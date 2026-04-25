@@ -1,0 +1,459 @@
+
+{
+    "StatusPage": {
+      "switchLangAria": "Switch language to {to}",
+      "title": "Check Request Status",
+      "subtitle": "Enter your details to look up your request",
+      "step": "Step 1/2 • Provide information to verify",
+      "form": {
+        "title": "Information for Verification",
+        "desc": "We use this information to securely find your request.",
+        "id": {
+          "label": "Thai National ID or Passport Number",
+          "placeholder": "Thai ID (13 digits) or Passport No.",
+          "help": {
+            "thai": "✓ Detected: Thai National ID (13 digits)",
+            "foreigner": "✓ Detected: Passport number (digits supported)",
+            "mixed": "Enter Thai National ID (13 digits) or Passport No.",
+            "empty": "Enter Thai National ID (13 digits) or Passport No."
+          }
+        },
+        "phone": {
+          "label": "Last 4 digits of phone number",
+          "placeholder": "e.g. 1234",
+          "help": "Enter only the last 4 digits used when filing the request."
+        },
+        "submit": {
+          "label": "Check Status",
+          "loading": "Checking…"
+        }
+      },
+      "live": {
+        "loading": "Checking status"
+      },
+      "pdpa": "Your data is used only to verify your request and is protected under PDPA.",
+      "contact": {
+        "aria": "Government contact information",
+        "title": "Government Contact",
+        "hours": "Business hours",
+        "weekday": "Mon–Fri: 08:30–16:30",
+        "weekend": "Sat–Sun: 08:00–16:00",
+        "hoursFull": "Business hours: Mon–Fri 08:30–16:30; Sat–Sun 08:00–16:00",
+        "place": "Contact place",
+        "center": "Public Safety & Security Coordination Center",
+        "floor": "Hua Hin City Municipality, 3rd Floor",
+        "phoneLabel": "Phone",
+        "phoneShort": "Tel.",
+        "ext": "ext."
+      },
+      "err": {
+        "fillAll": "Please enter Thai ID/Passport and the last 4 digits of your phone number.",
+        "phone4": "Phone last 4 must be 4 digits.",
+        "needId": "Please provide Thai ID or Passport number.",
+        "invalidId": "Invalid ID/Passport number.",
+        "invalidPhone": "Invalid phone number.",
+        "search": "Search failed.",
+        "badShape": "Invalid response format. Please try again.",
+        "incomplete": "Incomplete request data. Please try again.",
+        "badToken": "Invalid verification data. Please try again."
+      }
+    },
+    "StatusResult": {
+      "loading": "Loading request data…",
+      "loadingGeneric": "Loading...",
+      "errors": {
+        "invalidOrExpired": "The link is invalid or has expired.",
+        "notFound": "Request not found.",
+        "loadFailed": "Failed to load data."
+      },
+      "notfound": {
+        "title": "Request not found",
+        "reasonsTitle": "Possible reasons:",
+        "r1": "The link you used is invalid or has expired.",
+        "r2": "The request has been removed or cannot be found.",
+        "r3": "The access token is invalid.",
+        "r4": "The request may have been cancelled or rejected.",
+        "hint": "Please verify the link from LINE and try again. If issues persist, go back to the status page and enter your details again, or contact staff."
+      },
+      "back": "Back to status",
+      "backShort": "Back",
+      "aria": { "back": "Go back to request status" },
+      "sr": { "pageTitle": "CCTV Request Status" },
+      "status": {
+        "pending": "Pending",
+        "waitingForDocuments": "Waiting for Documents",
+        "waitingForApproval": "Waiting for Approval",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "urgent": "Urgent"
+      },
+      "tabs": {
+        "all": "All ({total})",
+        "images": "Images ({count})",
+        "videos": "Videos ({count})"
+      },
+      "ios": {
+        "saveHint": "iOS: After downloading a video, tap the download icon → Share → Save Video.",
+        "saveHintLong": "iOS (Safari): After downloading a video, tap the download icon (top-right) → Share → Save Video."
+      },
+      "img": {
+        "alt": "CCTV image",
+        "loadError": "Unable to load image"
+      },
+      "btn": {
+        "download": "Download",
+        "open": "Open",
+        "downloadImage": "Download image",
+        "openImage": "Open image",
+        "downloadVideo": "Download video",
+        "openVideo": "Open video"
+      },
+      "details": {
+        "title": "Request Details",
+        "submittedAt": "Submitted at",
+        "fullName": "Applicant",
+        "requestType": "Request type",
+        "incidentDate": "Incident date",
+        "incidentTime": "Incident time",
+        "incidentLocation": "Location",
+        "requestDetails": "Request details",
+        "officerNote": "Officer note",
+        "rejectionReason": "Rejection reason"
+      },
+      "pdf": {
+        "title": "Supporting document (PDF)",
+        "open": "Open PDF",
+        "download": "Download"
+      },
+      "media": {
+        "title": "Media from CCTV",
+        "emptyTitle": "No images or videos yet",
+        "emptyDesc": "Files will be available once the document is reviewed and approved by staff."
+      },
+      "approvedAt": "Approved at {date}",
+      "submittedAtPrefix": "Submitted at {date}",
+      "show": "Show",
+      "hide": "Hide",
+      "na": "N/A",
+      "reports": {
+        "all": "All requests ({count})"
+      },
+      "video": { "play": "Play video", "error": "Unable to play video" },
+      "external": {
+        "title": "Open in browser",
+        "desc": "You are opening this link from LINE which doesn’t fully support downloading. Please copy the URL below and open in Safari/Chrome.",
+        "copy": "Copy URL",
+        "copydone": "URL copied! Open Safari/Chrome and paste the URL.",
+        "copymanual": "Please copy this URL and open in Safari/Chrome:",
+        "close": "Close",
+        "howto": "📱 How to:\n1) Tap “Copy URL”\n2) Leave LINE and open Safari/Chrome\n3) Paste the URL"
+      },
+      "pager": { "prev": "Prev", "next": "Next" }
+    },
+    "RequestPage": {
+      "hero": {
+        "badge": "Request System",
+        "title": "Submit CCTV Footage Request",
+        "subtitle": "Provide detailed incident information to help officers locate footage quickly",
+        "features": {
+          "security": "Personal Data Protection",
+          "tracking": "Track Status",
+          "complete": "Complete Documentation"
+        },
+        "mobileTitle": "CCTV Request",
+        "mobileSubtitle": "Complete incident details"
+      },
+      "stepper": {
+        "step1": "Applicant Information",
+        "step2": "Incident Details",
+        "step3": "Review & Confirm",
+        "current": "Step {current}/{total} • {label}"
+      },
+      "applicant": {
+        "title": "Applicant Information",
+        "description": "Provide complete contact details",
+        "prefix": {
+          "label": "Prefix",
+          "placeholder": "Select prefix",
+          "options": {
+            "นาย": "Mr.",
+            "นาง": "Mrs.",
+            "นางสาว": "Ms."
+          }
+        },
+        "fullName": {
+          "label": "Full Name"
+        },
+        "age": {
+          "label": "Age"
+        },
+        "phone": {
+          "label": "Phone Number"
+        },
+        "id": {
+          "label": "Thai ID/Passport Number"
+        }
+      },
+      "address": {
+        "title": "Applicant Address",
+        "description": "Specify address for contact and identity verification",
+        "houseNumber": {
+          "label": "House Number"
+        },
+        "villageNumber": {
+          "label": "Village Number"
+        },
+        "alley": {
+          "label": "Alley/Lane"
+        },
+        "road": {
+          "label": "Road"
+        },
+        "province": {
+          "label": "Province"
+        },
+        "district": {
+          "label": "District"
+        },
+        "subdistrict": {
+          "label": "Subdistrict"
+        },
+        "postalCode": {
+          "label": "Postal Code"
+        },
+        "provincePlaceholder": "Select province first",
+        "districtPlaceholder": "Select district first"
+      },
+      "incident": {
+        "title": "Request & Incident Details",
+        "description": "Specify request type, date/time, and location as clearly as possible",
+        "requestType": {
+          "label": "Request Type",
+          "view": {
+            "title": "View Footage",
+            "description": "Request to view CCTV footage during the incident period for preliminary investigation",
+            "badge": "View Images"
+          },
+          "copy": {
+            "title": "Request Footage Copy",
+            "description": "Request copy of CCTV footage files for legal evidence or court proceedings",
+            "badge": "Original Files",
+            "badgeEvidence": "Evidence"
+          }
+        },
+        "involvement": {
+          "label": "Involvement Status",
+          "placeholder": "Select involvement status",
+          "explainLabel": "Specify Relationship",
+          "explainPlaceholder": "e.g. Father/Mother/Colleague/Caretaker, etc.",
+          "options": {
+            "ผู้เสียหาย": "Victim",
+            "ญาติ": "Relative",
+            "ผู้เกี่ยวข้อง": "Related Person",
+            "เจ้าหน้าที่รัฐ": "Government Official",
+            "ประกัน": "Insurance"
+          }
+        },
+        "category": {
+          "label": "Incident Category",
+          "placeholder": "Select incident category...",
+          "options": {
+            "ขอสำเนาข้อมูลภาพ": "Request Footage Copy",
+            "ขอดูข้อมูลรูปภาพ": "View Footage"
+          }
+        },
+        "date": {
+          "label": "Incident Date"
+        },
+        "time": {
+          "label": "Incident Time"
+        },
+        "location": {
+          "label": "Incident Location",
+          "placeholder": "e.g. intersection in front of market"
+        },
+        "details": {
+          "label": "Additional Details",
+          "hint": "Recommended: landmarks, vehicle make, license plate"
+        },
+        "documents": {
+          "label": "Supporting Documents",
+          "idCard": "Copy of Thai ID Card/Government Official ID",
+          "policeReport": "Copy of Police Report",
+          "other": "Other",
+          "otherDetails": "Please specify other documents",
+          "otherPlaceholder": "e.g. Driver's License copy, Receipt copy, Other documents"
+        }
+      },
+      "review": {
+        "title": "Review Information Before Confirmation",
+        "description": "Please verify accuracy. Click &ldquo;Back&rdquo; if you need to make changes.",
+        "labels": {
+          "applicant": "Applicant",
+          "involvement": "Involvement Status",
+          "contact": "Contact",
+          "category": "Incident Category",
+          "type": "Request Type",
+          "datetime": "Incident Date/Time",
+          "location": "Incident Location",
+          "documents": "Supporting Documents"
+        },
+        "consent": {
+          "title": "Consent under Personal Data Protection Act (PDPA)",
+          "summary": "I consent to the agency collecting, using, and/or disclosing personal data as necessary to receive and consider the request and follow up in accordance with applicable laws.",
+          "details": "The agency will process data for the purposes of receiving requests, investigating and monitoring incidents, verifying and confirming identity, communicating, notifying results, recording as official evidence, and preparing internal statistics/reports, using appropriate data security measures, and retaining data for the period required by law or as necessary.",
+          "showDetails": "View additional details"
+        }
+      },
+      "actions": {
+        "back": "Back",
+        "next": "Next",
+        "submit": "Submit Request",
+        "submitting": "Submitting request...",
+        "saveDraft": "Save Draft",
+        "newRequest": "New Request"
+      },
+      "progress": {
+        "label": "Form Completion",
+        "percentage": "{percent}%"
+      },
+      "success": {
+        "title": "Request Submitted Successfully",
+        "reportId": "Request ID: {id}",
+        "message": "Staff will contact you as soon as possible",
+        "hint": "Please keep the request ID for status tracking"
+      },
+      "errors": {
+        "required": "Please complete all required information before proceeding",
+        "submitFailed": "Failed to submit request. Please try again",
+        "submitting": "Submitting request, please wait..."
+      },
+      "validation": {
+        "prefix": "Please select a prefix",
+        "fullName": "Please enter full name",
+        "age": "Please specify age",
+        "ageRange": "Age must be between 1-120 years",
+        "ageNumber": "Age must be a number only",
+        "phone": "Phone number is invalid",
+        "phoneFormat": "Format: 0XXXXXXXXX or 0XXXXXXXXXX",
+        "id": "Thai ID/Passport number is invalid",
+        "idLength": "At least 6 characters",
+        "idFormat": "Only numbers/letters/hyphens allowed",
+        "province": "Please specify province",
+        "district": "Please specify district",
+        "subdistrict": "Please specify subdistrict",
+        "postalCode": "Postal code must be 5 digits",
+        "postalCodeFormat": "Invalid postal code format",
+        "requestType": "Please select request type",
+        "involvement": "Please select involvement status",
+        "involvementExplain": "Please specify relationship",
+        "category": "Please select incident category",
+        "incidentDate": "Please specify incident date",
+        "incidentTime": "Please specify incident time",
+        "incidentLocation": "Please specify incident location",
+        "documents": "Please select at least one supporting document and provide details for other documents if selected",
+        "consent": "Must accept terms before submitting request"
+      },
+      "placeholders": {
+        "fullName": "Enter full name",
+        "age": "years",
+        "phone": "Enter phone number",
+        "id": "Enter Thai ID or Passport number",
+        "houseNumber": "Enter house number",
+        "villageNumber": "Enter village number",
+        "alley": "Enter alley/lane",
+        "road": "Enter road",
+        "postalCode": "Enter postal code",
+        "incidentLocation": "Enter incident location",
+        "incidentDetails": "Enter incident details",
+        "otherDetails": "e.g. Driver's License copy, Receipt copy, Other documents",
+        "disabled": "Not available",
+        "search": "Type to search...",
+        "noResults": "No results found"
+      }
+    },
+    "contract": {
+    "hero": {
+      "title": "Contact Channels",
+      "description": "Please use the information below for contacting to request information, complaints, suggestions, or coordinate government affairs"
+    },
+    "contact": {
+      "title": "Primary Contact Information",
+      "description": "Main channels for contacting the organization",
+      "fields": {
+        "organization": "Organization",
+        "address": "Address",
+        "phone": "Phone",
+        "website": "Website",
+        "lineOA": "LINE Official",
+        "lineOAHint": "Click to open LINE OA chat"
+      },
+      "buttons": {
+        "call": "Call Us",
+        "visitWebsite": "Visit Website"
+      }
+    },
+    "hours": {
+      "title": "Operating Hours",
+      "description": "Government working hours and service channels outside working hours",
+      "day": "Day",
+      "time": "Operating Hours",
+      "mondayToFriday": {
+        "day": "Monday – Friday",
+        "time": "08:30 – 16:30"
+      },
+      "weekend": {
+        "day": "Saturday – Sunday",
+        "time": "08:00 -16:00"
+      },
+      "holiday": {
+        "day": "Public Holidays",
+        "time": "08:00 -16:00"
+      }
+    },
+    "notes": {
+      "title": "Important Notes",
+      "pdpa": {
+        "title": "Personal Data Protection (PDPA)",
+        "description": "The information you provide is used only for contact and service according to the request. The organization will store and use the data according to personal data protection principles"
+      },
+      "accessibility": {
+        "title": "Accessibility for All",
+        "description": "The building has ramps and elevators for wheelchair users. If you need special assistance, please inform the staff before entering the service"
+      }
+    },
+    "map": {
+      "title": "Map",
+      "description": "Organization location (click the button to open in map app)",
+      "openButton": "Open in Map"
+    },
+    "org": {
+      "name": "Hua Hin City Municipality",
+      "unit": "3rd Floor, Peace and Security Coordination Center",
+      "address": "114 Petchkasem Road, Hua Hin Sub-district, Hua Hin District, Prachuap Khiri Khan Province 77110",
+      "telMain": "0-3251-1047 Ext. 310"
+    }
+  },
+  "navbar": {
+    "submitRequest": "Submit Request",
+    "checkStatus": "Check Status",
+    "contact": "Contact"
+  },
+  "success": {
+    "title": "Request Submitted Successfully!",
+    "subtitle": "Your request has been recorded successfully",
+    "lineTitle": "Track Status via LINE",
+    "addLineFriend": "Add LINE OA Friend",
+    "connectNotification": "Connect to receive notifications when documents are approved",
+    "lineAccountName": "Hua Hin City Municipality CCTV Official",
+    "scanQrDescription": "Scan QR Code to add friend and track your request status",
+    "benefitsTitle": "Benefits of Adding LINE Friend",
+    "benefit1": "Receive request status notifications",
+    "benefit2": "Inquire for additional information: Mon-Fri 08:30-16:30, Sat-Sun 08:00-16:00",
+    "benefit3": "Contact staff directly via chat",
+    "newRequest": "Submit New Request",
+  "footerNote": "For additional questions, please contact Tel. 032-511-047 Ext. 310 or via LINE Official Account",
+  "loading": "Loading...",
+  "unknownReportId": "Unknown"
+}
+}

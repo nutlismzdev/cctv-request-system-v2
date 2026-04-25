@@ -1,0 +1,358 @@
+2025-09-26T15:34:24:    ▲ Next.js 15.5.4
+2025-09-26T15:34:24:    - Local:        http://localhost:4000
+2025-09-26T15:34:24:    - Network:      http://118.119.201.96:4000
+2025-09-26T15:34:24: 
+2025-09-26T15:34:24:  ✓ Starting...
+2025-09-26T15:34:25:  ✓ Ready in 1065ms
+2025-09-26T15:34:47:    ▲ Next.js 15.5.4
+2025-09-26T15:34:47:    - Local:        http://localhost:4000
+2025-09-26T15:34:47:    - Network:      http://118.119.201.96:4000
+2025-09-26T15:34:47: 
+2025-09-26T15:34:47:  ✓ Starting...
+2025-09-26T15:34:48:  ✓ Ready in 1146ms
+2025-09-26T15:46:59: PATCH /api/reports/[id] - Received data: {
+2025-09-26T15:46:59:   reportId: 78,
+2025-09-26T15:46:59:   currentStatus: 'รอดำเนินการ',
+2025-09-26T15:46:59:   newStatus: 'รอดำเนินการ',
+2025-09-26T15:46:59:   hasStatusChange: false
+2025-09-26T15:46:59: }
+2025-09-26T15:47:23: Photos API: Received upload request
+2025-09-26T15:47:23: Processing form data with 240000ms timeout for estimated 18.3MB
+2025-09-26T15:47:32: FormData parsed successfully: 1 files, total size 18.3MB
+2025-09-26T15:47:32: File successfully written: C:\E-services\cctv_reqeust\public\uploads\cctv\1758876452741-4o0r10fh4q7.mp4 (18.29MB)
+2025-09-26T15:47:42: 📋 Found 2 attachments for report 78:
+2025-09-26T15:47:42:    1. 20250919123544331.pdf (application/pdf) - Path: 1758876426026-uqs3m3ofg5k.pdf - Category: idcopy
+2025-09-26T15:47:42:    2. 19627.jpg (image/jpeg) - Path: 1758876432247-uk37f45t66.jpg - Category: operation
+2025-09-26T15:47:42: 📄 Attempting to embed PDF: 20250919123544331.pdf
+2025-09-26T15:47:42: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:47:42: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:47:42: 📊 PDF has 2 pages
+2025-09-26T15:47:43: ✅ Successfully embedded PDF: 20250919123544331.pdf (2 pages)
+2025-09-26T15:47:43: 🖼️  Attempting to embed image: 19627.jpg
+2025-09-26T15:47:43: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-26T15:47:43: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-26T15:47:43: ✅ Successfully embedded image: 19627.jpg
+2025-09-26T15:47:43: 📋 Found 2 attachments for report 78:
+2025-09-26T15:47:43:    1. 20250919123544331.pdf (application/pdf) - Path: 1758876426026-uqs3m3ofg5k.pdf - Category: idcopy
+2025-09-26T15:47:43:    2. 19627.jpg (image/jpeg) - Path: 1758876432247-uk37f45t66.jpg - Category: operation
+2025-09-26T15:47:43: 📄 Attempting to embed PDF: 20250919123544331.pdf
+2025-09-26T15:47:43: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:47:43: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:47:43: 📊 PDF has 2 pages
+2025-09-26T15:47:43: ✅ Successfully embedded PDF: 20250919123544331.pdf (2 pages)
+2025-09-26T15:47:43: 🖼️  Attempting to embed image: 19627.jpg
+2025-09-26T15:47:43: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-26T15:47:43: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-26T15:47:43: ✅ Successfully embedded image: 19627.jpg
+2025-09-26T15:48:07: Attachment 48: DB path "1758876432247-uk37f45t66.jpg" -> URL "/uploads/attachments/1758876432247-uk37f45t66.jpg" (exists: true)
+2025-09-26T15:48:07: Full URL for 48: http://localhost:4000/uploads/attachments/1758876432247-uk37f45t66.jpg
+2025-09-26T15:48:07: Attachment 47: DB path "1758876426026-uqs3m3ofg5k.pdf" -> URL "/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf" (exists: true)
+2025-09-26T15:48:07: Full URL for 47: http://localhost:4000/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:48:10: 📋 Found 2 attachments for report 78:
+2025-09-26T15:48:10:    1. 20250919123544331.pdf (application/pdf) - Path: 1758876426026-uqs3m3ofg5k.pdf - Category: idcopy
+2025-09-26T15:48:10:    2. 19627.jpg (image/jpeg) - Path: 1758876432247-uk37f45t66.jpg - Category: operation
+2025-09-26T15:48:10: 📄 Attempting to embed PDF: 20250919123544331.pdf
+2025-09-26T15:48:10: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:48:10: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:48:10: 📊 PDF has 2 pages
+2025-09-26T15:48:10: ✅ Successfully embedded PDF: 20250919123544331.pdf (2 pages)
+2025-09-26T15:48:10: 🖼️  Attempting to embed image: 19627.jpg
+2025-09-26T15:48:10: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-26T15:48:10: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-26T15:48:10: ✅ Successfully embedded image: 19627.jpg
+2025-09-26T15:48:10: 📋 Found 2 attachments for report 78:
+2025-09-26T15:48:10:    1. 20250919123544331.pdf (application/pdf) - Path: 1758876426026-uqs3m3ofg5k.pdf - Category: idcopy
+2025-09-26T15:48:10:    2. 19627.jpg (image/jpeg) - Path: 1758876432247-uk37f45t66.jpg - Category: operation
+2025-09-26T15:48:10: 📄 Attempting to embed PDF: 20250919123544331.pdf
+2025-09-26T15:48:10: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:48:10: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:48:10: 📊 PDF has 2 pages
+2025-09-26T15:48:10: ✅ Successfully embedded PDF: 20250919123544331.pdf (2 pages)
+2025-09-26T15:48:10: 🖼️  Attempting to embed image: 19627.jpg
+2025-09-26T15:48:10: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-26T15:48:10: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-26T15:48:10: ✅ Successfully embedded image: 19627.jpg
+2025-09-26T15:48:19: Attachment 48: DB path "1758876432247-uk37f45t66.jpg" -> URL "/uploads/attachments/1758876432247-uk37f45t66.jpg" (exists: true)
+2025-09-26T15:48:19: Full URL for 48: http://localhost:4000/uploads/attachments/1758876432247-uk37f45t66.jpg
+2025-09-26T15:48:19: Attachment 47: DB path "1758876426026-uqs3m3ofg5k.pdf" -> URL "/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf" (exists: true)
+2025-09-26T15:48:19: Full URL for 47: http://localhost:4000/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T15:48:32: Attachment 48: DB path "1758876432247-uk37f45t66.jpg" -> URL "/uploads/attachments/1758876432247-uk37f45t66.jpg" (exists: true)
+2025-09-26T15:48:32: Full URL for 48: http://localhost:4000/uploads/attachments/1758876432247-uk37f45t66.jpg
+2025-09-26T15:48:32: Attachment 47: DB path "1758876426026-uqs3m3ofg5k.pdf" -> URL "/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf" (exists: true)
+2025-09-26T15:48:32: Full URL for 47: http://localhost:4000/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf
+2025-09-26T16:29:47:    ▲ Next.js 15.5.4
+2025-09-26T16:29:47:    - Local:        http://localhost:4000
+2025-09-26T16:29:47:    - Network:      http://118.119.201.96:4000
+2025-09-26T16:29:47: 
+2025-09-26T16:29:47:  ✓ Starting...
+2025-09-26T16:29:48:  ✓ Ready in 1095ms
+2025-09-26T16:32:44: 📋 Found 0 attachments for report 80:
+2025-09-26T16:34:07: 📋 Found 0 attachments for report 80:
+2025-09-26T16:34:45: PATCH /api/reports/[id] - Received data: {
+2025-09-26T16:34:45:   reportId: 80,
+2025-09-26T16:34:45:   currentStatus: 'รอดำเนินการ',
+2025-09-26T16:34:45:   newStatus: 'รอดำเนินการ',
+2025-09-26T16:34:45:   hasStatusChange: false
+2025-09-26T16:34:45: }
+2025-09-26T16:34:47: 📋 Found 0 attachments for report 80:
+2025-09-26T16:35:08: 📋 Found 0 attachments for report 80:
+2025-09-26T16:37:49:    ▲ Next.js 15.5.4
+2025-09-26T16:37:49:    - Local:        http://localhost:4000
+2025-09-26T16:37:49:    - Network:      http://118.119.201.96:4000
+2025-09-26T16:37:49: 
+2025-09-26T16:37:49:  ✓ Starting...
+2025-09-26T16:37:50:  ✓ Ready in 1120ms
+2025-09-26T16:37:57: 📋 Found 0 attachments for report 80:
+2025-09-26T16:39:43: PATCH /api/reports/[id] - Received data: {
+2025-09-26T16:39:43:   reportId: 80,
+2025-09-26T16:39:43:   currentStatus: 'รอดำเนินการ',
+2025-09-26T16:39:43:   newStatus: 'รอดำเนินการ',
+2025-09-26T16:39:43:   hasStatusChange: false
+2025-09-26T16:39:43: }
+2025-09-27T22:45:29: Attachment 48: DB path "1758876432247-uk37f45t66.jpg" -> URL "/uploads/attachments/1758876432247-uk37f45t66.jpg" (exists: true)
+2025-09-27T22:45:29: Full URL for 48: http://localhost:4000/uploads/attachments/1758876432247-uk37f45t66.jpg
+2025-09-27T22:45:29: Attachment 47: DB path "1758876426026-uqs3m3ofg5k.pdf" -> URL "/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf" (exists: true)
+2025-09-27T22:45:29: Full URL for 47: http://localhost:4000/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf
+2025-09-27T22:45:39: Attachment 48: DB path "1758876432247-uk37f45t66.jpg" -> URL "/uploads/attachments/1758876432247-uk37f45t66.jpg" (exists: true)
+2025-09-27T22:45:39: Full URL for 48: http://localhost:4000/uploads/attachments/1758876432247-uk37f45t66.jpg
+2025-09-27T22:45:39: Attachment 47: DB path "1758876426026-uqs3m3ofg5k.pdf" -> URL "/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf" (exists: true)
+2025-09-27T22:45:39: Full URL for 47: http://localhost:4000/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf
+2025-09-28T11:14:17:    ▲ Next.js 15.5.4
+2025-09-28T11:14:17:    - Local:        http://localhost:4000
+2025-09-28T11:14:17:    - Network:      http://118.119.201.96:4000
+2025-09-28T11:14:17: 
+2025-09-28T11:14:17:  ✓ Starting...
+2025-09-28T11:14:18:  ✓ Ready in 1119ms
+2025-09-28T11:20:19: PATCH /api/reports/[id] - Received data: {
+2025-09-28T11:20:19:   reportId: 80,
+2025-09-28T11:20:19:   currentStatus: 'รอดำเนินการ',
+2025-09-28T11:20:19:   newStatus: 'รอดำเนินการ',
+2025-09-28T11:20:19:   hasStatusChange: false
+2025-09-28T11:20:19: }
+2025-09-28T11:20:20: 📋 Found 0 attachments for report 80:
+2025-09-28T11:20:21: 📋 Found 0 attachments for report 80:
+2025-09-28T11:28:30:    ▲ Next.js 15.5.4
+2025-09-28T11:28:30:    - Local:        http://localhost:4000
+2025-09-28T11:28:30:    - Network:      http://118.119.201.96:4000
+2025-09-28T11:28:30: 
+2025-09-28T11:28:30:  ✓ Starting...
+2025-09-28T11:28:31:  ✓ Ready in 1217ms
+2025-09-28T11:28:59: Attachment 48: DB path "1758876432247-uk37f45t66.jpg" -> URL "/uploads/attachments/1758876432247-uk37f45t66.jpg" (exists: true)
+2025-09-28T11:28:59: Full URL for 48: http://localhost:4000/uploads/attachments/1758876432247-uk37f45t66.jpg
+2025-09-28T11:28:59: Attachment 47: DB path "1758876426026-uqs3m3ofg5k.pdf" -> URL "/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf" (exists: true)
+2025-09-28T11:28:59: Full URL for 47: http://localhost:4000/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf
+2025-09-28T11:30:18: Attachment 48: DB path "1758876432247-uk37f45t66.jpg" -> URL "/uploads/attachments/1758876432247-uk37f45t66.jpg" (exists: true)
+2025-09-28T11:30:18: Full URL for 48: http://localhost:4000/uploads/attachments/1758876432247-uk37f45t66.jpg
+2025-09-28T11:30:18: Attachment 47: DB path "1758876426026-uqs3m3ofg5k.pdf" -> URL "/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf" (exists: true)
+2025-09-28T11:30:18: Full URL for 47: http://localhost:4000/uploads/attachments/1758876426026-uqs3m3ofg5k.pdf
+2025-09-28T11:47:28:    ▲ Next.js 15.5.4
+2025-09-28T11:47:28:    - Local:        http://localhost:4000
+2025-09-28T11:47:28:    - Network:      http://118.119.201.96:4000
+2025-09-28T11:47:28: 
+2025-09-28T11:47:28:  ✓ Starting...
+2025-09-28T11:47:29:  ✓ Ready in 1485ms
+2025-09-28T11:47:36: 📋 Found 0 attachments for report 80:
+2025-09-28T11:47:36: 📋 Found 0 attachments for report 80:
+2025-09-28T11:47:51: PATCH /api/reports/[id] - Received data: {
+2025-09-28T11:47:51:   reportId: 80,
+2025-09-28T11:47:51:   currentStatus: 'รอดำเนินการ',
+2025-09-28T11:47:51:   newStatus: 'รอดำเนินการ',
+2025-09-28T11:47:51:   hasStatusChange: false
+2025-09-28T11:47:51: }
+2025-09-28T12:17:22:    ▲ Next.js 15.5.4
+2025-09-28T12:17:22:    - Local:        http://localhost:4000
+2025-09-28T12:17:22:    - Network:      http://118.119.201.96:4000
+2025-09-28T12:17:22: 
+2025-09-28T12:17:22:  ✓ Starting...
+2025-09-28T12:17:23:  ✓ Ready in 1118ms
+2025-09-28T12:23:15:    ▲ Next.js 15.5.4
+2025-09-28T12:23:15:    - Local:        http://localhost:4000
+2025-09-28T12:23:15:    - Network:      http://118.119.201.96:4000
+2025-09-28T12:23:15: 
+2025-09-28T12:23:15:  ✓ Starting...
+2025-09-28T12:23:16:  ✓ Ready in 1127ms
+2025-09-28T12:25:26: [LINE-WEBHOOK] Raw body length: 559
+2025-09-28T12:25:26: [LINE-WEBHOOK] Raw body content (first 200 chars): {"destination":"U760f43f1b37888668d39cecf7d28ad28","events":[{"type":"message","message":{"type":"text","id":"580836984508645499","quoteToken":"VmpU51oiuBskX-46LaGo79ps9-vzcUzasOCxjTa6TeS8AyOtjlpvN2Zf
+2025-09-28T12:25:26: [LINE-WEBHOOK] === Signature Verification ===
+2025-09-28T12:25:26: [LINE-WEBHOOK] Raw body length: 559
+2025-09-28T12:25:26: [LINE-WEBHOOK] Has signature: true
+2025-09-28T12:25:26: [LINE-WEBHOOK] Has secret: true
+2025-09-28T12:25:26: [LINE-WEBHOOK] Expected signature: srhnjVyYrAg8WIyS1R2b...
+2025-09-28T12:25:26: [LINE-WEBHOOK] Received signature: srhnjVyYrAg8WIyS1R2b...
+2025-09-28T12:25:26: [LINE-WEBHOOK] Signature valid: true
+2025-09-28T12:55:16:    ▲ Next.js 15.5.4
+2025-09-28T12:55:16:    - Local:        http://localhost:4000
+2025-09-28T12:55:16:    - Network:      http://118.119.201.96:4000
+2025-09-28T12:55:16: 
+2025-09-28T12:55:16:  ✓ Starting...
+2025-09-28T12:55:16:  ✓ Ready in 1190ms
+2025-09-28T12:55:25: 📋 Found 0 attachments for report 81:
+2025-09-28T12:55:36: 📋 Found 0 attachments for report 80:
+2025-09-28T12:55:45: 📋 Found 2 attachments for report 78:
+2025-09-28T12:55:45:    1. 20250919123544331.pdf (application/pdf) - Path: 1758876426026-uqs3m3ofg5k.pdf - Category: idcopy
+2025-09-28T12:55:45:    2. 19627.jpg (image/jpeg) - Path: 1758876432247-uk37f45t66.jpg - Category: operation
+2025-09-28T12:55:45: 📄 Attempting to embed PDF: 20250919123544331.pdf
+2025-09-28T12:55:45: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-28T12:55:45: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-28T12:55:45: 📊 PDF has 2 pages
+2025-09-28T12:55:45: ✅ Successfully embedded PDF: 20250919123544331.pdf (2 pages)
+2025-09-28T12:55:45: 🖼️  Attempting to embed image: 19627.jpg
+2025-09-28T12:55:45: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-28T12:55:45: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-28T12:55:45: ✅ Successfully embedded image: 19627.jpg
+2025-09-28T12:55:53: 📋 Found 0 attachments for report 81:
+2025-09-28T12:59:01:    ▲ Next.js 15.5.4
+2025-09-28T12:59:01:    - Local:        http://localhost:4000
+2025-09-28T12:59:01:    - Network:      http://118.119.201.96:4000
+2025-09-28T12:59:01: 
+2025-09-28T12:59:01:  ✓ Starting...
+2025-09-28T12:59:02:  ✓ Ready in 1146ms
+2025-09-28T12:59:05: 📋 Found 0 attachments for report 81:
+2025-09-28T12:59:12: 📋 Found 0 attachments for report 80:
+2025-09-28T12:59:14: 📋 Found 2 attachments for report 78:
+2025-09-28T12:59:14:    1. 20250919123544331.pdf (application/pdf) - Path: 1758876426026-uqs3m3ofg5k.pdf - Category: idcopy
+2025-09-28T12:59:14:    2. 19627.jpg (image/jpeg) - Path: 1758876432247-uk37f45t66.jpg - Category: operation
+2025-09-28T12:59:14: 📄 Attempting to embed PDF: 20250919123544331.pdf
+2025-09-28T12:59:14: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-28T12:59:14: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-28T12:59:14: 📊 PDF has 2 pages
+2025-09-28T12:59:14: ✅ Successfully embedded PDF: 20250919123544331.pdf (2 pages)
+2025-09-28T12:59:14: 🖼️  Attempting to embed image: 19627.jpg
+2025-09-28T12:59:14: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-28T12:59:14: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-28T12:59:14: ✅ Successfully embedded image: 19627.jpg
+2025-09-28T12:59:28: PATCH /api/reports/[id] - Received data: {
+2025-09-28T12:59:28:   reportId: 81,
+2025-09-28T12:59:28:   currentStatus: 'รอดำเนินการ',
+2025-09-28T12:59:28:   newStatus: 'รอดำเนินการ',
+2025-09-28T12:59:28:   hasStatusChange: false
+2025-09-28T12:59:28: }
+2025-09-28T12:59:29: 📋 Found 0 attachments for report 81:
+2025-09-28T12:59:29: 📋 Found 0 attachments for report 81:
+2025-09-28T12:59:43: PATCH /api/reports/[id] - Received data: {
+2025-09-28T12:59:43:   reportId: 81,
+2025-09-28T12:59:43:   currentStatus: 'รอดำเนินการ',
+2025-09-28T12:59:43:   newStatus: 'รอดำเนินการ',
+2025-09-28T12:59:43:   hasStatusChange: false
+2025-09-28T12:59:43: }
+2025-09-28T12:59:44: 📋 Found 0 attachments for report 81:
+2025-09-28T12:59:44: 📋 Found 0 attachments for report 81:
+2025-09-28T12:59:59: PATCH /api/reports/[id] - Received data: {
+2025-09-28T12:59:59:   reportId: 81,
+2025-09-28T12:59:59:   currentStatus: 'รอดำเนินการ',
+2025-09-28T12:59:59:   newStatus: 'รอดำเนินการ',
+2025-09-28T12:59:59:   hasStatusChange: false
+2025-09-28T12:59:59: }
+2025-09-28T13:00:19: Attachment 49: DB path "1759039205396-etdo5a5pwj.pdf" -> URL "/uploads/attachments/1759039205396-etdo5a5pwj.pdf" (exists: true)
+2025-09-28T13:00:19: Full URL for 49: http://localhost:4000/uploads/attachments/1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:00:34: Attachment 50: DB path "1759039231713-1qys2ubh2df.jpg" -> URL "/uploads/attachments/1759039231713-1qys2ubh2df.jpg" (exists: true)
+2025-09-28T13:00:34: Full URL for 50: http://localhost:4000/uploads/attachments/1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:00:34: Attachment 49: DB path "1759039205396-etdo5a5pwj.pdf" -> URL "/uploads/attachments/1759039205396-etdo5a5pwj.pdf" (exists: true)
+2025-09-28T13:00:34: Full URL for 49: http://localhost:4000/uploads/attachments/1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:01:08: Photos API: Received upload request
+2025-09-28T13:01:08: Processing form data with 300000ms timeout for estimated 35.3MB
+2025-09-28T13:01:10: Photos API: Received upload request
+2025-09-28T13:01:10: Processing form data with 300000ms timeout for estimated 23.4MB
+2025-09-28T13:01:57: Attachment 50: DB path "1759039231713-1qys2ubh2df.jpg" -> URL "/uploads/attachments/1759039231713-1qys2ubh2df.jpg" (exists: true)
+2025-09-28T13:01:57: Full URL for 50: http://localhost:4000/uploads/attachments/1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:01:57: Attachment 49: DB path "1759039205396-etdo5a5pwj.pdf" -> URL "/uploads/attachments/1759039205396-etdo5a5pwj.pdf" (exists: true)
+2025-09-28T13:01:57: Full URL for 49: http://localhost:4000/uploads/attachments/1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:02:38: Attachment 50: DB path "1759039231713-1qys2ubh2df.jpg" -> URL "/uploads/attachments/1759039231713-1qys2ubh2df.jpg" (exists: true)
+2025-09-28T13:02:38: Full URL for 50: http://localhost:4000/uploads/attachments/1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:02:38: Attachment 49: DB path "1759039205396-etdo5a5pwj.pdf" -> URL "/uploads/attachments/1759039205396-etdo5a5pwj.pdf" (exists: true)
+2025-09-28T13:02:38: Full URL for 49: http://localhost:4000/uploads/attachments/1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:02:42: Photos API: Received upload request
+2025-09-28T13:02:42: Processing form data with 300000ms timeout for estimated 35.3MB
+2025-09-28T13:02:46: Photos API: Received upload request
+2025-09-28T13:02:46: Processing form data with 300000ms timeout for estimated 23.4MB
+2025-09-28T13:02:49: Photos API: Received upload request
+2025-09-28T13:02:49: Processing form data with 240000ms timeout for estimated 12.0MB
+2025-09-28T13:03:02: FormData parsed successfully: 1 files, total size 12.0MB
+2025-09-28T13:03:02: File successfully written: C:\E-services\cctv_reqeust\public\uploads\cctv\1759039382132-dsxmdyrazvp.mp4 (11.98MB)
+2025-09-28T13:03:04: FormData parsed successfully: 1 files, total size 35.3MB
+2025-09-28T13:03:04: File successfully written: C:\E-services\cctv_reqeust\public\uploads\cctv\1759039384674-idvko3rckd.mp4 (35.28MB)
+2025-09-28T13:03:05: FormData parsed successfully: 1 files, total size 23.4MB
+2025-09-28T13:03:05: File successfully written: C:\E-services\cctv_reqeust\public\uploads\cctv\1759039385148-gaqkytpvih.mp4 (23.38MB)
+2025-09-28T13:03:37: Attachment 50: DB path "1759039231713-1qys2ubh2df.jpg" -> URL "/uploads/attachments/1759039231713-1qys2ubh2df.jpg" (exists: true)
+2025-09-28T13:03:37: Full URL for 50: http://localhost:4000/uploads/attachments/1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:03:37: Attachment 49: DB path "1759039205396-etdo5a5pwj.pdf" -> URL "/uploads/attachments/1759039205396-etdo5a5pwj.pdf" (exists: true)
+2025-09-28T13:03:37: Full URL for 49: http://localhost:4000/uploads/attachments/1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:04:09: 📋 Found 2 attachments for report 81:
+2025-09-28T13:04:09:    1. 20250815141759849.pdf (application/pdf) - Path: 1759039205396-etdo5a5pwj.pdf - Category: idcopy
+2025-09-28T13:04:09:    2. image.jpg (image/jpeg) - Path: 1759039231713-1qys2ubh2df.jpg - Category: operation
+2025-09-28T13:04:09: 📄 Attempting to embed PDF: 20250815141759849.pdf
+2025-09-28T13:04:09: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:04:09: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:04:09: 📊 PDF has 2 pages
+2025-09-28T13:04:09: ✅ Successfully embedded PDF: 20250815141759849.pdf (2 pages)
+2025-09-28T13:04:09: 🖼️  Attempting to embed image: image.jpg
+2025-09-28T13:04:09: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:04:09: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:04:09: ✅ Successfully embedded image: image.jpg
+2025-09-28T13:04:10: 📋 Found 2 attachments for report 81:
+2025-09-28T13:04:10:    1. 20250815141759849.pdf (application/pdf) - Path: 1759039205396-etdo5a5pwj.pdf - Category: idcopy
+2025-09-28T13:04:10:    2. image.jpg (image/jpeg) - Path: 1759039231713-1qys2ubh2df.jpg - Category: operation
+2025-09-28T13:04:10: 📄 Attempting to embed PDF: 20250815141759849.pdf
+2025-09-28T13:04:10: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:04:10: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:04:10: 📊 PDF has 2 pages
+2025-09-28T13:04:10: ✅ Successfully embedded PDF: 20250815141759849.pdf (2 pages)
+2025-09-28T13:04:10: 🖼️  Attempting to embed image: image.jpg
+2025-09-28T13:04:10: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:04:10: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:04:10: ✅ Successfully embedded image: image.jpg
+2025-09-28T13:04:24: 📋 Found 0 attachments for report 80:
+2025-09-28T13:04:29: 📋 Found 2 attachments for report 78:
+2025-09-28T13:04:29:    1. 20250919123544331.pdf (application/pdf) - Path: 1758876426026-uqs3m3ofg5k.pdf - Category: idcopy
+2025-09-28T13:04:29:    2. 19627.jpg (image/jpeg) - Path: 1758876432247-uk37f45t66.jpg - Category: operation
+2025-09-28T13:04:29: 📄 Attempting to embed PDF: 20250919123544331.pdf
+2025-09-28T13:04:29: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-28T13:04:29: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876426026-uqs3m3ofg5k.pdf
+2025-09-28T13:04:29: 📊 PDF has 2 pages
+2025-09-28T13:04:29: ✅ Successfully embedded PDF: 20250919123544331.pdf (2 pages)
+2025-09-28T13:04:29: 🖼️  Attempting to embed image: 19627.jpg
+2025-09-28T13:04:29: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-28T13:04:29: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1758876432247-uk37f45t66.jpg
+2025-09-28T13:04:29: ✅ Successfully embedded image: 19627.jpg
+2025-09-28T13:04:41: 📋 Found 2 attachments for report 81:
+2025-09-28T13:04:41:    1. 20250815141759849.pdf (application/pdf) - Path: 1759039205396-etdo5a5pwj.pdf - Category: idcopy
+2025-09-28T13:04:41:    2. image.jpg (image/jpeg) - Path: 1759039231713-1qys2ubh2df.jpg - Category: operation
+2025-09-28T13:04:41: 📄 Attempting to embed PDF: 20250815141759849.pdf
+2025-09-28T13:04:41: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:04:41: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039205396-etdo5a5pwj.pdf
+2025-09-28T13:04:41: 📊 PDF has 2 pages
+2025-09-28T13:04:41: ✅ Successfully embedded PDF: 20250815141759849.pdf (2 pages)
+2025-09-28T13:04:41: 🖼️  Attempting to embed image: image.jpg
+2025-09-28T13:04:41: 📂 Full path: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:04:41: ✅ File exists: C:\E-services\cctv_reqeust\public\uploads\attachments\1759039231713-1qys2ubh2df.jpg
+2025-09-28T13:04:41: ✅ Successfully embedded image: image.jpg
+2025-09-28T13:05:35: PATCH /api/reports/[id] - Received data: {
+2025-09-28T13:05:35:   reportId: 81,
+2025-09-28T13:05:35:   currentStatus: 'รอดำเนินการ',
+2025-09-28T13:05:35:   newStatus: 'รอเอกสารอนุมัติ',
+2025-09-28T13:05:35:   hasStatusChange: true
+2025-09-28T13:05:35: }
+2025-09-28T13:58:28:    ▲ Next.js 15.5.4
+2025-09-28T13:58:28:    - Local:        http://localhost:4000
+2025-09-28T13:58:28:    - Network:      http://118.119.201.96:4000
+2025-09-28T13:58:28: 
+2025-09-28T13:58:28:  ✓ Starting...
+2025-09-28T13:58:29:  ✓ Ready in 1137ms
+2025-09-28T14:03:12:    ▲ Next.js 15.5.4
+2025-09-28T14:03:12:    - Local:        http://localhost:4000
+2025-09-28T14:03:12:    - Network:      http://118.119.201.96:4000
+2025-09-28T14:03:12: 
+2025-09-28T14:03:12:  ✓ Starting...
+2025-09-28T14:03:13:  ✓ Ready in 1139ms
+2025-09-28T14:05:11:    ▲ Next.js 15.5.4
+2025-09-28T14:05:11:    - Local:        http://localhost:4000
+2025-09-28T14:05:11:    - Network:      http://118.119.201.96:4000
+2025-09-28T14:05:11: 
+2025-09-28T14:05:11:  ✓ Starting...
+2025-09-28T14:05:11:  ✓ Ready in 1149ms
+2025-09-28T14:05:59:    ▲ Next.js 15.5.4
+2025-09-28T14:05:59:    - Local:        http://localhost:4000
+2025-09-28T14:05:59:    - Network:      http://118.119.201.96:4000
+2025-09-28T14:05:59: 
+2025-09-28T14:05:59:  ✓ Starting...
+2025-09-28T14:06:00:  ✓ Ready in 1121ms

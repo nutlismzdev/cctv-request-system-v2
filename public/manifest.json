@@ -1,0 +1,32 @@
+{
+  "name": "เทศบาลนครหัวหิน — ระบบยื่นคำร้อง",
+  "short_name": "CCTV Hua Hin",
+  "description": "ระบบยื่นคำร้องขอภาพจากกล้อง CCTV เทศบาลนครหัวหิน",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0369a1",
+  "orientation": "portrait-primary",
+  "categories": ["government", "utilities"],
+  "lang": "th",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/logo/1_0.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/logo/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

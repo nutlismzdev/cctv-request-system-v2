@@ -1,0 +1,396 @@
+@import "tailwindcss";
+
+
+
+/* ใช้ variant .dark ตามมาตรฐาน shadcn */
+@custom-variant dark (&:is(.dark *));
+
+/* Tailwind CSS Variables (inline theme) */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* ใช้ Sarabun เป็นฟ้อนหลัก */
+  --font-sans: var(--font-sarabun);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ========= Design tokens (Light) ========= */
+/* Modern Blue */
+:root {
+  --radius: 0.5rem;
+  scroll-padding-top: 5rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.180 0.045 234.567);
+  --card: oklch(0.995 0.005 240);
+  --card-foreground: oklch(0.180 0.045 234.567);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.180 0.045 234.567);
+
+  --primary: oklch(0.420 0.180 234.567);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.920 0.012 240);
+  --secondary-foreground: oklch(0.280 0.035 234.567);
+
+  --muted: oklch(0.945 0.008 240);
+  --muted-foreground: oklch(0.450 0.025 240);
+
+  --accent: oklch(0.965 0.015 240);
+  --accent-foreground: oklch(0.380 0.140 234.567);
+
+  --destructive: oklch(0.580 0.160 15);
+  --destructive-foreground: oklch(1 0 0);
+
+  --success: oklch(0.520 0.120 142);
+  --success-foreground: oklch(1 0 0);
+
+  --warning: oklch(0.650 0.140 65);
+  --warning-foreground: oklch(1 0 0);
+
+  --border: oklch(0.890 0.008 240);
+  --input: oklch(0.890 0.008 240);
+  --ring: oklch(0.420 0.180 234.567);
+
+  --chart-1: oklch(0.420 0.180 234.567);
+  --chart-2: oklch(0.520 0.120 220);
+  --chart-3: oklch(0.380 0.140 280);
+  --chart-4: oklch(0.480 0.100 200);
+  --chart-5: oklch(0.350 0.080 160);
+
+  --sidebar: oklch(0.975 0.008 240);
+  --sidebar-foreground: oklch(0.280 0.035 234.567);
+  --sidebar-primary: oklch(0.420 0.180 234.567);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.945 0.012 240);
+  --sidebar-accent-foreground: oklch(0.380 0.140 234.567);
+  --sidebar-border: oklch(0.890 0.008 240);
+  --sidebar-ring: oklch(0.420 0.180 234.567);
+
+  --font-sans: var(--font-sarabun), "Noto Sans Thai", "Prompt", system-ui, 
+               -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ========= Dark ========= */
+.dark {
+  --background: oklch(0.120 0.025 235);
+  --foreground: oklch(0.980 0.005 240);
+
+  --card: oklch(0.140 0.030 235);
+  --card-foreground: oklch(0.980 0.005 240);
+  --popover: oklch(0.140 0.030 235);
+  --popover-foreground: oklch(0.980 0.005 240);
+
+  --primary: oklch(0.640 0.140 234.567);
+  --primary-foreground: oklch(0.080 0.020 235);
+
+  --secondary: oklch(0.180 0.035 235);
+  --secondary-foreground: oklch(0.920 0.008 240);
+
+  --muted: oklch(0.180 0.035 235);
+  --muted-foreground: oklch(0.750 0.015 240);
+
+  --accent: oklch(0.200 0.040 235);
+  --accent-foreground: oklch(0.740 0.120 234.567);
+
+  --destructive: oklch(0.680 0.140 15);
+  --destructive-foreground: oklch(0.080 0.020 235);
+
+  --success: oklch(0.620 0.100 142);
+  --success-foreground: oklch(0.080 0.020 235);
+
+  --warning: oklch(0.720 0.120 65);
+  --warning-foreground: oklch(0.080 0.020 235);
+
+  --border: oklch(0.250 0.020 235);
+  --input: oklch(0.200 0.040 235);
+  --ring: oklch(0.640 0.140 234.567);
+
+  --chart-1: oklch(0.640 0.140 234.567);
+  --chart-2: oklch(0.620 0.120 220);
+  --chart-3: oklch(0.680 0.120 280);
+  --chart-4: oklch(0.720 0.100 200);
+  --chart-5: oklch(0.620 0.100 160);
+
+  --sidebar: oklch(0.100 0.020 235);
+  --sidebar-foreground: oklch(0.920 0.008 240);
+  --sidebar-primary: oklch(0.640 0.140 234.567);
+  --sidebar-primary-foreground: oklch(0.080 0.020 235);
+  --sidebar-accent: oklch(0.160 0.030 235);
+  --sidebar-accent-foreground: oklch(0.740 0.120 234.567);
+  --sidebar-border: oklch(0.200 0.040 235);
+  --sidebar-ring: oklch(0.640 0.140 234.567);
+}
+
+/* ===== การปรับแต่งเพิ่มเติมสำหรับงานราชการ ===== */
+
+:root {
+  --status-draft: oklch(0.750 0.015 240);
+  --status-pending: oklch(0.420 0.180 234.567);
+  --status-approved: oklch(0.520 0.120 142);
+  --status-rejected: oklch(0.580 0.160 15);
+  --status-urgent: oklch(0.580 0.180 30);
+
+  --status-in-progress: oklch(0.420 0.180 234.567);
+  --status-under-review: oklch(0.965 0.015 240);
+  --status-completed: oklch(0.520 0.120 142);
+}
+
+.dark {
+  --status-draft: oklch(0.450 0.020 240);
+  --status-pending: oklch(0.640 0.140 234.567);
+  --status-approved: oklch(0.620 0.100 142);
+  --status-rejected: oklch(0.680 0.140 15);
+  --status-urgent: oklch(0.680 0.160 30);
+
+  --status-in-progress: oklch(0.640 0.140 234.567);
+  --status-under-review: oklch(0.740 0.120 234.567);
+  --status-completed: oklch(0.620 0.100 142);
+}
+
+/* ระดับความสำคัญ */
+:root {
+  --priority-low: oklch(0.750 0.015 240);
+  --priority-medium: oklch(0.650 0.140 65);
+  --priority-high: oklch(0.580 0.160 15);
+  --priority-critical: oklch(0.350 0.200 340);
+}
+.dark {
+  --priority-low: oklch(0.450 0.020 240);
+  --priority-medium: oklch(0.720 0.120 65);
+  --priority-high: oklch(0.680 0.140 15);
+  --priority-critical: oklch(0.750 0.180 340);
+}
+
+/* Base layers */
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
+}
+
+/* Typography base */
+html, body {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+h1, h2, h3, .heading { font-weight: 600; letter-spacing: -0.01em; }
+.small-note { font-weight: 500; }
+h1 { font-size: clamp(1.75rem, 2.5vw + 1rem, 2.75rem); }
+h2 { font-size: clamp(1.5rem, 2vw + 0.8rem, 2.25rem); }
+h3 { font-size: clamp(1.25rem, 1.5vw + 0.6rem, 1.75rem); }
+
+input, select, textarea { font: inherit; }
+input, select, textarea, [contenteditable], .input-base { font-size: max(16px, 1em) !important; }
+@media (min-width: 768px) {
+  input, select, textarea, [contenteditable], .input-base { font-size: 1rem !important; }
+}
+
+/* ===== Gallery UI Animations (คงเดิม) ===== */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+.animate-scaleIn { animation: scaleIn 0.4s ease-out; }
+.animate-fadeInUp { animation: fadeInUp 0.6s ease-out; }
+.gallery-item:nth-child(1) { animation-delay: 0.1s; }
+.gallery-item:nth-child(2) { animation-delay: 0.2s; }
+.gallery-item:nth-child(3) { animation-delay: 0.3s; }
+.gallery-item:nth-child(4) { animation-delay: 0.4s; }
+.gallery-item:nth-child(5) { animation-delay: 0.5s; }
+.gallery-item:nth-child(6) { animation-delay: 0.6s; }
+.gallery-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.gallery-item:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 20px 40px -12px rgba(0,0,0,.25); }
+.gallery-container { scroll-behavior: smooth; }
+
+/* Loading skeleton */
+@keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
+.skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200px 100%; animation: shimmer 1.5s infinite; }
+
+/* Misc UI */
+.media-container { position: relative; overflow: hidden; }
+.media-container::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
+  transition: left .5s;
+}
+.media-container:hover::before { left: 100%; }
+
+.gallery-item:focus-within { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 1rem; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.smooth-scroll { scroll-behavior: smooth; }
+
+/* ========= Video React (ปรับให้ถูกตามเอกสาร) ========= */
+.video-react {
+  max-width: 100%;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;   /* เก็บมุมโค้งและไม่ให้ child ล้น */
+  box-shadow: 0 4px 20px rgba(0,0,0,.15);
+  transition: box-shadow .3s ease;
+  background: #000;
+}
+.video-react:hover { box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+
+.video-react video { max-width: 100%; height: auto; display: block; }
+
+/* Big play button กลางจอ */
+.video-react .video-react-big-play-button {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+@media (min-width: 768px) {
+  .video-react .video-react-big-play-button { width: 80px; height: 80px; }
+}
+@media (max-width: 767px) {
+  .video-react .video-react-big-play-button { width: 60px; height: 60px; }
+}
+
+/* Control bar สวยอ่านง่าย */
+.video-react .video-react-control-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 5;
+  background: linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,.35));
+  backdrop-filter: blur(6px);
+  border-top: 1px solid rgba(255,255,255,.1);
+  display: flex; align-items: center; justify-content: space-between;
+}
+@media (min-width: 768px) {
+  .video-react .video-react-control-bar { height: 48px; padding: 0 16px; }
+  .video-react .video-react-control-bar .video-react-control {
+    margin: 0 2px; min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; transition: all .2s ease;
+  }
+  .video-react .video-react-control-bar .video-react-control:hover {
+    background-color: rgba(255,255,255,.1); transform: scale(1.05);
+  }
+}
+
+/* เวลา/ทูลทิป/สไลเดอร์ (คงดีเทลเดิมเท่าที่ไม่ขัด layout) */
+.video-react .video-react-current-time,
+.video-react .video-react-duration { color: #fff; font-size: 13px; font-weight: 500; margin: 0 6px; min-width: 45px; text-align: center; }
+.video-react .video-react-time-divider { color: #fff; font-size: 13px; font-weight: 500; margin: 0 2px; opacity: .8; }
+
+@media (min-width: 768px) {
+  .video-react .video-react-progress-holder {
+    height: 6px; background-color: rgba(255,255,255,.2); border-radius: 3px; cursor: pointer; position: relative; width: 100%; margin: 0 8px; transition: height .2s ease;
+  }
+  .video-react .video-react-progress-holder:hover { height: 8px; }
+  .video-react .video-react-play-progress { background: linear-gradient(90deg, #0336FF 0%, #0066FF 100%); border-radius: 3px; height: 100%; position: relative; }
+  .video-react .video-react-load-progress { background-color: rgba(255,255,255,.4); border-radius: 3px; height: 100%; position: absolute; top: 0; left: 0; width: 100%; }
+  .video-react .video-react-slider-handle {
+    background-color: #0336FF; border: 2px solid #fff; border-radius: 50%;
+    width: 16px; height: 16px; position: absolute; top: 50%; transform: translate(-50%, -50%);
+    cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: all .2s ease; z-index: 10;
+  }
+  .video-react .video-react-slider-handle:hover { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 4px 8px rgba(0,0,0,.4); }
+  .video-react .video-react-slider-handle:active { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* Mobile control bar */
+@media (max-width: 767px) {
+  .video-react .video-react-control-bar { height: 40px; padding: 0 5px; }
+  .video-react .video-react-control-bar .video-react-control { margin: 0 1px; }
+  .video-react .video-react-time-display { font-size: 12px; }
+}
+
+/* Loading spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+.video-react .video-react-loading-spinner {
+  border-color: #0336FF; border-width: 3px; width: 40px; height: 40px; border-top-color: transparent; animation: spin 1s linear infinite;
+}
+
+/* Error state */
+.video-react.video-react-error { background-color: #f8f9fa; }
+.video-react.video-react-error .video-react-big-play-button { background-color: rgba(220,53,69,.9); color: #fff; }
+.video-react.video-react-error .video-react-big-play-button:hover { background-color: rgba(220,53,69,1); }
+
+/* Auto-hide control bar transition */
+.video-react:hover .video-react-control-bar,
+.video-react .video-react-control-bar.video-react-control-bar-auto-hide-showing { opacity: 1; }
+.video-react .video-react-control-bar { opacity: 0; transition: opacity .3s ease; }
+
+/* Duration badge (ยืดหยุ่นกับทุกขนาด) */
+.video-duration-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.625rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 30;
+  pointer-events: none;
+}
+
+/* ✅ Print styles (moved from styled-jsx global in reports/page.tsx) */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body { background: #fff !important; }
+  header, nav, .print\:hidden { display: none !important; }
+  .print\:break-inside-avoid { break-inside: avoid; }
+  .print\:border { border: 1px solid #ddd !important; }
+  .print\:shadow-none { box-shadow: none !important; }
+}
+
+/* ✅ Leaflet marker icon fix (moved from styled-jsx global in location-picker.tsx) */
+.leaflet-default-icon-path {
+  background-image: url('https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png');
+}
+
+/* ✅ Custom marker icon (moved from styled-jsx in location-picker.tsx) */
+.custom-marker-icon {
+  background: transparent !important;
+  border: none !important;
+}
+.custom-marker-icon svg {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* ✅ content-visibility for report cards (rendering-content-visibility) */
+.report-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px;
+}

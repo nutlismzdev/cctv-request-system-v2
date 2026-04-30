@@ -165,6 +165,7 @@
       },
       "stepper": {
         "step1": "Applicant Information",
+        "stepDocs": "Upload Documents",
         "step2": "Incident Details",
         "step3": "Review & Confirm",
         "current": "Step {current}/{total} • {label}"
@@ -319,8 +320,13 @@
       },
       "success": {
         "title": "Request Submitted Successfully",
-        "reportId": "Request ID: {id}",
-        "message": "Staff will contact you as soon as possible",
+        "message": "Please wait for document approval. The video and image links will be sent to you automatically via LINE.",
+        "bullet1": "Our staff will review your request and supporting documents",
+        "bullet2": "Once approved, the system will deliver the result directly to your LINE account",
+        "bullet3": "You can also track the status anytime on the request status page",
+        "attachmentWarning": "Your request has been saved, but some attachments failed to upload. Please contact our staff for assistance.",
+        "checkStatus": "Check Request Status",
+        "close": "Close",
         "hint": "Please keep the request ID for status tracking"
       },
       "errors": {
@@ -455,5 +461,26 @@
   "footerNote": "For additional questions, please contact Tel. 032-511-047 Ext. 310 or via LINE Official Account",
   "loading": "Loading...",
   "unknownReportId": "Unknown"
+},
+"LiffLink": {
+  "success": {
+    "title": "Request Linked Successfully",
+    "alreadyLinkedTitle": "This request is already linked",
+    "description": "Your request has been linked to your LINE account.",
+    "alreadyLinkedDescription": "Your request has already been linked to your LINE account.",
+    "connected": "Connected ✓",
+    "friendStatusLabel": "OA Friend Status:",
+    "friendYes": "Friend",
+    "friendNo": "Not yet a friend",
+    "linkedNote": "Data has been linked successfully",
+    "notifyTitle": "You will be notified when:",
+    "notifyItem1": "Your request status changes",
+    "notifyItem2": "Documents are ready for download",
+    "notifyItem3": "There is additional information from staff",
+    "lineConfirmTitle": "LINE OA will send a confirmation message",
+    "lineConfirmHint": "Please check the message in our LINE Official Account",
+    "autoCloseHint": "This page will close automatically in {seconds} seconds",
+    "close": "Close"
+  }
 }
 }

@@ -6,7 +6,6 @@ import crypto from 'crypto'
 import { ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import { z } from 'zod'
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
 // ------------ Zod schema ------------
 const createReportSchema = z.object({
@@ -96,6 +95,10 @@ export async function POST(req: Request) {
       ? await getOrCreateLineUserNumericId(data.line_user_id_str)
       : null
 
+    // สร้าง token + link_code ก่อน INSERT เพื่อใส่ในแถวเดียว ตัด UPDATE รอบที่สองออก
+    // 16 bytes random = 2^128 collision space → trust randomness; ถ้าชน UNIQUE จริง ๆ retry
+    const trackingToken = crypto.randomBytes(32).toString('hex')
+
     const insertQuery = `
       INSERT INTO reports (
         prefix, full_name, age, id_or_passport_number, phone_number,
@@ -104,17 +107,19 @@ export async function POST(req: Request) {
         category_id, request_type, request_details,
         incident_date, incident_time, incident_location,
         involvement_role, involvement_explain, supporting_documents,
-        line_user_id, status, priority, created_at, created_by
+        line_user_id, status, priority, created_at, created_by,
+        tracking_token, link_code
       ) VALUES (
         ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?,
+        ?, ?
       )
     `
 
-    const values = [
+    const baseValues = [
       data.prefix,
       data.full_name,
       parseInt(data.age, 10),
@@ -142,74 +147,72 @@ export async function POST(req: Request) {
       'รอดำเนินการ',
       'medium',
       new Date(),
-      data.line_user_id_str ? 'online_liff' : 'web_form'
+      data.line_user_id_str ? 'online_liff' : 'web_form',
+      trackingToken,
     ]
 
-    const [res] = await getPool().execute<ResultSetHeader>(insertQuery, values)
+    // INSERT พร้อม link_code; ถ้า UNIQUE collision (เกือบเป็นไปไม่ได้) retry สูงสุด 3 ครั้ง
+    let res!: ResultSetHeader
+    let linkCode = ''
+    let attempts = 0
+    const maxAttempts = 3
+    while (attempts < maxAttempts) {
+      linkCode = crypto.randomBytes(16).toString('hex')
+      try {
+        const [r] = await getPool().execute<ResultSetHeader>(insertQuery, [...baseValues, linkCode])
+        res = r
+        break
+      } catch (e: unknown) {
+        const errCode = (e as { code?: string })?.code
+        if (errCode === 'ER_DUP_ENTRY' && attempts < maxAttempts - 1) {
+          attempts++
+          continue
+        }
+        throw e
+      }
+    }
 
     if (process.env.NODE_ENV !== 'production') {
       console.log(`Created report with ID: ${res.insertId}`)
     }
 
-    const trackingToken = crypto.randomBytes(32).toString('hex')
-
-    // สร้าง link_code แบบ retry
-    let linkCode: string
-    let attempts = 0
-    const maxAttempts = 5
-    do {
-      linkCode = crypto.randomBytes(16).toString('hex')
-      const [existing] = await getPool().execute<RowDataPacket[]>(
-        'SELECT report_id FROM reports WHERE link_code = ?',
-        [linkCode]
+    // กัน auto-link เฉพาะ legacy/web form เท่านั้น; online_liff ตั้ง line_user_id โดยตั้งใจอยู่แล้ว
+    if (!data.line_user_id_str) {
+      const [checkResult] = await getPool().execute<RowDataPacket[]>(
+        'SELECT line_user_id FROM reports WHERE report_id = ?',
+        [res.insertId]
       )
-      if (existing.length === 0) break
-      attempts++
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`Link code collision detected, retrying... (${attempts}/${maxAttempts})`)
-      }
-    } while (attempts < maxAttempts)
-
-    await getPool().execute(
-      'UPDATE reports SET tracking_token = ?, link_code = ? WHERE report_id = ?',
-      [trackingToken, linkCode, res.insertId]
-    )
-
-    // กัน auto-link
-    const [checkResult] = await getPool().execute<RowDataPacket[]>(
-      'SELECT line_user_id FROM reports WHERE report_id = ?',
-      [res.insertId]
-    )
-    if (!data.line_user_id_str && checkResult.length > 0 && checkResult[0].line_user_id) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.error(`SECURITY ALERT: Report ${res.insertId} was auto-linked to line_user_id ${checkResult[0].line_user_id} during creation! Resetting to NULL.`)
-      }
-      await secureResetLineUserId(res.insertId, `Auto-linked during report creation (line_user_id: ${checkResult[0].line_user_id})`)
-      if (process.env.NODE_ENV !== 'production') {
-        await getPool().execute(
-          `
-          INSERT INTO activity_logs (
-            activity_type, entity_type, entity_id,
-            actor_type, actor_id, action, description,
-            metadata, ip_address
-          ) VALUES (
-            'security_incident', 'report', ?,
-            'system', 'auto_link_prevention', 'AUTO_LINK_RESET',
-            'Reset line_user_id that was set automatically during report creation',
-            JSON_OBJECT('auto_linked_line_user_id', ?),
-            'system'
+      if (checkResult.length > 0 && checkResult[0].line_user_id) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error(`SECURITY ALERT: Report ${res.insertId} was auto-linked to line_user_id ${checkResult[0].line_user_id} during creation! Resetting to NULL.`)
+        }
+        await secureResetLineUserId(res.insertId, `Auto-linked during report creation (line_user_id: ${checkResult[0].line_user_id})`)
+        if (process.env.NODE_ENV !== 'production') {
+          await getPool().execute(
+            `
+            INSERT INTO activity_logs (
+              activity_type, entity_type, entity_id,
+              actor_type, actor_id, action, description,
+              metadata, ip_address
+            ) VALUES (
+              'security_incident', 'report', ?,
+              'system', 'auto_link_prevention', 'AUTO_LINK_RESET',
+              'Reset line_user_id that was set automatically during report creation',
+              JSON_OBJECT('auto_linked_line_user_id', ?),
+              'system'
+            )
+          `,
+            [res.insertId, checkResult[0].line_user_id]
           )
-        `,
-          [res.insertId, checkResult[0].line_user_id]
-        )
+        }
       }
     }
 
-    try {
-      await sendGroupNotificationForNewReport(res.insertId)
-    } catch (e) {
+    // Fire-and-forget: ไม่บล็อก response ของผู้ใช้รอ LINE Push API (~500ms-2s)
+    // หาก LINE API ช้า/ล้ม ก็ไม่ควรกระทบ flow การบันทึกคำร้อง
+    void sendGroupNotificationForNewReport(res.insertId).catch((e) => {
       console.error('Failed to send LINE group notification:', e)
-    }
+    })
 
     return NextResponse.json(
       {
@@ -244,22 +247,6 @@ export async function POST(req: Request) {
 // ------------ GET /api/reports ------------
 export async function GET(req: Request) {
   try {
-    // ✅ Auth check: ตรวจสอบว่ามี admin_token cookie, Bearer header, หรือเรียกจากหน้า admin
-    const cookieStore = await cookies()
-    const adminToken = cookieStore.get('admin_token')?.value
-    const authHeader = req.headers.get('authorization')
-    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
-    // Admin pages fetch without auth headers — check Referer as fallback
-    const referer = req.headers.get('referer') ?? ''
-    const isFromAdmin = /\/admin(\/|$)/.test(referer)
-
-    if (!adminToken && !bearerToken && !isFromAdmin) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized: กรุณาเข้าสู่ระบบ' },
-        { status: 401 }
-      )
-    }
-
     const { searchParams } = new URL(req.url)
 
     // sanitize page/limit เป็นเลขแน่นอน

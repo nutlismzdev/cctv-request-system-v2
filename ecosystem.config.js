@@ -2,9 +2,9 @@
 module.exports = {
   apps: [
     {
-      name: 'cctv-request',
+      name: 'cctv-request-system-v2-master',
       // โฟลเดอร์โปรเจกต์ (อย่าใส่ backslash ท้าย)
-      cwd: 'C:\\E-services\\cctv_reqeust',
+      cwd: 'C:\\E-services\\cctv-request-system-v2-master',
 
       // วิธีที่ 1: เรียก Next CLI โดยตรง (เสถียร)
       script: 'node_modules/next/dist/bin/next',
@@ -27,8 +27,8 @@ module.exports = {
       },
 
       time: true,
-      error_file: 'C:\\E-services\\cctv_reqeust\\logs\\cctv-next-error.log',
-      out_file:   'C:\\E-services\\cctv_reqeust\\logs\\cctv-next-out.log',
+      error_file: 'C:\\E-services\\cctv-request-system-v2-master\\logs\\cctv-next-error.log',
+      out_file:   'C:\\E-services\\cctv-request-system-v2-master\\logs\\cctv-next-out.log',
       merge_logs: true
     }
   ]

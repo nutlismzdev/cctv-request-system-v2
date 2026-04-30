@@ -98,15 +98,6 @@ export async function GET(
       LEFT JOIN officers o ON r.assigned_officer_id = o.officer_id
       WHERE r.report_id = ?
     `
-    const reports = await query<ReportDetail>(reportSql, [reportId])
-    if (reports.length === 0) {
-      return Response.json(
-        { success: false, message: 'ไม่พบคำร้องที่ระบุ' },
-        { status: 404 }
-      )
-    }
-    const report = reports[0]
-
     const documentsSql = `
       SELECT
         doc_id,
@@ -120,7 +111,6 @@ export async function GET(
       WHERE report_id = ?
       ORDER BY uploaded_at DESC
     `
-    const documents = await query<DocumentSummary>(documentsSql, [reportId])
 
     const cctvSql = `
       SELECT
@@ -150,7 +140,21 @@ export async function GET(
       WHERE report_id = ?
       ORDER BY uploaded_at DESC
     `
-    const cctvFiles = await query<CCTVFileSummary>(cctvSql, [reportId, reportId])
+
+    // ทั้ง 3 query เป็นอิสระกัน → รัน parallel ลด round trips จาก 3 → 1 (vercel: async-parallel)
+    const [reports, documents, cctvFiles] = await Promise.all([
+      query<ReportDetail>(reportSql, [reportId]),
+      query<DocumentSummary>(documentsSql, [reportId]),
+      query<CCTVFileSummary>(cctvSql, [reportId, reportId]),
+    ])
+
+    if (reports.length === 0) {
+      return Response.json(
+        { success: false, message: 'ไม่พบคำร้องที่ระบุ' },
+        { status: 404 }
+      )
+    }
+    const report = reports[0]
 
     return Response.json({
       success: true,

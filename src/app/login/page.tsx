@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { login } from '@/lib/auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -23,27 +24,13 @@ export default function LoginPage() {
     setError('')
 
     try {
-      // Simple password check - no database required
-      if (password === '77110') {
-        // Create a simple session token
-        const token = `admin_session_${Date.now()}`
-        const user = {
-          id: 1,
-          username: 'admin',
-          role: 'administrator',
-          name: 'ผู้ดูแลระบบ'
-        }
-
-        // Store auth data in localStorage
-        localStorage.setItem('admin_token', token)
-        localStorage.setItem('admin_user', JSON.stringify(user))
-
+      const result = await login(password)
+      if (result.success) {
         toast.success('เข้าสู่ระบบสำเร็จ')
         router.push('/admin/request')
       } else {
-        throw new Error('รหัสผ่านไม่ถูกต้อง')
+        throw new Error(result.message || 'รหัสผ่านไม่ถูกต้อง')
       }
-
     } catch (err) {
       const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
       setError(message)

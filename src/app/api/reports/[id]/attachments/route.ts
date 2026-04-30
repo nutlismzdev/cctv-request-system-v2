@@ -210,8 +210,10 @@ export async function POST(
     }
 
     const formData = await req.formData()
+
     files = formData.getAll('files') as File[]
     const category = (formData.get('category') as string) || 'idcopy'
+    const categories = formData.getAll('categories').map(String)
 
     // Map category -> document_type
     const documentTypeMap: Record<string, string> = {
@@ -224,8 +226,6 @@ export async function POST(
       power_of_attorney: 'power_of_attorney',
       legal: 'legal_document',
     }
-    const documentType = documentTypeMap[category] || 'supporting_document'
-
     if (!files || files.length === 0) {
       return NextResponse.json({ success: false, message: 'ไม่มีไฟล์ที่อัปโหลด' }, { status: 400 })
     }
@@ -244,14 +244,21 @@ export async function POST(
     }
 
     const uploadedFiles: UploadedFile[] = []
+    const uploadedByIp = req.headers.get('x-forwarded-for') ||
+      req.headers.get('x-real-ip') ||
+      'unknown'
+    const insertValues: Array<string | number> = []
+    const now = new Date().toISOString()
 
-    for (const file of files) {
+    const preparedFiles = await Promise.all(files.map(async (file, index) => {
       const validation = validateFile(file)
       if (!validation.valid) {
         console.warn(`Skipping file ${file.name}: ${validation.reason}`)
-        continue
+        return null
       }
 
+      const fileCategory = categories[index] || category
+      const documentType = documentTypeMap[fileCategory] || 'supporting_document'
       const uniqueFilename = generateUniqueFilename(file.name)
       const filePathOnly = uniqueFilename
       const fullPath = join(UPLOAD_DIR, uniqueFilename)
@@ -259,40 +266,53 @@ export async function POST(
       const bytes = await file.arrayBuffer()
       await writeFile(fullPath, new Uint8Array(bytes))
 
-      const [result] = await getPool().execute<ResultSetHeader>(
-        `INSERT INTO request_documents (
-          report_id, document_type, file_name, file_path, file_size,
-          mime_type, verification_status, uploaded_by_ip
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          reportId,
-          documentType,
-          file.name,
-          filePathOnly,
-          file.size,
-          file.type || 'application/octet-stream',
-          'pending',
-          req.headers.get('x-forwarded-for') ||
-            req.headers.get('x-real-ip') ||
-            'unknown',
-        ]
+      insertValues.push(
+        reportId,
+        documentType,
+        file.name,
+        filePathOnly,
+        file.size,
+        file.type || 'application/octet-stream',
+        'pending',
+        uploadedByIp,
       )
 
-      uploadedFiles.push({
-        id: result.insertId,
+      return {
         file_name: file.name,
         file_path: filePathOnly,
         file_size: file.size,
         file_type: file.type || 'application/octet-stream',
-        category,
+        category: fileCategory,
         url: `/api/files/attachments/${uniqueFilename}`,
-        uploaded_at: new Date().toISOString(),
+        uploaded_at: now,
+      }
+    }))
+
+    const validFiles = preparedFiles.filter((file): file is Omit<UploadedFile, 'id'> => file !== null)
+
+    if (validFiles.length === 0) {
+      return NextResponse.json({ success: false, message: 'ไม่มีไฟล์ที่ผ่านเงื่อนไขการอัปโหลด' }, { status: 400 })
+    }
+
+    const placeholders = validFiles.map(() => '(?, ?, ?, ?, ?, ?, ?, ?)').join(', ')
+    const [result] = await getPool().execute<ResultSetHeader>(
+      `INSERT INTO request_documents (
+        report_id, document_type, file_name, file_path, file_size,
+        mime_type, verification_status, uploaded_by_ip
+      ) VALUES ${placeholders}`,
+      insertValues,
+    )
+
+    for (let index = 0; index < validFiles.length; index++) {
+      uploadedFiles.push({
+        id: result.insertId + index,
+        ...validFiles[index],
       })
     }
 
     return NextResponse.json({
       success: true,
-      message: `อัปโหลดไฟล์ ${files.length} ไฟล์เรียบร้อยแล้ว`,
+      message: `อัปโหลดไฟล์ ${uploadedFiles.length} ไฟล์เรียบร้อยแล้ว`,
       data: uploadedFiles,
     })
   } catch (error: unknown) {

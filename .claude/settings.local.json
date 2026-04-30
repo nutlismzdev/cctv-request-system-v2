@@ -1,7 +1,32 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(npx tsc *)",
+      "Bash(npx next *)",
+      "Bash(npx skills *)",
+      "Bash(python scripts/search.py \"file upload document image preview form\" --domain ux -n 10)",
+      "PowerShell(Get-Command *)",
+      "Bash(node -e \"const pkg = require\\('./package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\({...pkg.dependencies,...\\(pkg.devDependencies||{}\\)}\\), null, 2\\)\\)\")",
+      "Bash(cat next.config.ts)",
+      "Bash(cat next.config.js)",
+      "Bash(cat next.config.mjs)",
+      "Bash(npm ls *)",
+      "Bash(npm install *)",
+      "WebFetch(domain:developers.line.biz)",
+      "Bash(echo \"=== ทดสอบ /api/line/link ด้วย report ที่มีจริง ===\" echo \"ใส่ report_id และ tracking_token ที่มีจริงในฐานข้อมูล:\" echo \"\" echo \"curl -X POST https://cctvrequest.itac-huahincity.com/api/line/link \\\\\\\\\" echo \" -H 'Content-Type: application/json' \\\\\\\\\" echo \" -d '{\\\\\"report_id\\\\\":REAL_ID,\\\\\"tracking_token\\\\\":\\\\\"REAL_TOKEN\\\\\",\\\\\"userId\\\\\":\\\\\"Utestxxxx\\\\\"}'\" echo \"\" echo \"ดู logs ของ Next.js server:\" ls \"C:\\\\E-services\\\\cctv-request-system-v2-master\\\\logs\")",
+      "Bash(curl -sS -X POST http://localhost:4000/api/debug/liff-log -H 'Content-Type: application/json' -d '{\"label\":\"test\",\"t\":1714000000000}' -w '\\\\nHTTP: %{http_code}\\\\n')",
+      "Bash(> \"C:\\\\E-services\\\\cctv-request-system-v2-master\\\\logs\\\\liff-debug.log\")",
+      "Bash(awk 'NR==792' \"C:/E-services/cctv-request-system-v2-master/src/app/request/page.tsx\")",
+      "Bash(grep -n \"drawRoleWatermarks\\\\|^function drawRole\\\\|/\\\\\\\\*\\\\\\\\*\" \"C:/E-services/cctv-request-system-v2-master/src/app/api/reports/[id]/pdf/route.ts\")",
+      "Bash(git config *)",
+      "Bash(git --version)",
+      "Bash(git ls-remote *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git reset *)",
+      "Bash(git add *)"
     ]
   }
 }

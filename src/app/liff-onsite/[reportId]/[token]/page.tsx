@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { CheckCircle2, MessageCircle, AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { THEME_COLORS } from '@/lib/theme-colors'
+import { liffLog } from '@/lib/liff-debug-log'
 import Image from 'next/image'
 // Import LIFF types
 import type { LiffSDK } from '@/types/liff'
@@ -32,9 +34,17 @@ interface LiffProfile {
 type Step = 'checking' | 'add-friend' | 'linking' | 'success' | 'error'
 
 export default function LiffLinkPage() {
+  const tSuccess = useTranslations('LiffLink.success')
   const params = useParams() as { reportId?: string; token?: string }
-  const reportId = params.reportId ?? ''
-  const token = params.token ?? ''
+  const searchParams = useSearchParams()
+  // ดึงเป็น primitive string (กฎ rerender-dependencies — ห้ามเอา object เป็น dep ของ effect)
+  const paramReportId = params.reportId || ''
+  const paramToken = params.token || ''
+  const queryReportId = searchParams.get('reportId') || searchParams.get('r') || ''
+  const queryToken = searchParams.get('token') || searchParams.get('t') || ''
+  // derived state — คำนวณตอน render (กฎ rerender-derived-state-no-effect)
+  const reportId = paramReportId || queryReportId
+  const token = paramToken || queryToken
 
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isLiffReady, setIsLiffReady] = useState<boolean>(false)
@@ -43,6 +53,9 @@ export default function LiffLinkPage() {
   const [profile, setProfile] = useState<LiffProfile | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [currentStep, setCurrentStep] = useState<Step>('checking')
+  // กัน initLiff ถูกเรียกซ้ำเมื่อ deps ของ useEffect เปลี่ยน reference
+  // (linkReport เป็น useCallback แต่ deps reportId/token เปลี่ยนได้ตอน hydrate, useParams ก็คืน object ใหม่ทุก render)
+  const initStartedRef = useRef(false)
 
   /** helper: get LIFF safely */
   const getLiff = (): LiffSDK | null => (typeof window !== 'undefined' ? window.liff ?? null : null)
@@ -53,11 +66,19 @@ export default function LiffLinkPage() {
       try {
         setCurrentStep('linking')
 
+        const numericReportId = Number(reportId)
+        if (!Number.isFinite(numericReportId) || numericReportId <= 0 || !token || !userId) {
+          setError(`ข้อมูลไม่ครบ: reportId=${reportId} token=${token ? 'มี' : 'ไม่มี'} userId=${userId ? 'มี' : 'ไม่มี'}`)
+          setCurrentStep('error')
+          setIsLoading(false)
+          return
+        }
+
         const response = await fetch('/api/line/link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            report_id: Number(reportId),
+            report_id: numericReportId,
             tracking_token: token,
             userId
           })
@@ -89,14 +110,14 @@ export default function LiffLinkPage() {
     try {
       const liff = getLiff()
       if (liff && liff.openWindow) {
-        liff.openWindow({ url: 'https://lin.ee/UFqUdB6', external: true })
+        liff.openWindow({ url: 'https://line.me/R/ti/p/@513dlddc', external: true })
       } else {
-        window.open('https://lin.ee/UFqUdB6', '_blank', 'noreferrer')
+        window.open('https://line.me/R/ti/p/@513dlddc', '_blank', 'noreferrer')
       }
     } catch (err) {
     
       console.error('Error opening add friend page:', err)
-      window.open('https://lin.ee/UFqUdB6', '_blank', 'noreferrer')
+      window.open('https://line.me/R/ti/p/@513dlddc', '_blank', 'noreferrer')
     }
   }, [])
 
@@ -107,13 +128,37 @@ export default function LiffLinkPage() {
   }, [])
 
   // Initialize LIFF
+  // dep เป็น primitive (reportId, token) เท่านั้น (กฎ rerender-dependencies)
+  // initStartedRef กัน effect re-run จากสาเหตุอื่น (กฎ advanced-init-once)
   useEffect(() => {
+    liffLog('link-page:effect-fire', {
+      reportId,
+      token,
+      hasGuard: initStartedRef.current,
+    })
+    if (initStartedRef.current) {
+      liffLog('link-page:effect-skip-already-started', {})
+      return
+    }
+    if (!reportId || !token) {
+      liffLog('link-page:effect-skip-no-params', { reportId, token })
+      return
+    }
+    initStartedRef.current = true
+    let cancelled = false
+    let stage = 'start'
     const initLiff = async () => {
       try {
-        if (!reportId || !token) {
-          setError('ข้อมูลคำร้องไม่ถูกต้อง')
-          setCurrentStep('error')
-          setIsLoading(false)
+        liffLog('link-page:init-start', { reportId, token })
+        // Guard: ถ้าเข้ามาที่ path /liff-onsite/[id]/[token] โดยตรง (ไม่ผ่าน /dispatch/)
+        // → redirect ไป /dispatch/ เพื่อให้ LIFF SDK init ใต้ Endpoint URL ที่ถูกต้อง
+        // (LIFF Endpoint URL = /liff-onsite/dispatch — ห้าม init นอกพาธนี้)
+        const currentPath = window.location.pathname
+        if (!currentPath.startsWith('/liff-onsite/dispatch')) {
+          liffLog('link-page:redirect-to-dispatch', { from: currentPath })
+          window.location.replace(
+            `/liff-onsite/dispatch/${encodeURIComponent(reportId)}/${encodeURIComponent(token)}`
+          )
           return
         }
 
@@ -131,50 +176,140 @@ export default function LiffLinkPage() {
             document.head.appendChild(script)
           })
 
+        stage = 'load-sdk'
+        liffLog('link-page:stage', { stage })
         await ensureSDK()
+        if (cancelled) return
         const liff = getLiff()
         if (!liff) throw new Error('ไม่พบ LIFF SDK')
+        liffLog('link-page:sdk-loaded', { hasLiff: !!liff })
 
-        await liff.init({ liffId: process.env.NEXT_PUBLIC_LINE_LIFF_ID || 'YOUR_LIFF_ID' })
-        setIsLiffReady(true)
-
-        if (!liff.isLoggedIn()) {
-          liff.login()
+        // ต้องใช้ LIFF ID เดียวกับที่ encode ใน QR (success-onsite ใช้ NEXT_PUBLIC_LINE_LIFF_ONSITE_ID เป็นหลัก)
+        const onsiteLiffId =
+          process.env.NEXT_PUBLIC_LINE_LIFF_ONSITE_ID ||
+          process.env.NEXT_PUBLIC_LINE_LIFF_ID ||
+          ''
+        if (!onsiteLiffId) {
+          setError('LIFF ID ไม่ถูกตั้งค่า')
+          setCurrentStep('error')
+          setIsLoading(false)
           return
         }
 
-        const friendship = await liff.getFriendship()
-        setIsFriend(friendship.friendFlag)
+        stage = 'liff-init'
+        liffLog('link-page:stage', { stage, liffId: onsiteLiffId })
+        // ป้องกัน init ซ้ำ — บน mobile path-based unwrap ของ LIFF web อาจเรียก init ไปแล้ว
+        // เรียก init ซ้ำบน SDK เดิม จะ resolve ทันที ไม่ throw แต่ต้อง await กัน race
+        await liff.init({ liffId: onsiteLiffId })
+        if (cancelled) return
+        setIsLiffReady(true)
+        liffLog('link-page:init-ok', {
+          isLoggedIn: liff.isLoggedIn?.() ?? null,
+          isInClient: liff.isInClient?.() ?? null,
+          os: liff.getOS?.() ?? null,
+          version: liff.getVersion?.() ?? null,
+          lineVersion: liff.getLineVersion?.() ?? null,
+        })
 
-        if (!friendship.friendFlag) {
+        if (!liff.isLoggedIn()) {
+          if (liff.isInClient()) {
+            liffLog('link-page:in-client-not-logged-in', {})
+            // ใน LINE app แต่ไม่ login = session ใน LINE app เพี้ยน → ให้ user ปิด LIFF window แล้วสแกนใหม่
+            setError('ไม่สามารถเข้าสู่ระบบ LINE ผ่าน LIFF ได้ กรุณาปิดแล้วสแกน QR ใหม่อีกครั้ง')
+            setCurrentStep('error')
+            setIsLoading(false)
+            return
+          }
+
+          // เกิดเฉพาะกรณีสแกนนอก LINE app (กล้องมือถือ → external browser)
+          // OAuth round-trip ต้องใช้ redirect_uri = LIFF Endpoint URL พื้นฐาน
+          // ส่ง path ลึก (reportId/token) → LINE Login ตอบ 400 Bad Request
+          // → เก็บ reportId/token ลง sessionStorage แล้วส่งกลับมาที่ /liff-onsite/dispatch/callback
+          try {
+            sessionStorage.setItem(
+              'liff-onsite-redirect',
+              JSON.stringify({ reportId, token, ts: Date.now() })
+            )
+          } catch {}
+          const callbackUrl = `${window.location.origin}/liff-onsite/dispatch/callback`
+          liffLog('link-page:before-liff-login', { callbackUrl })
+          liff.login({ redirectUri: callbackUrl })
+          return
+        }
+
+        stage = 'get-friendship'
+        liffLog('link-page:stage', { stage })
+        // getFriendship throw เมื่อ LIFF ไม่ได้ link OA หรือ OA ต่าง provider
+        // → จับเฉพาะ error นี้ ให้ข้ามไป add-friend step แทนหยุดทั้ง flow
+        let isFriendFlag = false
+        try {
+          const friendship = await liff.getFriendship()
+          isFriendFlag = friendship.friendFlag
+          liffLog('link-page:friendship-ok', { isFriendFlag })
+        } catch (friendErr) {
+          liffLog('link-page:friendship-failed', { err: friendErr })
+          console.warn('getFriendship failed (อาจเพราะยังไม่ link OA):', friendErr)
+          isFriendFlag = false
+        }
+        setIsFriend(isFriendFlag)
+
+        if (!isFriendFlag) {
           setCurrentStep('add-friend')
           setIsLoading(false)
           return
         }
 
-        const idToken = liff.getDecodedIDToken()
+        stage = 'get-profile'
+        liffLog('link-page:stage', { stage })
         const prof = await liff.getProfile()
+        liffLog('link-page:profile-ok', { hasUserId: !!prof.userId, displayName: prof.displayName })
+        // ใช้ prof.userId เป็นหลัก (มาจาก scope `profile`) — ไม่พึ่ง openid scope
+        // fallback ไป idToken.sub กรณี profile ไม่ส่ง userId ด้วยเหตุผลใด ๆ
+        const idToken = liff.getDecodedIDToken?.() ?? null
+        const lineUserId = prof.userId || idToken?.sub || ''
+
+        if (!lineUserId) {
+          setError('ไม่สามารถดึง LINE user ID ได้ — กรุณาตรวจสอบ LIFF scope')
+          setCurrentStep('error')
+          setIsLoading(false)
+          return
+        }
 
         setProfile({
-          userId: idToken.sub,
+          userId: lineUserId,
           displayName: prof.displayName,
           pictureUrl: prof.pictureUrl,
           statusMessage: prof.statusMessage
         })
 
+        stage = 'link-report'
+        liffLog('link-page:stage', { stage, userId: lineUserId })
         setCurrentStep('linking')
-        await linkReport(idToken.sub)
+        await linkReport(lineUserId)
+        liffLog('link-page:done', {})
       } catch (err) {
-       
-        console.error('LIFF initialization error:', err)
-        setError('เกิดข้อผิดพลาดในการเชื่อมต่อ LINE')
+        if (cancelled) return
+        // ดึง error code จาก LIFF SDK (LiffError มี .code เช่น INIT_FAILED, FORBIDDEN)
+        const e = err as { code?: string; message?: string } | Error
+        const errCode = (e as { code?: string }).code || ''
+        const errMsg = e instanceof Error ? e.message : String(e)
+        liffLog('link-page:error', { stage, code: errCode, msg: errMsg, err })
+        console.error('[LIFF] error at stage:', stage, '| code:', errCode, '| msg:', errMsg, '| raw:', err)
+        const detail = [stage, errCode, errMsg].filter(Boolean).join(' / ')
+        setError(`เกิดข้อผิดพลาดในการเชื่อมต่อ LINE [${detail}]`)
         setCurrentStep('error')
         setIsLoading(false)
       }
     }
 
     void initLiff()
-  }, [reportId, token, linkReport])
+    return () => {
+      cancelled = true
+    }
+    // primitive deps เท่านั้น — linkReport stable แล้วผ่าน useCallback แต่ไม่ต้องใส่
+    // เพราะ guard initStartedRef.current กันการ re-run อยู่แล้ว
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportId, token])
 
   // Render based on current step
   const renderContent = () => {
@@ -251,9 +386,9 @@ export default function LiffLinkPage() {
         return (
           <div className="text-center space-y-4">
             <CheckCircle2 className="h-12 w-12 mx-auto text-green-600 mb-4" />
-            <h2 className="text-xl font-bold text-green-800">ผูกคำร้องสำเร็จ!</h2>
+            <h2 className="text-xl font-bold text-green-800">{tSuccess('title')}</h2>
             <p className="text-sm text-gray-600">
-              คำร้องหมายเลข {reportId} ได้ถูกผูกกับบัญชี LINE ของคุณเรียบร้อยแล้ว
+              {tSuccess('description')}
             </p>
 
             {profile && (
@@ -270,9 +405,9 @@ export default function LiffLinkPage() {
                   )}
                   <div className="text-left">
                     <p className="font-medium text-green-800">{profile.displayName}</p>
-                    <p className="text-xs text-green-600">เชื่อมต่อแล้ว ✓</p>
+                    <p className="text-xs text-green-600">{tSuccess('connected')}</p>
                     <p className="text-xs text-green-600">
-                      สถานะเพื่อน OA: {isFriend ? 'เป็นเพื่อน' : 'ยังไม่เป็นเพื่อน'}
+                      {tSuccess('friendStatusLabel')} {isFriend ? tSuccess('friendYes') : tSuccess('friendNo')}
                     </p>
                   </div>
                 </div>
@@ -280,15 +415,15 @@ export default function LiffLinkPage() {
             )}
 
             {linkStatus?.success && (
-              <p className="text-xs text-gray-600">เชื่อมโยงข้อมูลเรียบร้อยแล้ว</p>
+              <p className="text-xs text-gray-600">{tSuccess('linkedNote')}</p>
             )}
 
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 className="font-semibold text-blue-800 mb-2">คุณจะได้รับแจ้งเตือนเมื่อ:</h3>
+              <h3 className="font-semibold text-blue-800 mb-2">{tSuccess('notifyTitle')}</h3>
               <ul className="text-sm text-blue-700 space-y-1 text-left">
-                <li>• สถานะคำร้องมีการเปลี่ยนแปลง</li>
-                <li>• เอกสารพร้อมให้ดาวน์โหลด</li>
-                <li>• มีข้อมูลเพิ่มเติมจากเจ้าหน้าที่</li>
+                <li>• {tSuccess('notifyItem1')}</li>
+                <li>• {tSuccess('notifyItem2')}</li>
+                <li>• {tSuccess('notifyItem3')}</li>
               </ul>
             </div>
 
@@ -297,7 +432,7 @@ export default function LiffLinkPage() {
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isLoading}
             >
-              ปิดหน้านี้
+              {tSuccess('close')}
             </Button>
           </div>
         )

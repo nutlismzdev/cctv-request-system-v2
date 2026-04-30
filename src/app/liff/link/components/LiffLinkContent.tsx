@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { CheckCircle2, MessageCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,9 +17,40 @@ import type { LiffSDK } from '@/types/liff'
 
 type Step = 'checking' | 'add-friend' | 'linking' | 'success' | 'error'
 
+interface LinkStatus {
+  success: boolean
+  error?: string
+}
+
+async function ensureLiffSdk(): Promise<LiffSDK | null> {
+  if (typeof window === 'undefined') return null
+  if (window.liff) return window.liff
+
+  await new Promise<void>((resolve, reject) => {
+    const existingScript = document.querySelector<HTMLScriptElement>('script[data-liff-sdk="true"]')
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(), { once: true })
+      existingScript.addEventListener('error', () => reject(new Error('โหลด LIFF SDK ไม่สำเร็จ')), { once: true })
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'
+    script.async = true
+    script.dataset.liffSdk = 'true'
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('โหลด LIFF SDK ไม่สำเร็จ'))
+    document.head.appendChild(script)
+  })
+
+  return window.liff ?? null
+}
+
 export function LiffLinkContent() {
+  const tSuccess = useTranslations('LiffLink.success')
   const searchParams = useSearchParams()
   const reportId = searchParams.get('report_id')
+  const token = searchParams.get('t') || searchParams.get('tracking_token')
 
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
@@ -27,53 +59,92 @@ export function LiffLinkContent() {
   /** helper: get LIFF safely */
   const getLiff = (): LiffSDK | null => (typeof window !== 'undefined' ? window.liff ?? null : null)
 
+  const linkReport = useCallback(
+    async (userId: string) => {
+      setCurrentStep('linking')
+
+      const response = await fetch('/api/line/link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          report_id: Number(reportId),
+          tracking_token: token,
+          userId,
+        }),
+      })
+
+      const result: LinkStatus = await response.json()
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'เกิดข้อผิดพลาดในการผูกคำร้อง')
+      }
+
+      setCurrentStep('success')
+    },
+    [reportId, token]
+  )
+
   /** Initialize LIFF */
   useEffect(() => {
     const initLiff = async () => {
       try {
-        const liff = getLiff()
+        if (!reportId || !token) {
+          setError('ลิงก์นี้ไม่มีข้อมูลคำร้อง กรุณากดปุ่มเชื่อมต่อ LINE จากหน้าส่งคำร้องสำเร็จอีกครั้ง')
+          setCurrentStep('error')
+          return
+        }
+
+        const liff = await ensureLiffSdk()
         if (!liff) {
           setError('LIFF not available')
           setCurrentStep('error')
           return
         }
 
-        // Initialize LIFF
-        await liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID || '' })
-
-        // Check if logged in
-        if (!liff.isLoggedIn()) {
-          liff.login()
+        const liffId = process.env.NEXT_PUBLIC_LIFF_ID || process.env.NEXT_PUBLIC_LINE_LIFF_ID || ''
+        if (!liffId) {
+          setError('ยังไม่ได้ตั้งค่า LIFF ID ในระบบ')
+          setCurrentStep('error')
           return
         }
 
-        // Get profile (for potential future use)
-        await liff.getProfile()
+        // Initialize LIFF
+        await liff.init({ liffId })
+
+        // Check if logged in
+        if (!liff.isLoggedIn()) {
+          liff.login({ redirectUri: window.location.href })
+          return
+        }
 
         // Check friendship
-        await liff.getFriendship()
+        const friendship = await liff.getFriendship()
+        if (!friendship.friendFlag) {
+          setCurrentStep('add-friend')
+          return
+        }
 
-        setCurrentStep('add-friend')
+        const profile = await liff.getProfile()
+        await linkReport(profile.userId)
       } catch (err) {
         console.error('LIFF init error:', err)
-        setError('ไม่สามารถเชื่อมต่อกับ LINE ได้')
+        setError(err instanceof Error ? err.message : 'ไม่สามารถเชื่อมต่อกับ LINE ได้')
         setCurrentStep('error')
       } finally {
         setIsLoading(false)
       }
     }
 
-    initLiff()
-  }, [])
+    void initLiff()
+  }, [linkReport, reportId, token])
 
 
   /** Handle add friend */
   const handleAddFriend = useCallback(async () => {
     const liff = getLiff()
     if (liff && liff.openWindow) {
-      liff.openWindow({ url: 'https://lin.ee/UFqUdB6', external: true })
+      liff.openWindow({ url: 'https://line.me/R/ti/p/@513dlddc', external: true })
     } else {
-      window.open('https://lin.ee/UFqUdB6', '_blank', 'noreferrer')
+      window.open('https://line.me/R/ti/p/@513dlddc', '_blank', 'noreferrer')
     }
   }, [])
 
@@ -168,23 +239,23 @@ export function LiffLinkContent() {
             <CardContent className="p-6 text-center space-y-4">
               <CheckCircle2 className="h-12 w-12 mx-auto text-green-600" />
               <div>
-                <h2 className="text-lg font-semibold text-green-800 mb-2">เชื่อมต่อสำเร็จ!</h2>
+                <h2 className="text-lg font-semibold text-green-800 mb-2">{tSuccess('title')}</h2>
                 <p className="text-gray-600 text-sm">
-                  คำร้อง #{reportId} ได้ถูกเชื่อมโยงกับ LINE ของคุณเรียบร้อยแล้ว
+                  {tSuccess('description')}
                 </p>
               </div>
 
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <h3 className="font-semibold text-green-800 mb-2">คุณจะได้รับแจ้งเตือนเมื่อ:</h3>
+                <h3 className="font-semibold text-green-800 mb-2">{tSuccess('notifyTitle')}</h3>
                 <ul className="text-sm text-green-700 space-y-1 text-left">
-                  <li>• สถานะคำร้องมีการเปลี่ยนแปลง</li>
-                  <li>• เอกสารพร้อมให้ดาวน์โหลด</li>
-                  <li>• มีข้อมูลเพิ่มเติมจากเจ้าหน้าที่</li>
+                  <li>• {tSuccess('notifyItem1')}</li>
+                  <li>• {tSuccess('notifyItem2')}</li>
+                  <li>• {tSuccess('notifyItem3')}</li>
                 </ul>
               </div>
 
               <Button onClick={handleClose} className="w-full bg-green-600 hover:bg-green-700 text-white">
-                ปิดหน้านี้
+                {tSuccess('close')}
               </Button>
             </CardContent>
           </Card>

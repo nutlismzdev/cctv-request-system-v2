@@ -339,21 +339,26 @@ async function upsertLineUser(lineUserId: string, displayName?: string, pictureU
 
 /* ================= Signature verification ====================== */
 function verifySignature(raw: string, sig?: string | null) {
-  logLine(`=== Signature Verification ===`)
-  logLine(`Raw body length: ${raw.length}`)
-  logLine(`Has signature: ${!!sig}`)
-  logLine(`Has secret: ${!!SECRET}`)
-  if (!sig || !SECRET) { logLine(`Signature verification failed: missing sig or secret`); return false }
+  if (process.env.NODE_ENV !== 'production') {
+    logLine(`=== Signature Verification ===`)
+    logLine(`Raw body length: ${raw.length}`)
+    logLine(`Has signature: ${!!sig}`)
+    logLine(`Has secret: ${!!SECRET}`)
+  }
+  if (!sig || !SECRET) {
+    if (process.env.NODE_ENV !== 'production') logLine(`Signature verification failed: missing sig or secret`)
+    return false
+  }
   try {
     const expected = crypto.createHmac('sha256', SECRET).update(raw, 'utf8').digest('base64')
-    logLine(`Expected signature: ${expected.substring(0, 20)}...`)
-    logLine(`Received signature: ${sig.substring(0, 20)}...`)
     const isValid = crypto.timingSafeEqual(Buffer.from(expected, 'base64'), Buffer.from(sig, 'base64'))
-    logLine(`Signature valid: ${isValid}`)
-    if (!isValid) logLine(`Signature mismatch!`)
+    if (process.env.NODE_ENV !== 'production') {
+      logLine(`Signature valid: ${isValid}`)
+      if (!isValid) logLine(`Signature mismatch!`)
+    }
     return isValid
   } catch (error) {
-    logLine(`Signature verification error: ${String(error)}`)
+    if (process.env.NODE_ENV !== 'production') logLine(`Signature verification error: ${String(error)}`)
     return false
   }
 }
@@ -365,15 +370,16 @@ export async function POST(req: NextRequest) {
     const raw = await req.text()
     const sig = req.headers.get('x-line-signature')
 
-    logLine(`Raw body length: ${raw.length}`)
-    logLine(`Raw body content (first 200 chars): ${raw.substring(0, 200)}`)
+    if (process.env.NODE_ENV !== 'production') {
+      logLine(`Raw body length: ${raw.length}`)
+    }
 
     if (!raw || raw.length === 0) {
       logLine(`Empty body received!`)
       return NextResponse.json({ ok: true, message: 'Empty body received' })
     }
     if (!verifySignature(raw, sig)) {
-      logLine(`Signature verification failed`)
+      if (process.env.NODE_ENV !== 'production') logLine(`Signature verification failed`)
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 

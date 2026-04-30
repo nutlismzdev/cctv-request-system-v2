@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { CheckCircle2, MessageCircle, AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -35,6 +36,7 @@ export default function LiffLinkPage() {
   const params = useParams() as { reportId?: string; token?: string }
   const reportId = params.reportId ?? ''
   const token = params.token ?? ''
+  const tSuccess = useTranslations('LiffLink.success')
 
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [isLiffReady, setIsLiffReady] = useState<boolean>(false)
@@ -89,14 +91,14 @@ export default function LiffLinkPage() {
     try {
       const liff = getLiff()
       if (liff && liff.openWindow) {
-        liff.openWindow({ url: 'https://lin.ee/UFqUdB6', external: true })
+        liff.openWindow({ url: 'https://line.me/R/ti/p/@513dlddc', external: true })
       } else {
-        window.open('https://lin.ee/UFqUdB6', '_blank', 'noreferrer')
+        window.open('https://line.me/R/ti/p/@513dlddc', '_blank', 'noreferrer')
       }
     } catch (err) {
     
       console.error('Error opening add friend page:', err)
-      window.open('https://lin.ee/UFqUdB6', '_blank', 'noreferrer')
+      window.open('https://line.me/R/ti/p/@513dlddc', '_blank', 'noreferrer')
     }
   }, [])
 
@@ -251,9 +253,9 @@ export default function LiffLinkPage() {
         return (
           <div className="text-center space-y-4">
             <CheckCircle2 className="h-12 w-12 mx-auto text-green-600 mb-4" />
-            <h2 className="text-xl font-bold text-green-800">ผูกคำร้องสำเร็จ!</h2>
+            <h2 className="text-xl font-bold text-green-800">{tSuccess('title')}</h2>
             <p className="text-sm text-gray-600">
-              คำร้องหมายเลข {reportId} ได้ถูกผูกกับบัญชี LINE ของคุณเรียบร้อยแล้ว
+              {tSuccess('description')}
             </p>
 
             {profile && (
@@ -270,9 +272,9 @@ export default function LiffLinkPage() {
                   )}
                   <div className="text-left">
                     <p className="font-medium text-green-800">{profile.displayName}</p>
-                    <p className="text-xs text-green-600">เชื่อมต่อแล้ว ✓</p>
+                    <p className="text-xs text-green-600">{tSuccess('connected')}</p>
                     <p className="text-xs text-green-600">
-                      สถานะเพื่อน OA: {isFriend ? 'เป็นเพื่อน' : 'ยังไม่เป็นเพื่อน'}
+                      {tSuccess('friendStatusLabel')} {isFriend ? tSuccess('friendYes') : tSuccess('friendNo')}
                     </p>
                   </div>
                 </div>
@@ -280,15 +282,15 @@ export default function LiffLinkPage() {
             )}
 
             {linkStatus?.success && (
-              <p className="text-xs text-gray-600">เชื่อมโยงข้อมูลเรียบร้อยแล้ว</p>
+              <p className="text-xs text-gray-600">{tSuccess('linkedNote')}</p>
             )}
 
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 className="font-semibold text-blue-800 mb-2">คุณจะได้รับแจ้งเตือนเมื่อ:</h3>
+              <h3 className="font-semibold text-blue-800 mb-2">{tSuccess('notifyTitle')}</h3>
               <ul className="text-sm text-blue-700 space-y-1 text-left">
-                <li>• สถานะคำร้องมีการเปลี่ยนแปลง</li>
-                <li>• เอกสารพร้อมให้ดาวน์โหลด</li>
-                <li>• มีข้อมูลเพิ่มเติมจากเจ้าหน้าที่</li>
+                <li>• {tSuccess('notifyItem1')}</li>
+                <li>• {tSuccess('notifyItem2')}</li>
+                <li>• {tSuccess('notifyItem3')}</li>
               </ul>
             </div>
 
@@ -297,7 +299,7 @@ export default function LiffLinkPage() {
               className="w-full bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isLoading}
             >
-              ปิดหน้านี้
+              {tSuccess('close')}
             </Button>
           </div>
         )

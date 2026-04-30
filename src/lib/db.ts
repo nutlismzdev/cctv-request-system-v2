@@ -7,34 +7,74 @@ export type DatabasePool = mysql.Pool
 export type DatabaseConnection = mysql.Connection
 export type QueryResult<T = unknown> = T[]
 
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'cctv_huahin',
-  port: parseInt(process.env.DB_PORT || '3306', 10),
-  charset: 'utf8mb4',
-  timezone: '+07:00',
-  connectTimeout: 30000,
-  waitForConnections: true,
-  connectionLimit: 5,
-  queueLimit: 0,
-  dateStrings: true,
-  supportBigNumbers: true,
-  bigNumberStrings: false,
-  multipleStatements: false,
+function envValue(name: string, fallback: string): string {
+  const value = process.env[name]?.trim()
+  return value || fallback
+}
+
+function createDbConfig() {
+  return {
+    host: envValue('DB_HOST', 'localhost'),
+    user: envValue('DB_USER', 'root'),
+    password: process.env.DB_PASSWORD || '',
+    database: envValue('DB_NAME', 'cctv_huahin'),
+    port: parseInt(envValue('DB_PORT', '3306'), 10),
+    charset: 'utf8mb4',
+    timezone: '+07:00',
+    connectTimeout: 30000,
+    waitForConnections: true,
+    connectionLimit: 5,
+    queueLimit: 0,
+    dateStrings: true,
+    supportBigNumbers: true,
+    bigNumberStrings: false,
+    multipleStatements: false,
+  }
+}
+
+function globalPoolState() {
+  return globalThis as unknown as {
+    __MYSQL_POOL__?: mysql.Pool
+    __MYSQL_POOL_SIGNATURE__?: string
+  }
+}
+
+function configSignature(config: ReturnType<typeof createDbConfig>): string {
+  return JSON.stringify({
+    host: config.host,
+    user: config.user,
+    database: config.database,
+    port: config.port,
+  })
 }
 
 let pool: mysql.Pool | null = null
 export function getPool(): mysql.Pool {
-  if (pool) return pool
-  const g = globalThis as unknown as { __MYSQL_POOL__?: mysql.Pool }
-  if (!g.__MYSQL_POOL__) g.__MYSQL_POOL__ = mysql.createPool(dbConfig)
+  const dbConfig = createDbConfig()
+  const signature = configSignature(dbConfig)
+  const g = globalPoolState()
+
+  if (pool && g.__MYSQL_POOL_SIGNATURE__ === signature) return pool
+
+  if (g.__MYSQL_POOL__ && g.__MYSQL_POOL_SIGNATURE__ !== signature) {
+    g.__MYSQL_POOL__.end().catch(() => {})
+    g.__MYSQL_POOL__ = undefined
+  }
+
+  if (!g.__MYSQL_POOL__) {
+    g.__MYSQL_POOL__ = mysql.createPool(dbConfig)
+    g.__MYSQL_POOL_SIGNATURE__ = signature
+  }
   pool = g.__MYSQL_POOL__
   return pool
 }
 export const db = getPool
-export function resetPool(): void { pool = null }
+export function resetPool(): void {
+  const g = globalPoolState()
+  g.__MYSQL_POOL__ = undefined
+  g.__MYSQL_POOL_SIGNATURE__ = undefined
+  pool = null
+}
 
 export async function query<T = unknown>(sql: string, params: unknown[] = [], retryCount = 0): Promise<T[]> {
   const maxRetries = 2

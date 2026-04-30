@@ -345,12 +345,12 @@ export default function StatusPage() {
                   <div className="text-[14px] leading-relaxed">
                     <div className="font-medium mb-1">Line Official</div>
                     <a
-                      href="https://line.me/R/ti/p/@huahin"
+                      href="https://line.me/R/ti/p/@513dlddc"
                       target="_blank"
                       rel="noopener"
                       className={`text-[var(--primary)] underline underline-offset-4 hover:text-[var(--primary)]/80`}
                     >
-                      @huahin
+                      @513dlddc
                     </a>
                   </div>
                 </div>
@@ -394,7 +394,7 @@ export default function StatusPage() {
 
               <p className="inline-flex items-center justify-center gap-2">
                 <MessageCircle className="w-4 h-4 text-[var(--primary)]" />
-                <span>Line Official: <a href="https://lin.ee/ucf9Nju" target="_blank" rel="noopener" className="underline underline-offset-4 text-[var(--primary)] hover:text-[var(--primary)]/80">@cctv_huahin</a></span>
+                <span>Line Official: <a href="https://line.me/R/ti/p/@513dlddc" target="_blank" rel="noopener" className="underline underline-offset-4 text-[var(--primary)] hover:text-[var(--primary)]/80">@513dlddc</a></span>
               </p>
 
               <p className="inline-flex items-center justify-center gap-2 text-[12px] opacity-80">

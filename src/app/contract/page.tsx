@@ -127,7 +127,7 @@ export default function ContactPage() {
     address: t('contract.org.address'),
     telMain: t('contract.org.telMain'),
     website: 'https://www.huahin.go.th/new/frontpage',
-    lineOA: 'cctv@huahin', // ตัวอย่าง
+    lineOA: '@513dlddc',
   }
 
   const telHref = `tel:${org.telMain.replace(/[^0-9+]/g, '')}`
@@ -201,7 +201,7 @@ export default function ContactPage() {
                   icon={<MessageSquare className="w-5 h-5" />}
                   label={t('contract.contact.fields.lineOA')}
                   value={org.lineOA}
-                  href={`https://lin.ee/ucf9Nju`}
+                  href={`https://line.me/R/ti/p/@513dlddc`}
                   hint={t('contract.contact.fields.lineOAHint')}
                 />
 

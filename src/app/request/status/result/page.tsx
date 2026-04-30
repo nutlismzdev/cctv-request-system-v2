@@ -315,15 +315,16 @@ function StatusResultContent() {
   }, [external])
 
   useEffect(() => {
-    if (!token) {
-      setError(t('errors.invalidOrExpired'))
-      setIsLoading(false)
-      return
-    }
-
     const fetchReportData = async () => {
       try {
-        const params = new URLSearchParams({ token })
+        // API บังคับต้องมี token (ทั้ง statusTokenStore และ LINE token)
+        if (!token) {
+          setError(t('errors.notFound'))
+          return
+        }
+
+        const params = new URLSearchParams()
+        params.append('token', token)
         if (reportId) params.append('id', reportId)
 
         const url = `/api/status/result?${params.toString()}`
@@ -343,13 +344,15 @@ function StatusResultContent() {
   }, [reportId, token, t])
 
   useEffect(() => {
-    if (selectedReportId && selectedReportId !== parseInt(reportId || '0', 10) && token) {
+    if (selectedReportId && selectedReportId !== parseInt(reportId || '0', 10)) {
       setReportData(null)
       setAllUserReports([])
       setCurrentPage(1)
       setIsLoading(true)
       setError('')
-      router.push(`/request/status/result?id=${selectedReportId}&token=${encodeURIComponent(token)}`)
+      const qs = new URLSearchParams({ id: String(selectedReportId) })
+      if (token) qs.append('token', token)
+      router.push(`/request/status/result?${qs.toString()}`)
     }
   }, [selectedReportId, reportId, token, router])
 

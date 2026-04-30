@@ -46,11 +46,35 @@ interface DocAvgRow extends RowDataPacket {
   avg_minutes: number | null
 }
 
+type DateFilter = { sql: (col: string) => string; params: (string | number)[] }
+
+function buildDateFilter(url: URL): DateFilter | { error: string } {
+  const from = url.searchParams.get('from')?.trim() || ''
+  const to = url.searchParams.get('to')?.trim() || ''
+  const isYmd = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s)
+
+  if (from && to) {
+    if (!isYmd(from) || !isYmd(to)) return { error: 'invalid date range format (use YYYY-MM-DD)' }
+    if (from > to) return { error: 'from must be <= to' }
+    return {
+      sql: (col: string) => `${col} >= ? AND ${col} < DATE_ADD(?, INTERVAL 1 DAY)`,
+      params: [from, to],
+    }
+  }
+
+  const days = Number(url.searchParams.get('days') || 30)
+  if (!Number.isFinite(days) || days <= 0) return { error: 'invalid days' }
+  return {
+    sql: (col: string) => `${col} >= NOW() - INTERVAL ? DAY`,
+    params: [days],
+  }
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url)
-  const days = Number(url.searchParams.get('days') || 30)
-  if (!Number.isFinite(days) || days <= 0) {
-    return NextResponse.json({ success: false, message: 'invalid days' }, { status: 400 })
+  const filter = buildDateFilter(url)
+  if ('error' in filter) {
+    return NextResponse.json({ success: false, message: filter.error }, { status: 400 })
   }
 
   try {
@@ -63,9 +87,9 @@ export async function GET(req: Request) {
       `
       SELECT COUNT(*) AS total
       FROM reports
-      WHERE created_at >= NOW() - INTERVAL ? DAY
+      WHERE ${filter.sql('created_at')}
       `,
-      [days]
+      filter.params
     )
     const total_reports = Number(totalRows[0]?.total || 0)
 
@@ -76,11 +100,11 @@ export async function GET(req: Request) {
       `
       SELECT status, COUNT(*) AS count
       FROM reports
-      WHERE created_at >= NOW() - INTERVAL ? DAY
+      WHERE ${filter.sql('created_at')}
       GROUP BY status
       ORDER BY count DESC
       `,
-      [days]
+      filter.params
     )
 
     const status_breakdown = statusRows.map((row) => ({
@@ -99,11 +123,11 @@ export async function GET(req: Request) {
       `
       SELECT COALESCE(request_type, 'ไม่ระบุ') AS request_type, COUNT(*) AS count
       FROM reports
-      WHERE created_at >= NOW() - INTERVAL ? DAY
+      WHERE ${filter.sql('created_at')}
       GROUP BY COALESCE(request_type, 'ไม่ระบุ')
       ORDER BY count DESC
       `,
-      [days]
+      filter.params
     )
 
     const request_type_breakdown = typeRows.map((row) => ({
@@ -126,11 +150,11 @@ export async function GET(req: Request) {
         MONTH(created_at) AS month_num,
         COUNT(*) AS count
       FROM reports
-      WHERE created_at >= NOW() - INTERVAL ? DAY
+      WHERE ${filter.sql('created_at')}
       GROUP BY YEAR(created_at), MONTH(created_at), DATE_FORMAT(created_at, '%M %Y')
       ORDER BY year ASC, month_num ASC
       `,
-      [days]
+      filter.params
     )
 
     const monthly_trend = trendRows.map((row) => ({
@@ -147,12 +171,12 @@ export async function GET(req: Request) {
       SELECT c.category_name, COUNT(r.report_id) AS count
       FROM reports r
       LEFT JOIN categories c ON r.category_id = c.category_id
-      WHERE r.created_at >= NOW() - INTERVAL ? DAY
+      WHERE ${filter.sql('r.created_at')}
       GROUP BY c.category_id, c.category_name
       ORDER BY count DESC
       LIMIT 10
       `,
-      [days]
+      filter.params
     )
 
     const category_breakdown = categoryRows.map((row) => ({
@@ -171,14 +195,14 @@ export async function GET(req: Request) {
       `
       SELECT incident_location, COUNT(*) AS count
       FROM reports
-      WHERE created_at >= NOW() - INTERVAL ? DAY
+      WHERE ${filter.sql('created_at')}
         AND incident_location IS NOT NULL
         AND incident_location <> ''
       GROUP BY incident_location
       ORDER BY count DESC
       LIMIT 10
       `,
-      [days]
+      filter.params
     )
 
     const top_locations = locationRows.map((row) => ({
@@ -202,9 +226,9 @@ export async function GET(req: Request) {
         WHERE sh.new_status = 'เอกสารอนุมัติเรียบร้อย'
         GROUP BY sh.report_id
       ) s ON s.report_id = r.report_id
-      WHERE r.created_at >= NOW() - INTERVAL ? DAY
+      WHERE ${filter.sql('r.created_at')}
       `,
-      [days]
+      filter.params
     )
 
     const processing_time_avg =
@@ -230,13 +254,13 @@ export async function GET(req: Request) {
            WHERE sh2.report_id = r.report_id
              AND sh2.new_status = 'เอกสารอนุมัติเรียบร้อย') AS approved_at
         FROM reports r
-        WHERE r.created_at >= NOW() - INTERVAL ? DAY
+        WHERE ${filter.sql('r.created_at')}
       ) AS t
       WHERE t.wait_doc_at IS NOT NULL
         AND t.approved_at IS NOT NULL
         AND t.approved_at > t.wait_doc_at
       `,
-      [days]
+      filter.params
     )
 
     const processing_time_doc_avg_minutes =

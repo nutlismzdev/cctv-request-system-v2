@@ -278,7 +278,6 @@ function StatusResultContent() {
   const [showExternalBrowserModal, setShowExternalBrowserModal] = useState(false)
 
   const reportId = searchParams.get('id')
-  const token = searchParams.get('token')
   const external = searchParams.get('external')
 
   // Handle LINE browser external redirect
@@ -315,15 +314,9 @@ function StatusResultContent() {
   }, [external])
 
   useEffect(() => {
-    if (!token) {
-      setError(t('errors.invalidOrExpired'))
-      setIsLoading(false)
-      return
-    }
-
     const fetchReportData = async () => {
       try {
-        const params = new URLSearchParams({ token })
+        const params = new URLSearchParams()
         if (reportId) params.append('id', reportId)
 
         const url = `/api/status/result?${params.toString()}`
@@ -340,18 +333,18 @@ function StatusResultContent() {
     }
 
     fetchReportData()
-  }, [reportId, token, t])
+  }, [reportId, t])
 
   useEffect(() => {
-    if (selectedReportId && selectedReportId !== parseInt(reportId || '0', 10) && token) {
+    if (selectedReportId && selectedReportId !== parseInt(reportId || '0', 10)) {
       setReportData(null)
       setAllUserReports([])
       setCurrentPage(1)
       setIsLoading(true)
       setError('')
-      router.push(`/request-onsite/status/result?id=${selectedReportId}&token=${encodeURIComponent(token)}`)
+      router.push(`/request-onsite/status/result?id=${selectedReportId}`)
     }
-  }, [selectedReportId, reportId, token, router])
+  }, [selectedReportId, reportId, router])
 
   // Pagination
   const totalReports = allUserReports.length

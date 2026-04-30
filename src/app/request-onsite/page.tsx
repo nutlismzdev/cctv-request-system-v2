@@ -1480,6 +1480,7 @@ export default function RequestPage() {
       }
 
       const reportId = result.data.report_id.toString()
+      const trackingToken = result.data.tracking_token as string | undefined
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('latest_report_id', reportId)
@@ -1517,8 +1518,11 @@ export default function RequestPage() {
         consent: false,
       })
 
-      // Redirect ไป success page ของ onsite flow
-      router.push(`/success-onsite?id=${reportId}`)
+      // Redirect ไป success page ของ onsite flow พร้อม token เพื่อให้ QR เป็น LIFF deep link auto-link คำร้อง
+      const successUrl = trackingToken
+        ? `/success-onsite?id=${encodeURIComponent(reportId)}&token=${encodeURIComponent(trackingToken)}`
+        : `/success-onsite?id=${encodeURIComponent(reportId)}`
+      router.push(successUrl)
 
     } catch (error) {
       console.error('Submit error:', error)

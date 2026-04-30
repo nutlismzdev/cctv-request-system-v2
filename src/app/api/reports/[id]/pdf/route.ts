@@ -639,27 +639,32 @@ function drawTextFields(page: PDFPage, font: PDFFont, report: ReportRecord) {
 
 /* ==================== Official watermark helpers ==================== */
 /**
- * ลายน้ำมาตรฐานงานราชการไทย (จาง สีเทา หมุนเฉียง ทำซ้ำเต็มหน้า)
- * ข้อความ: "เอกสารประกอบคำร้องขอดูภาพกล้อง CCTV • เทศบาลนครหัวหิน"
+ * ลายน้ำมาตรฐานเอกสารราชการ (จาง สีเทา หมุนเฉียง ทำซ้ำเต็มหน้าแบบไขว้)
+ * - ระบุวัตถุประสงค์การใช้งานชัดเจนเพื่อจำกัดการนำเอกสารไปใช้อย่างอื่น
+ * - opacity ต่ำและกระจายซ้ำ ๆ จึงไม่บังตัวหนังสือบนเอกสารต้นฉบับ
  */
+const OFFICIAL_WATERMARK_TEXT = 'ใช้สำหรับประกอบการยื่นคำร้องขอสำเนาภาพจากกล้องโทรทัศน์วงจรปิด (CCTV) เทศบาลนครหัวหินเท่านั้น'
+
 function drawOfficialWatermarks(page: PDFPage, font: PDFFont) {
   const { width, height } = page.getSize()
-  const angle = -30
-  const text = 'เอกสารประกอบคำร้องขอดูภาพกล้อง CCTV • เทศบาลนครหัวหิน'
-  const baseSize = Math.min(width, height) * 0.06 // ขนาดตัวอักษรพื้นฐาน (~6% ของด้านสั้น)
-  const color = rgb(0.6, 0.6, 0.6) // เทากลาง
-  const opacity = 0.15 // จางตามแนวทางเอกสารราชการ
+  const text = OFFICIAL_WATERMARK_TEXT
+  // ขนาด ~3.6% ของด้านสั้น เพื่อให้ข้อความยาวอ่านได้แต่ไม่บังเนื้อหาเอกสาร
+  const baseSize = Math.min(width, height) * 0.036
+  const color = rgb(0.10, 0.20, 0.65) // น้ำเงินเข้มทางราชการ
+  const opacity = 0.18 // จางพอให้อ่านเอกสารได้ แต่ชัดพอจะเห็นข้อความสีน้ำเงิน
 
-  // คำนวณระยะก้าวตามความกว้างข้อความ
   let textWidth = 0
-  try { textWidth = font.widthOfTextAtSize(text, baseSize) } catch { textWidth = baseSize * text.length * 0.6 }
+  try { textWidth = font.widthOfTextAtSize(text, baseSize) } catch { textWidth = baseSize * text.length * 0.55 }
 
-  const stepX = Math.max(textWidth * 0.7, width * 0.6)
-  const stepY = baseSize * 4.5
+  // ระยะก้าวให้แถบข้อความเรียงต่อกันแน่นพอเพื่อกันการตัดต่อ แต่ไม่ทับซ้อนกันเอง
+  const stepX = textWidth + baseSize * 4
+  const stepY = baseSize * 5.5
+  const angle = -30
 
-  // วาดลายน้ำแบบกระดานหมากรุกครอบคลุมทั้งหน้า
   for (let y = -height; y < height * 2; y += stepY) {
-    for (let x = -width; x < width * 2; x += stepX) {
+    // เยื้องบรรทัดเว้นแบบอิฐสลับเพื่อกระจายลายน้ำให้สม่ำเสมอ
+    const offsetX = (Math.floor((y + height) / stepY) % 2 === 0) ? 0 : stepX / 2
+    for (let x = -width + offsetX; x < width * 2; x += stepX) {
       page.drawText(text, {
         x,
         y,
@@ -674,33 +679,135 @@ function drawOfficialWatermarks(page: PDFPage, font: PDFFont) {
 }
 
 /**
- * ลายน้ำเสริมสำหรับเอกสารที่เป็น "สำเนาบัตร/สำเนาเอกสารสำคัญ"
- * แสดงบทบาทความเกี่ยวข้องและคำอธิบายอย่างจาง ๆ กึ่งกลางหน้า
+ * ลายน้ำเสริมสำหรับเอกสารสำเนาบัตร/สำเนาเอกสารสำคัญ — ระบุบทบาทผู้ยื่นคำร้อง
+ * - ข้อความแนวนอนบรรทัดเดียวในกล่องที่มุมขวาล่าง
+ * - รองรับหน้า PDF แนวนอน (landscape mediabox) และหน้าที่มี rotation 90/180/270
+ *   โดยกล่องจะปรากฏที่มุมขวาล่างของพื้นที่ "แสดงผลจริง" และวางขนานกับเอกสารเสมอ
  */
 function drawRoleWatermarks(page: PDFPage, font: PDFFont, role?: string | null, explain?: string | null) {
   if (!role) return
   const { width, height } = page.getSize()
-  const angle = -30
-  const size = Math.min(width, height) * 0.08
-  const color = rgb(0.35, 0.35, 0.35)
-  const opacity = 0.20
+  const rot = ((page.getRotation().angle % 360) + 360) % 360 // 0 / 90 / 180 / 270
 
-  const lines = [role.trim()].concat(explain && explain.trim() ? [explain.trim()] : [])
-  const centerX = width * 0.5
-  const centerY = height * 0.5
-  const lineGap = size * 1.1
+  // ขนาดที่ "แสดงจริง" หลังหมุน
+  const swap = rot === 90 || rot === 270
+  const dispW = swap ? height : width
+  const dispH = swap ? width : height
 
-  lines.forEach((line, idx) => {
-    page.drawText(line, {
-      x: centerX,
-      y: centerY + (idx === 0 ? lineGap * 0.5 : -lineGap * 0.6),
-      size,
-      font,
-      color,
-      opacity,
-      rotate: degrees(angle),
-    })
+  const baseSize = Math.min(dispW, dispH) * 0.038
+  const color = rgb(0.10, 0.20, 0.65) // น้ำเงินเข้มทางราชการ
+  const opacity = 0.9
+
+  const trimmedRole = role.trim()
+  const trimmedExplain = explain && explain.trim() ? explain.trim() : ''
+  const label = trimmedExplain
+    ? `ผู้ยื่นคำร้อง: ${trimmedRole} — ${trimmedExplain}`
+    : `ผู้ยื่นคำร้อง: ${trimmedRole}`
+
+  const measure = (text: string, fontSize: number) => {
+    try { return font.widthOfTextAtSize(text, fontSize) } catch { return fontSize * text.length * 0.55 }
+  }
+
+  // จำกัดความกว้างกล่อง ≤ 80% ของด้านที่แสดง — ลดขนาดอักษรลงถ้าจำเป็น
+  let fontSize = baseSize
+  let labelWidth = measure(label, fontSize)
+  const padding = fontSize * 0.7
+  const maxBlockWidth = dispW * 0.8
+  while (labelWidth + padding * 2 > maxBlockWidth && fontSize > 6) {
+    fontSize *= 0.92
+    labelWidth = measure(label, fontSize)
+  }
+  const finalPadding = fontSize * 0.7
+  const blockW = labelWidth + finalPadding * 2
+  const blockH = fontSize + finalPadding * 2
+
+  // มุมขวาล่าง "ในระบบพิกัดที่แสดงผลจริง"
+  const dispX = Math.max(finalPadding, dispW - blockW - finalPadding)
+  const dispY = finalPadding
+
+  // แปลงพิกัด displayed (ซ้ายล่างของกล่อง) → พิกัดจริงของ pdf-lib (ที่จะใช้ rotate ในตัว draw*)
+  // pdf-lib หมุนวัตถุรอบ anchor (x, y) จึงต้องคำนวณ x, y ของ anchor ที่ทำให้กล่อง/ข้อความ
+  // ปรากฏที่ตำแหน่ง displayed ที่ต้องการ
+  let rectX: number, rectY: number
+  let textX: number, textY: number
+  if (rot === 0) {
+    rectX = dispX
+    rectY = dispY
+    textX = dispX + finalPadding
+    textY = dispY + finalPadding
+  } else if (rot === 90) {
+    // displayed +x → unrotated +y ; displayed +y → unrotated -x (ที่ x = width)
+    rectX = width - dispY
+    rectY = dispX
+    textX = width - dispY - finalPadding
+    textY = dispX + finalPadding
+  } else if (rot === 180) {
+    rectX = width - dispX
+    rectY = height - dispY
+    textX = width - dispX - finalPadding
+    textY = height - dispY - finalPadding
+  } else { // rot === 270
+    rectX = dispY
+    rectY = height - dispX
+    textX = dispY + finalPadding
+    textY = height - dispX - finalPadding
+  }
+
+  // กล่องพื้นหลังขาวกึ่งโปร่งใส
+  page.drawRectangle({
+    x: rectX,
+    y: rectY,
+    width: blockW,
+    height: blockH,
+    color: rgb(1, 1, 1),
+    opacity: 0.7,
+    borderColor: color,
+    borderWidth: 0.8,
+    borderOpacity: 0.7,
+    rotate: degrees(rot),
   })
+
+  page.drawText(label, {
+    x: textX,
+    y: textY,
+    size: fontSize,
+    font,
+    color,
+    opacity,
+    rotate: degrees(rot),
+  })
+}
+
+/** อ่าน EXIF orientation จาก JPEG bytes (คืน 1 = ปกติ ถ้าไม่พบหรือ error) */
+function readJpegOrientation(buf: Buffer): number {
+  if (buf.length < 4 || buf[0] !== 0xFF || buf[1] !== 0xD8) return 1
+  let offset = 2
+  while (offset + 4 < buf.length) {
+    if (buf[offset] !== 0xFF) break
+    const marker = buf[offset + 1]
+    const segLen = buf.readUInt16BE(offset + 2)
+    if (marker === 0xE1 && segLen >= 6) {
+      const hdr = buf.slice(offset + 4, offset + 10)
+      if (hdr.length === 6 && hdr.toString('ascii') === 'Exif\0\0') {
+        const ts = offset + 10
+        if (ts + 8 >= buf.length) break
+        const le = buf[ts] === 0x49 && buf[ts + 1] === 0x49
+        const r16 = (o: number) => le ? buf.readUInt16LE(ts + o) : buf.readUInt16BE(ts + o)
+        const r32 = (o: number) => le ? buf.readUInt32LE(ts + o) : buf.readUInt32BE(ts + o)
+        const ifdOff = r32(4)
+        if (ifdOff + 2 > buf.length - ts) break
+        const n = r16(ifdOff)
+        for (let i = 0; i < n; i++) {
+          const e = ifdOff + 2 + i * 12
+          if (e + 12 > buf.length - ts) break
+          if (r16(e) === 0x0112) return r16(e + 8)
+        }
+      }
+    }
+    if (segLen < 2) break
+    offset += 2 + segLen
+  }
+  return 1
 }
 
 /** วาดข้อมูลเอกสารแนบในหน้าใหม่ พร้อม embed ไฟล์จริง */
@@ -812,23 +919,65 @@ async function drawAttachmentsPage(pdfDoc: PDFDocument, font: PDFFont, attachmen
         }
       }
 
-      // ปรับขนาดรูปภาพให้พอดีกับหน้า (80% ของขนาดหน้า)
+      // อ่าน EXIF orientation เฉพาะ JPEG
+      let orientation = 1
+      const isJpeg = mimeType === 'image/jpeg' || mimeType === 'image/jpg' ||
+        fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')
+      if (isJpeg) {
+        try { orientation = readJpegOrientation(imageBytes) } catch { orientation = 1 }
+      }
+
+      // orientation 6 = 90° CW, 8 = 90° CCW, 3 = 180°
+      // orientations 6 & 8 swap the display width/height vs. raw image dimensions
+      const swapDims = orientation === 6 || orientation === 8
+      const rawW = embeddedImage.width
+      const rawH = embeddedImage.height
+      const dispW = swapDims ? rawH : rawW
+      const dispH = swapDims ? rawW : rawH
+
+      // scale to 80% of page using the final display dimensions
       const scaleFactor = Math.min(
-        (pageWidth * 0.8) / embeddedImage.width,
-        (pageHeight * 0.8) / embeddedImage.height
+        (pageWidth * 0.8) / dispW,
+        (pageHeight * 0.8) / dispH
       )
 
-      const imgWidth = embeddedImage.width * scaleFactor
-      const imgHeight = embeddedImage.height * scaleFactor
+      // pre-rotation draw dimensions
+      const drawnW = rawW * scaleFactor
+      const drawnH = rawH * scaleFactor
+      // post-rotation display dimensions
+      const finalW = dispW * scaleFactor
+      const finalH = dispH * scaleFactor
 
-      const x = (pageWidth - imgWidth) / 2
-      const y = (pageHeight - imgHeight) / 2
+      let drawX: number, drawY: number, rotateDeg: number
+
+      if (orientation === 6) {
+        // 90° CW: rotate: degrees(-90), anchor = (centerX - finalW/2, centerY + finalH/2)
+        rotateDeg = -90
+        drawX = (pageWidth - finalW) / 2
+        drawY = (pageHeight + finalH) / 2
+      } else if (orientation === 8) {
+        // 90° CCW: rotate: degrees(90), anchor = (centerX + finalW/2, centerY - finalH/2)
+        rotateDeg = 90
+        drawX = (pageWidth + finalW) / 2
+        drawY = (pageHeight - finalH) / 2
+      } else if (orientation === 3) {
+        // 180°: rotate: degrees(180), anchor = (centerX + finalW/2, centerY + finalH/2)
+        rotateDeg = 180
+        drawX = (pageWidth + finalW) / 2
+        drawY = (pageHeight + finalH) / 2
+      } else {
+        // ปกติ (orientation 1 หรืออื่นๆ)
+        rotateDeg = 0
+        drawX = (pageWidth - finalW) / 2
+        drawY = (pageHeight - finalH) / 2
+      }
 
       newPage.drawImage(embeddedImage, {
-        x,
-        y,
-        width: imgWidth,
-        height: imgHeight
+        x: drawX,
+        y: drawY,
+        width: drawnW,
+        height: drawnH,
+        ...(rotateDeg !== 0 ? { rotate: degrees(rotateDeg) } : {})
       })
 
       // เพิ่มชื่อไฟล์

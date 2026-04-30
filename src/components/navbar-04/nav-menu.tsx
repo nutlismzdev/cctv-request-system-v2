@@ -17,11 +17,6 @@ export const NavMenu = (props: ComponentProps<typeof NavigationMenu>) => {
       <NavigationMenuList className="gap-6 space-x-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start data-[orientation=vertical]:justify-start">
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
             <Link href="/request" className={`${THEME_COLORS.foreground} hover:text-[var(--primary)] font-medium px-3 py-2 rounded-md hover:bg-[var(--muted)] transition-colors`}>
               {t('submitRequest')}
             </Link>

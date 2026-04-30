@@ -19,15 +19,17 @@ import {
   Activity,
   Printer,
   Download,
-  Info
+  Info,
+  Target,
+  Gauge,
+  ShieldCheck,
+  Users,
+  MapPin,
 } from 'lucide-react'
 // ✅ Dynamic import recharts to avoid loading ~300KB in initial bundle (bundle-dynamic-imports)
+// — webpack dedupe ทุก reference เข้า chunk เดียวกัน
 const ResponsiveContainer = dynamic(
-  () => import('recharts').then(m => {
-    // Re-export as default for dynamic()
-    const C = m.ResponsiveContainer
-    return { default: C }
-  }),
+  () => import('recharts').then(m => ({ default: m.ResponsiveContainer })),
   { ssr: false }
 )
 const PieChart = dynamic(() => import('recharts').then(m => ({ default: m.PieChart })), { ssr: false })
@@ -64,7 +66,42 @@ interface StatisticsData {
  * Utilities (ไทย)
  * ========================================================================== */
 const formatThaiNumber = (n: number) => n.toLocaleString('th-TH')
-const monthLabel = (m: string, y: number) => `${m} ${y}`
+
+const THAI_MONTHS_FULL = [
+  'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม',
+] as const
+const THAI_MONTHS_SHORT = [
+  'ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+  'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.',
+] as const
+
+/** "January 2026" / "Jan 2026" / "1 2026" → "ม.ค. 2569" (พ.ศ.) */
+function monthLabel(m: string, y: number): string {
+  const yBE = y + 543
+  const enFull = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const enShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  const trimmed = (m || '').trim()
+  let idx = enFull.findIndex(name => trimmed.toLowerCase().startsWith(name.toLowerCase()))
+  if (idx < 0) idx = enShort.findIndex(name => trimmed.toLowerCase().startsWith(name.toLowerCase()))
+  if (idx < 0) {
+    const num = parseInt(trimmed, 10)
+    if (!Number.isNaN(num) && num >= 1 && num <= 12) idx = num - 1
+  }
+  if (idx < 0) return `${trimmed} ${yBE}`
+  return `${THAI_MONTHS_SHORT[idx]} ${yBE}`
+}
+
+/** "2026-01-15" → "15 มกราคม 2569" (วัน/เดือน/พ.ศ. แบบไทย) */
+function formatThaiDate(input: string): string {
+  if (!input) return ''
+  const m = input.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return input
+  const yBE = parseInt(m[1], 10) + 543
+  const moIdx = Math.max(0, Math.min(11, parseInt(m[2], 10) - 1))
+  const day = parseInt(m[3], 10)
+  return `${day} ${THAI_MONTHS_FULL[moIdx]} ${yBE}`
+}
 
 function formatDurationThaiFromMinutes(mins: number) {
   if (!Number.isFinite(mins) || mins < 0) return '—'
@@ -225,6 +262,9 @@ export default function AdminReportsPage() {
   const [loading, setLoading] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
   const [timeRange, setTimeRange] = useState('30')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [appliedRange, setAppliedRange] = useState<{ from: string; to: string } | null>(null)
   const [pdfMonth, setPdfMonth] = useState(getDefaultPdfMonth)
   const [pdfYear, setPdfYear] = useState(getDefaultPdfYear)
 
@@ -237,12 +277,19 @@ export default function AdminReportsPage() {
     setAuthChecked(true)
   }, [router])
 
-  // ดึงข้อมูลสถิติ
-  const fetchStatistics = async (days: string = '30') => {
+  // ดึงข้อมูลสถิติ — รองรับทั้งโหมด days (preset) และโหมด from/to (กำหนดช่วงวันที่เอง)
+  const fetchStatistics = async (opts: { days?: string; from?: string; to?: string } = {}) => {
     if (!authChecked) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/admin/reports?days=${days}`, { cache: 'no-store' })
+      const qs = new URLSearchParams()
+      if (opts.from && opts.to) {
+        qs.set('from', opts.from)
+        qs.set('to', opts.to)
+      } else {
+        qs.set('days', opts.days || timeRange)
+      }
+      const res = await fetch(`/api/admin/reports?${qs.toString()}`, { cache: 'no-store' })
       if (!res.ok) throw new Error('Bad response')
       const data = await res.json()
       if (data?.success) setStatistics(data.data as StatisticsData)
@@ -255,9 +302,29 @@ export default function AdminReportsPage() {
   }
 
   useEffect(() => {
-    if (authChecked) fetchStatistics(timeRange)
+    if (!authChecked) return
+    if (appliedRange) fetchStatistics({ from: appliedRange.from, to: appliedRange.to })
+    else fetchStatistics({ days: timeRange })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authChecked, timeRange])
+  }, [authChecked, timeRange, appliedRange])
+
+  const applyDateRange = () => {
+    if (!dateFrom || !dateTo) {
+      toast.error('กรุณาเลือกวันที่เริ่มต้นและสิ้นสุด')
+      return
+    }
+    if (dateFrom > dateTo) {
+      toast.error('วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด')
+      return
+    }
+    setAppliedRange({ from: dateFrom, to: dateTo })
+  }
+
+  const clearDateRange = () => {
+    setDateFrom('')
+    setDateTo('')
+    setAppliedRange(null)
+  }
 
   // อนุมานค่าเพื่อแสดงผล
   const sparkline = (statistics?.monthly_trend || []).map((m) => m.count)
@@ -265,29 +332,65 @@ export default function AdminReportsPage() {
   const prev = sparkline.at(-2) ?? 0
   const deltaPct = prev === 0 ? (latest > 0 ? 100 : 0) : Math.round(((latest - prev) / prev) * 100)
 
-  // สร้าง CSV (สำหรับผู้บริหารดาวน์โหลด/แนบอีเมล)
-  const csvBlobUrl = useMemo(() => {
+  /* ---------- ตัวชี้วัดประสิทธิภาพการให้บริการ ---------- */
+  const lpa = useMemo(() => {
     if (!statistics) return null
+    const total = Number(statistics.total_reports || 0)
+    const findCount = (s: string) => statistics.status_breakdown.find((x) => x.status === s)?.count || 0
+    const done = findCount('เอกสารอนุมัติเรียบร้อย')
+    const rejected = findCount('ปฏิเสธคำร้อง')
+    const waitDoc = findCount('รอเอกสารอนุมัติ')
+    const waitSubmit = findCount('รอยื่นเอกสาร')
+    const inProgress = waitDoc + waitSubmit
+    const avgDays = typeof statistics.processing_time_avg === 'number' ? statistics.processing_time_avg : null
+    const pct = (n: number) => (total > 0 ? Math.round((n / total) * 1000) / 10 : 0) // 1 ตำแหน่งทศนิยม
+    return {
+      total,
+      done,
+      rejected,
+      inProgress,
+      waitDoc,
+      waitSubmit,
+      completionRate: pct(done),
+      rejectionRate: pct(rejected),
+      backlogRate: pct(inProgress),
+      avgDays,
+    }
+  }, [statistics])
+
+  // สร้าง CSV — โครงสร้างเตรียมพร้อมสำหรับการคัดลอกไปใช้ในรายงานราชการ
+  const csvBlobUrl = useMemo(() => {
+    if (!statistics || !lpa) return null
+    const periodLabel = appliedRange ? `${formatThaiDate(appliedRange.from)} ถึง ${formatThaiDate(appliedRange.to)}` : `${timeRange} วันย้อนหลัง`
+    const escape = (s: string) => `"${s.replace(/"/g, '""')}"`
     const lines: string[] = []
-    lines.push('หัวข้อ,ค่า')
-    lines.push(`จำนวนคำร้องทั้งหมด,${statistics.total_reports}`)
-    const done = statistics.status_breakdown.find(s => s.status === 'เอกสารอนุมัติเรียบร้อย')?.count || 0
-    const pendingDocs = statistics.status_breakdown.find(s => s.status === 'รอยื่นเอกสาร')?.count || 0
-    const pending = statistics.status_breakdown.find(s => s.status === 'รอเอกสารอนุมัติ')?.count || 0
-    const denied = statistics.status_breakdown.find(s => s.status === 'ปฏิเสธคำร้อง')?.count || 0
-    lines.push(`คำร้องที่แล้วเสร็จ,${done}`)
-    lines.push(`คำร้องที่รอยื่นเอกสาร,${pendingDocs}`)
-    lines.push(`คำร้องที่อยู่ระหว่างดำเนินการ,${pending}`)
-    lines.push(`คำร้องที่ถูกปฏิเสธ,${denied}`)
+    lines.push('หัวข้อ,ค่า,หมายเหตุ')
+    lines.push([escape('ช่วงเวลารายงาน'), escape(periodLabel), escape('สรุปข้อมูลผลการให้บริการ')].join(','))
+    lines.push([escape('จำนวนคำร้องที่ให้บริการประชาชน'), lpa.total, escape('รวมทุกสถานะ')].join(','))
+    lines.push([escape('อัตราการอนุมัติสำเร็จ (%)'), lpa.completionRate, escape(`อนุมัติ ${lpa.done} / ${lpa.total}`)].join(','))
+    lines.push([escape('อัตราการปฏิเสธ (%)'), lpa.rejectionRate, escape(`ปฏิเสธ ${lpa.rejected} คำร้อง`)].join(','))
+    lines.push([escape('คำร้องคงค้างระหว่างดำเนินการ'), lpa.inProgress, escape(`รอเอกสาร ${lpa.waitDoc} • รอยื่น ${lpa.waitSubmit}`)].join(','))
     if (typeof statistics.processing_time_avg === 'number') {
-      lines.push(`เวลาเฉลี่ยตั้งแต่ยื่นถึงอนุมัติ(วัน),${statistics.processing_time_avg}`)
+      lines.push([escape('ระยะเวลาดำเนินการเฉลี่ย (วัน)'), statistics.processing_time_avg, escape('SLA: ตั้งแต่วันยื่นถึงวันอนุมัติ')].join(','))
     }
     if (typeof statistics.processing_time_doc_avg_minutes === 'number') {
-      lines.push(`เวลาเฉลี่ยช่วงรอเอกสาร→อนุมัติ(นาที),${statistics.processing_time_doc_avg_minutes}`)
+      lines.push([escape('เวลาตรวจเอกสาร → อนุมัติ (นาที)'), statistics.processing_time_doc_avg_minutes, escape('เฉลี่ยภายในกระบวนการพิจารณา')].join(','))
     }
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
+    lines.push('')
+    lines.push('อันดับ,พื้นที่/จุดเกิดเหตุ,จำนวน (เรื่อง)')
+    statistics.top_locations.slice(0, 10).forEach((t, idx) => {
+      lines.push([idx + 1, escape(t.location || 'ไม่ระบุ'), t.count].join(','))
+    })
+    // Add UTF-8 BOM so Excel reads Thai correctly
+    const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' })
     return URL.createObjectURL(blob)
-  }, [statistics])
+  }, [statistics, lpa, appliedRange, timeRange])
+
+  // revoke object URL เก่าเมื่อ value เปลี่ยนหรือ component unmount — กัน memory leak
+  useEffect(() => {
+    if (!csvBlobUrl) return
+    return () => { URL.revokeObjectURL(csvBlobUrl) }
+  }, [csvBlobUrl])
 
   const handlePrint = () => {
     window.print()
@@ -320,13 +423,22 @@ export default function AdminReportsPage() {
                 รายงานสรุปคำร้องขอดูภาพจากกล้อง CCTV
               </h1>
               <p className="text-xs md:text-sm text-[var(--muted-foreground)]">
-                เทศบาลนครหัวหิน • แดชบอร์ดเพื่อการบริหารและติดตามผล
+                เทศบาลนครหัวหิน • แดชบอร์ดสรุปผลการให้บริการประชาชน
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Select value={timeRange} onValueChange={setTimeRange}>
+            <Select
+              value={timeRange}
+              onValueChange={(v) => {
+                setTimeRange(v)
+                setAppliedRange(null)
+                setDateFrom('')
+                setDateTo('')
+              }}
+              disabled={Boolean(appliedRange)}
+            >
               <SelectTrigger className="h-9 w-40" aria-label="ช่วงเวลา">
                 <SelectValue placeholder="เลือกช่วงเวลา" />
               </SelectTrigger>
@@ -338,7 +450,16 @@ export default function AdminReportsPage() {
               </SelectContent>
             </Select>
 
-            <Button variant="outline" size="sm" onClick={() => fetchStatistics(timeRange)} disabled={loading} className="h-9">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (appliedRange) fetchStatistics({ from: appliedRange.from, to: appliedRange.to })
+                else fetchStatistics({ days: timeRange })
+              }}
+              disabled={loading}
+              className="h-9"
+            >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               <span className="ml-2">รีเฟรช</span>
             </Button>
@@ -351,7 +472,7 @@ export default function AdminReportsPage() {
             {csvBlobUrl && (
               <a
                 href={csvBlobUrl}
-                download={`cctv-report-summary-${timeRange}d.csv`}
+                download={`cctv-report-summary-${appliedRange ? `${appliedRange.from}_to_${appliedRange.to}` : `${timeRange}d`}.csv`}
                 className="inline-flex h-9 items-center gap-2 rounded-md border px-3 text-sm hover:bg-muted"
               >
                 <Download className="h-4 w-4" />
@@ -359,6 +480,46 @@ export default function AdminReportsPage() {
               </a>
             )}
           </div>
+        </div>
+
+        {/* แถบเลือกช่วงวันที่กำหนดเอง */}
+        <div className="px-4 lg:px-6 py-3 border-t flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium text-[var(--foreground)]">กรองตามช่วงวันที่:</span>
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-[var(--muted-foreground)]">ตั้งแต่</span>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              max={dateTo || undefined}
+              className="h-9 rounded-md border bg-background px-3 text-sm"
+              aria-label="วันที่เริ่มต้น"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <span className="text-[var(--muted-foreground)]">ถึง</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              min={dateFrom || undefined}
+              className="h-9 rounded-md border bg-background px-3 text-sm"
+              aria-label="วันที่สิ้นสุด"
+            />
+          </label>
+          <Button variant="default" size="sm" className="h-9" onClick={applyDateRange} disabled={loading || !dateFrom || !dateTo}>
+            ใช้ช่วงวันที่นี้
+          </Button>
+          {appliedRange && (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-1 text-xs font-medium text-[var(--primary)]">
+                กรองแล้ว: {formatThaiDate(appliedRange.from)} → {formatThaiDate(appliedRange.to)}
+              </span>
+              <Button variant="outline" size="sm" className="h-9" onClick={clearDateRange} disabled={loading}>
+                ล้างช่วงวันที่
+              </Button>
+            </>
+          )}
         </div>
 
         {/* แถบออกรายงาน PDF ประจำเดือน */}
@@ -400,14 +561,31 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
-      {/* บล็อกแนะนำผู้ใช้งาน (คำอธิบายข้อมูล) */}
+      {/* บล็อกแนะนำผู้ใช้งาน + ใบหน้าปกสำหรับการพิมพ์ */}
       <div className="px-4 lg:px-6 print:px-6 pt-4">
         <div className="mb-4 flex items-start gap-2 text-[13px] text-[var(--muted-foreground)] print:hidden">
-          <Info className="h-4 w-4 mt-0.5" />
+          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <p>
-            ข้อมูลสรุปนี้จัดทำเพื่อการตัดสินใจเชิงบริหาร: ใช้ตัวเลขรวม, สัดส่วนสถานะ, แนวโน้มรายเดือน
-            และตัวชี้วัดเวลาเฉลี่ย (SLA) รวมถึงช่วง “รอเอกสารอนุมัติ → อนุมัติเรียบร้อย”
+            ข้อมูลสรุปการให้บริการประชาชน — แสดงตัวชี้วัดด้านประสิทธิผลของการให้บริการ,
+            อัตราการอนุมัติ/ปฏิเสธ, ระยะเวลาดำเนินการเฉลี่ย และพื้นที่ที่ประชาชนร้องขอบ่อย
+            เพื่อใช้ตัดสินใจเชิงบริหารและพัฒนาคุณภาพบริการ
           </p>
+        </div>
+
+        {/* หัวกระดาษสำหรับการพิมพ์ */}
+        <div className="hidden print:block mb-4">
+          <div className="border-b-2 border-slate-900 pb-3">
+            <h1 className="text-xl font-bold text-slate-900">
+              รายงานสรุปคำร้องขอดูภาพจากกล้องโทรทัศน์วงจรปิด (CCTV)
+            </h1>
+            <p className="text-sm text-slate-700 mt-1">
+              เทศบาลนครหัวหิน • รายงานสรุปการให้บริการประชาชน
+            </p>
+            <p className="text-xs text-slate-600 mt-1">
+              ช่วงเวลารายงาน: {appliedRange ? `${formatThaiDate(appliedRange.from)} ถึง ${formatThaiDate(appliedRange.to)}` : `${timeRange} วันย้อนหลังจากวันที่พิมพ์`}
+              {' • '}จัดพิมพ์เมื่อ: {new Date().toLocaleString('th-TH')}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -452,47 +630,88 @@ export default function AdminReportsPage() {
               ))}
             </div>
           </>
-        ) : statistics ? (
+        ) : statistics && lpa ? (
           <>
-            {/* 1) แถว KPI */}
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <StatCard
-                title="จำนวนคำร้องทั้งหมด"
-                value={statistics.total_reports}
-                description={`ช่วงเวลารายงาน: ${timeRange} วันย้อนหลัง`}
-                icon={FileText}
-                tone="primary"
-                trend={{ value: deltaPct, label: 'เทียบเดือนก่อน' }}
-              />
-              <StatCard
-                title="คำร้องที่แล้วเสร็จ (อนุมัติ)"
-                value={statistics.status_breakdown.find((s) => s.status === 'เอกสารอนุมัติเรียบร้อย')?.count || 0}
-                description="ผลการอนุมัติสำเร็จ"
-                icon={CheckCircle}
-                tone="success"
-              />
-              <StatCard
-                title="คำร้องระหว่างดำเนินการ"
-                value={statistics.status_breakdown.find((s) => s.status === 'รอเอกสารอนุมัติ')?.count || 0}
-                description="อยู่ระหว่างพิจารณา/รอเอกสารเพิ่มเติม"
-                icon={Clock}
-                tone="warning"
-              />
-              <StatCard
-                title="คำร้องรอยื่นเอกสาร"
-                value={statistics.status_breakdown.find((s) => s.status === 'รอยื่นเอกสาร')?.count || 0}
-                description="รอประชาชนยื่นเอกสารเพิ่มเติม"
-                icon={FileText}
-                tone="warning"
-              />
-              <StatCard
-                title="คำร้องที่ถูกปฏิเสธ"
-                value={statistics.status_breakdown.find((s) => s.status === 'ปฏิเสธคำร้อง')?.count || 0}
-                description="ไม่ผ่านเงื่อนไข/เอกสารไม่ครบ"
-                icon={XCircle}
-                tone="danger"
-              />
-            </div>
+            {/* 1) ตัวชี้วัดประสิทธิภาพการให้บริการ — Primary KPIs */}
+            <section aria-labelledby="service-indicators" className="space-y-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-blue-700" aria-hidden />
+                <h2 id="service-indicators" className="text-base font-semibold text-[var(--foreground)]">
+                  ตัวชี้วัดประสิทธิภาพการให้บริการ
+                </h2>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <StatCard
+                  title="จำนวนคำร้องที่ให้บริการ"
+                  value={lpa.total}
+                  description={appliedRange ? `${formatThaiDate(appliedRange.from)} → ${formatThaiDate(appliedRange.to)}` : `${timeRange} วันย้อนหลัง`}
+                  icon={Users}
+                  tone="primary"
+                  trend={{ value: deltaPct, label: 'เทียบเดือนก่อน' }}
+                />
+                <StatCard
+                  title="อัตราอนุมัติสำเร็จ"
+                  value={`${formatThaiNumber(lpa.completionRate)}%`}
+                  description={`อนุมัติแล้ว ${formatThaiNumber(lpa.done)} / ${formatThaiNumber(lpa.total)} คำร้อง`}
+                  icon={Target}
+                  tone="success"
+                />
+                <StatCard
+                  title="ระยะเวลาดำเนินการเฉลี่ย"
+                  value={lpa.avgDays != null ? `${formatThaiNumber(Math.round(lpa.avgDays * 10) / 10)} วัน` : '—'}
+                  description="ตั้งแต่วันยื่นถึงวันอนุมัติ (SLA)"
+                  icon={Gauge}
+                  tone="primary"
+                />
+                <StatCard
+                  title="คำร้องคงค้างระหว่างดำเนินการ"
+                  value={lpa.inProgress}
+                  description={`${formatThaiNumber(lpa.backlogRate)}% ของคำร้องทั้งหมด`}
+                  icon={Clock}
+                  tone={lpa.backlogRate > 30 ? 'warning' : 'primary'}
+                />
+              </div>
+            </section>
+
+            {/* 2) แถว KPI สถานะคำร้อง — รายละเอียดสนับสนุน */}
+            <section aria-labelledby="status-overview" className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-slate-700" aria-hidden />
+                <h2 id="status-overview" className="text-base font-semibold text-[var(--foreground)]">
+                  ภาพรวมสถานะคำร้อง
+                </h2>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <StatCard
+                  title="คำร้องที่แล้วเสร็จ"
+                  value={lpa.done}
+                  description="ผลการอนุมัติสำเร็จ"
+                  icon={CheckCircle}
+                  tone="success"
+                />
+                <StatCard
+                  title="รอเอกสารอนุมัติ"
+                  value={lpa.waitDoc}
+                  description="อยู่ระหว่างพิจารณาของเจ้าหน้าที่"
+                  icon={Clock}
+                  tone="warning"
+                />
+                <StatCard
+                  title="รอยื่นเอกสาร"
+                  value={lpa.waitSubmit}
+                  description="รอประชาชนยื่นเอกสารเพิ่มเติม"
+                  icon={FileText}
+                  tone="warning"
+                />
+                <StatCard
+                  title="คำร้องที่ถูกปฏิเสธ"
+                  value={lpa.rejected}
+                  description={`${formatThaiNumber(lpa.rejectionRate)}% ของคำร้องทั้งหมด`}
+                  icon={XCircle}
+                  tone="danger"
+                />
+              </div>
+            </section>
 
             {/* 1.1) ตารางสรุปสถานะ (อ่านบนกระดาษ/ผู้บริหาร) */}
             <Card className="print:break-inside-avoid">
@@ -548,31 +767,27 @@ export default function AdminReportsPage() {
             {/* 2) กราฟภาพรวม */}
             <div className="grid gap-6 xl:grid-cols-3">
               <Card className="xl:col-span-1 print:break-inside-avoid">
-                <CardHeader>
+                <CardHeader className="pb-2">
                   <CardTitle className="text-lg">สัดส่วนคำร้องตามสถานะ</CardTitle>
                   <CardDescription>มุมมองสรุป ณ ช่วงเวลาที่เลือก</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
+                  <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={statistics.status_breakdown}
                           dataKey="count"
                           nameKey="status"
-                          innerRadius={60}
-                          outerRadius={90}
+                          innerRadius={56}
+                          outerRadius={86}
                           paddingAngle={2}
+                          stroke="#fff"
+                          strokeWidth={2}
                         >
-                          {statistics.status_breakdown.map((entry, idx) => {
-                            const color =
-                              entry.status === 'เอกสารอนุมัติเรียบร้อย' ? '#059669' :  // เขียวเข้ม
-                              entry.status === 'รอเอกสารอนุมัติ' ? '#1e40af' :     // น้ำเงินเข้ม
-                              entry.status === 'รอยื่นเอกสาร' ? '#7c3aed' :        // ม่วงเข้ม
-                              entry.status === 'ปฏิเสธคำร้อง' ? '#dc2626' :        // แดงเข้ม
-                              COLORS.primary
-                            return <Cell key={`cell-${idx}`} fill={color} />
-                          })}
+                          {statistics.status_breakdown.map((entry, idx) => (
+                            <Cell key={`cell-${idx}`} fill={STATUS_COLOR_MAP[entry.status] ?? COLORS.primary} />
+                          ))}
                         </Pie>
                         <ReTooltip
                           formatter={(v, _n, d) => [
@@ -583,6 +798,26 @@ export default function AdminReportsPage() {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
+
+                  {/* Legend แบบ list — ใช้สีเดียวกับ pie + ป้องกันการพึ่งสีอย่างเดียว */}
+                  <ul className="mt-3 grid grid-cols-1 gap-1.5 text-xs">
+                    {statistics.status_breakdown.map((s) => (
+                      <li key={s.status} className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 hover:bg-muted/50">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                            style={{ backgroundColor: STATUS_COLOR_MAP[s.status] ?? COLORS.primary }}
+                            aria-hidden
+                          />
+                          <span className="truncate text-slate-700">{s.status}</span>
+                        </div>
+                        <span className="tabular-nums font-semibold text-slate-900">
+                          {formatThaiNumber(s.count)}
+                          <span className="ml-1 text-slate-500 font-normal">({formatThaiNumber(s.percentage)}%)</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
 
@@ -596,7 +831,7 @@ export default function AdminReportsPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={statistics.monthly_trend.map((m) => ({ name: monthLabel(m.month, m.year), count: m.count }))}
-                        margin={{ left: 8, right: 8 }}
+                        margin={{ left: 8, right: 12, top: 8, bottom: 8 }}
                       >
                         <defs>
                           <linearGradient id="areaPrimary" x1="0" y1="0" x2="0" y2="1">
@@ -605,13 +840,29 @@ export default function AdminReportsPage() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} />
-                        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                        <YAxis allowDecimals={false} width={40} tickFormatter={(v) => `${v}`} />
-                        <ReTooltip formatter={(v) => formatThaiNumber(Number(v))} />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 11 }}
+                          interval="preserveStartEnd"
+                          minTickGap={16}
+                        />
+                        <YAxis
+                          allowDecimals={false}
+                          width={40}
+                          tick={{ fontSize: 11 }}
+                          tickFormatter={(v) => formatThaiNumber(Number(v))}
+                        />
+                        <ReTooltip
+                          formatter={(v) => [formatThaiNumber(Number(v)), 'จำนวนคำร้อง']}
+                          labelFormatter={(label) => `เดือน ${String(label)}`}
+                        />
                         <Area type="monotone" dataKey="count" stroke="#3b82f6" fill="url(#areaPrimary)" strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
+                  <p className="mt-2 text-[11px] text-[var(--muted-foreground)]">
+                    หมายเหตุ: แสดงเดือนเป็นรูปแบบไทย (เช่น ม.ค. 2569)
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -619,91 +870,171 @@ export default function AdminReportsPage() {
             {/* 3) หมวดหมู่เหตุ/สถานที่ยอดนิยม */}
             <div className="grid gap-6 xl:grid-cols-2">
               <Card className="print:break-inside-avoid">
-                <CardHeader>
+                <CardHeader className="pb-2">
                   <CardTitle className="text-lg">หมวดหมู่เหตุการณ์ที่ถูกร้องขอบ่อย</CardTitle>
                   <CardDescription>ใช้วางแผนมาตรการเชิงป้องกัน/จัดสรรทรัพยากร</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={statistics.category_breakdown.map((c) => ({ name: c.category_name, value: c.count }))}
-                        margin={{ left: 16, right: 8 }}
-                      >
-                        <defs>
-                          <linearGradient id="barPurple" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.4} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} />
-                        <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} height={50} />
-                        <YAxis allowDecimals={false} width={40} tickFormatter={(v) => `${v}`} />
-                        <ReTooltip formatter={(v) => formatThaiNumber(Number(v))} />
-                        <Bar dataKey="value" fill="url(#barPurple)" radius={[6, 6, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  {(() => {
+                    const data = statistics.category_breakdown.slice(0, 8).map((c) => ({
+                      name: c.category_name || 'ไม่ระบุ',
+                      value: c.count,
+                      percentage: c.percentage,
+                    }))
+                    const maxVal = data[0]?.value || 1
+                    const totalCat = data.reduce((sum, d) => sum + d.value, 0)
+                    return (
+                      <>
+                        {/* Desktop/Tablet: horizontal bar — รองรับชื่อหมวดหมู่ยาวได้เต็ม */}
+                        <div className="hidden md:block" style={{ height: Math.max(240, data.length * 38) }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              layout="vertical"
+                              data={data}
+                              margin={{ left: 8, right: 24, top: 8, bottom: 8 }}
+                            >
+                              <defs>
+                                <linearGradient id="barPurple" x1="0" y1="0" x2="1" y2="0">
+                                  <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.85} />
+                                  <stop offset="100%" stopColor="#a78bfa" stopOpacity={0.55} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} horizontal={false} />
+                              <XAxis
+                                type="number"
+                                allowDecimals={false}
+                                tick={{ fontSize: 11 }}
+                                tickFormatter={(v) => formatThaiNumber(Number(v))}
+                              />
+                              <YAxis
+                                type="category"
+                                dataKey="name"
+                                width={200}
+                                tick={(props: { x: number; y: number; payload: { value: string } }) => {
+                                  const { x, y, payload } = props
+                                  const text = String(payload.value || '')
+                                  const truncated = text.length > 26 ? `${text.slice(0, 24)}…` : text
+                                  return (
+                                    <g transform={`translate(${x},${y})`}>
+                                      <title>{text}</title>
+                                      <text x={-6} y={0} dy={4} textAnchor="end" fill="#475569" fontSize={11}>
+                                        {truncated}
+                                      </text>
+                                    </g>
+                                  )
+                                }}
+                                interval={0}
+                              />
+                              <ReTooltip
+                                formatter={(v, _n, p) => [
+                                  `${formatThaiNumber(Number(v))} (${formatThaiNumber(p?.payload?.percentage ?? 0)}%)`,
+                                  'จำนวนคำร้อง',
+                                ]}
+                                labelFormatter={(label) => String(label)}
+                              />
+                              <Bar dataKey="value" fill="url(#barPurple)" radius={[0, 6, 6, 0]} barSize={20} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        {/* Mobile: list อันดับ — ชื่อหมวดหมู่แสดงครบ wrap ได้ */}
+                        <ol className="md:hidden space-y-2 print:hidden">
+                          {data.map((c, idx) => {
+                            const pct = totalCat > 0 ? Math.round((c.value / maxVal) * 100) : 0
+                            return (
+                              <li key={`${c.name}-${idx}`} className="rounded-lg border bg-card p-3">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex items-start gap-2 min-w-0">
+                                    <span
+                                      className="mt-0.5 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                                      style={{ backgroundColor: '#7c3aed' }}
+                                    >
+                                      {idx + 1}
+                                    </span>
+                                    <span className="text-sm text-slate-800 break-words">{c.name}</span>
+                                  </div>
+                                  <span className="text-sm font-semibold tabular-nums text-slate-900 flex-shrink-0">
+                                    {formatThaiNumber(c.value)}
+                                    <span className="ml-1 text-xs font-normal text-slate-500">
+                                      ({formatThaiNumber(c.percentage)}%)
+                                    </span>
+                                  </span>
+                                </div>
+                                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                  <div className="h-full rounded-full bg-gradient-to-r from-violet-600 to-violet-300" style={{ width: `${pct}%` }} />
+                                </div>
+                              </li>
+                            )
+                          })}
+                        </ol>
+
+                        {/* Print: ตารางครบรายการ */}
+                        <table className="hidden print:table w-full text-xs mt-3 border-t">
+                          <thead className="bg-slate-100">
+                            <tr>
+                              <th className="px-2 py-1 text-left w-10">#</th>
+                              <th className="px-2 py-1 text-left">หมวดหมู่เหตุการณ์</th>
+                              <th className="px-2 py-1 text-right w-24">จำนวน</th>
+                              <th className="px-2 py-1 text-right w-20">ร้อยละ</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {data.map((c, idx) => (
+                              <tr key={`prow-${idx}`} className="border-b">
+                                <td className="px-2 py-1 align-top">{idx + 1}</td>
+                                <td className="px-2 py-1 align-top">{c.name}</td>
+                                <td className="px-2 py-1 text-right align-top tabular-nums">{formatThaiNumber(c.value)}</td>
+                                <td className="px-2 py-1 text-right align-top tabular-nums">{formatThaiNumber(c.percentage)}%</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </>
+                    )
+                  })()}
                 </CardContent>
               </Card>
 
               <Card className="print:break-inside-avoid">
-                <CardHeader>
-                  <CardTitle className="text-lg">พื้นที่/จุดเกิดเหตุที่ถูกร้องขอบ่อย</CardTitle>
-                  <CardDescription>Top 10 เพื่อการจัดลำดับความสำคัญซ่อมบำรุง/ติดตั้งเพิ่ม</CardDescription>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-orange-600" aria-hidden />
+                    พื้นที่/จุดเกิดเหตุที่ถูกร้องขอบ่อย
+                  </CardTitle>
+                  <CardDescription>Top 10 เพื่อการจัดลำดับความสำคัญซ่อมบำรุง/ติดตั้งเพิ่ม (วางแนวนอนเพื่อแสดงชื่อยาวเต็ม)</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-96">
+                  {/* แนวนอน — รองรับชื่อสถานที่ยาว ๆ โดยไม่ต้องตัดข้อความ */}
+                  <div className="hidden md:block" style={{ height: Math.max(280, Math.min(10, statistics.top_locations.length) * 36) }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
-                        data={statistics.top_locations.slice(0, 10).map((t, index) => {
-                          const originalName = t.location
-                          // จัดการชื่อยาวสำหรับ display
-                          let displayName = originalName
-                          if (originalName.length > 18) {
-                            // หาจุดตัดที่ดีที่สุด
-                            let breakPoint = 15
-                            for (let i = 15; i > 8; i--) {
-                              if (originalName[i] === ' ') {
-                                breakPoint = i
-                                break
-                              }
-                            }
-                            displayName = originalName.substring(0, breakPoint) + '...'
-                          }
-
-                          return {
-                            name: displayName,
-                            fullName: originalName,
-                            value: t.count,
-                            index: index,
-                            rank: index + 1
-                          }
-                        })}
-                        margin={{ left: 12, right: 12, top: 20, bottom: 80 }}
+                        layout="vertical"
+                        data={statistics.top_locations.slice(0, 10).map((t, index) => ({
+                          name: t.location || 'ไม่ระบุ',
+                          value: t.count,
+                          rank: index + 1,
+                        }))}
+                        margin={{ left: 8, right: 24, top: 8, bottom: 8 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} horizontal={false} />
                         <XAxis
-                          dataKey="name"
-                          tick={{ fontSize: 10 }}
-                          interval={0}
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                        />
-                        <YAxis
+                          type="number"
                           allowDecimals={false}
                           tick={{ fontSize: 12 }}
                           tickFormatter={(v) => formatThaiNumber(v)}
                         />
-                        <ReTooltip
-                          formatter={(v, _n, props) => [
-                            formatThaiNumber(Number(v)),
-                            props?.payload?.fullName || 'ไม่ระบุ'
-                          ]}
-                          labelFormatter={() => ''}
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          tick={{ fontSize: 12 }}
+                          width={220}
+                          interval={0}
                         />
-                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                        <ReTooltip
+                          formatter={(v) => formatThaiNumber(Number(v))}
+                          labelFormatter={(name) => String(name)}
+                        />
+                        <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={22}>
                           {statistics.top_locations.slice(0, 10).map((_, index) => (
                             <Cell key={`cell-${index}`} fill={LOCATION_BAR_COLORS[index] || '#ea580c'} />
                           ))}
@@ -711,6 +1042,56 @@ export default function AdminReportsPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+
+                  {/* บนมือถือ — แสดงเป็นรายการอันดับ อ่านง่ายกว่ากราฟ */}
+                  <ol className="md:hidden space-y-2 print:hidden">
+                    {statistics.top_locations.slice(0, 10).map((t, idx) => {
+                      const max = statistics.top_locations[0]?.count || 1
+                      const pct = Math.round((t.count / max) * 100)
+                      return (
+                        <li key={`${t.location}-${idx}`} className="rounded-lg border bg-card p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-2 min-w-0">
+                              <span
+                                className="mt-0.5 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                                style={{ backgroundColor: LOCATION_BAR_COLORS[idx] || '#ea580c' }}
+                              >
+                                {idx + 1}
+                              </span>
+                              <span className="text-sm text-slate-800 break-words">{t.location || 'ไม่ระบุ'}</span>
+                            </div>
+                            <span className="text-sm font-semibold tabular-nums text-slate-900">{formatThaiNumber(t.count)}</span>
+                          </div>
+                          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${pct}%`, backgroundColor: LOCATION_BAR_COLORS[idx] || '#ea580c' }}
+                            />
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ol>
+
+                  {/* รายการเต็มรูปแบบสำหรับการพิมพ์ — รับประกันชื่อสถานที่แสดงครบ */}
+                  <table className="hidden print:table w-full text-xs mt-3 border-t">
+                    <thead className="bg-slate-100">
+                      <tr>
+                        <th className="px-2 py-1 text-left w-10">#</th>
+                        <th className="px-2 py-1 text-left">พื้นที่/จุดเกิดเหตุ</th>
+                        <th className="px-2 py-1 text-right w-24">จำนวน (เรื่อง)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statistics.top_locations.slice(0, 10).map((t, idx) => (
+                        <tr key={`row-${idx}`} className="border-b">
+                          <td className="px-2 py-1 align-top">{idx + 1}</td>
+                          <td className="px-2 py-1 align-top">{t.location || 'ไม่ระบุ'}</td>
+                          <td className="px-2 py-1 text-right align-top">{formatThaiNumber(t.count)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </CardContent>
               </Card>
             </div>
@@ -757,18 +1138,119 @@ export default function AdminReportsPage() {
               </Card>
             )}
 
-            {/* 5) หมายเหตุราชการ */}
-            <Card className="print:break-inside-avoid">
-              <CardHeader>
-                <CardTitle className="text-base">ข้อเสนอแนะต่อผู้บริหาร</CardTitle>
-                <CardDescription>หลักเกณฑ์เพื่อการตัดสินใจและติดตามปรับปรุงบริการ</CardDescription>
+            {/* 5) ตารางสรุปข้อมูลผลการให้บริการ — Print-ready data table */}
+            <Card className="print:break-before-page print:break-inside-avoid">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <ShieldCheck className="h-5 w-5 text-blue-700" aria-hidden />
+                  ตารางสรุปผลการให้บริการ
+                </CardTitle>
+                <CardDescription>
+                  ข้อมูลที่จัดเรียงตามตัวชี้วัดประสิทธิภาพ — ใช้แนบประกอบรายงานหรือคัดลอกไปใช้ในเอกสารราชการได้
+                </CardDescription>
               </CardHeader>
-              <CardContent className="text-sm text-[var(--muted-foreground)] space-y-2">
-                <p>• หากสัดส่วน “รอเอกสารอนุมัติ” &gt; 30% ต่อเนื่อง ควรทบทวนรายการเอกสาร/ขั้นตอนที่ใช้เวลา</p>
-                <p>• จุดที่ถูกร้องขอบ่อยควรพิจารณาเพิ่ม/ย้ายมุมกล้อง หรือซ่อมบำรุงอุปกรณ์เพื่อเพิ่มคุณภาพหลักฐาน</p>
-                <p>• ติดตามค่า SLA รายเดือนอย่างน้อย P90 เพื่อกำหนดเป้าหมายและสื่อสารต่อสาธารณะได้ชัดเจน</p>
+              <CardContent>
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/60">
+                      <tr>
+                        <th className="px-3 py-2 text-left w-1/2">รายการตัวชี้วัด</th>
+                        <th className="px-3 py-2 text-right">ค่าที่วัดได้</th>
+                        <th className="px-3 py-2 text-left">หมายเหตุ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="[&>tr:nth-child(odd)]:bg-muted/20">
+                      <tr>
+                        <td className="px-3 py-2">ช่วงเวลาที่ใช้ในการประเมิน</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-medium">
+                          {appliedRange ? `${formatThaiDate(appliedRange.from)} → ${formatThaiDate(appliedRange.to)}` : `${timeRange} วันย้อนหลัง`}
+                        </td>
+                        <td className="px-3 py-2 text-[var(--muted-foreground)]">นับจากวันที่บันทึกคำร้อง</td>
+                      </tr>
+                      <tr>
+                        <td className="px-3 py-2">จำนวนคำร้องที่ให้บริการประชาชน</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold">{formatThaiNumber(lpa.total)} คำร้อง</td>
+                        <td className="px-3 py-2 text-[var(--muted-foreground)]">รวมทุกสถานะในช่วงเวลา</td>
+                      </tr>
+                      <tr>
+                        <td className="px-3 py-2">อัตราการอนุมัติสำเร็จ</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-green-800">
+                          {formatThaiNumber(lpa.completionRate)}%
+                        </td>
+                        <td className="px-3 py-2 text-[var(--muted-foreground)]">
+                          อนุมัติ {formatThaiNumber(lpa.done)} / {formatThaiNumber(lpa.total)} คำร้อง
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-3 py-2">อัตราการปฏิเสธ</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-red-800">
+                          {formatThaiNumber(lpa.rejectionRate)}%
+                        </td>
+                        <td className="px-3 py-2 text-[var(--muted-foreground)]">
+                          ปฏิเสธ {formatThaiNumber(lpa.rejected)} คำร้อง
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-3 py-2">ระยะเวลาดำเนินการเฉลี่ย (SLA)</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold">
+                          {lpa.avgDays != null ? `${formatThaiNumber(Math.round(lpa.avgDays * 10) / 10)} วัน` : 'ไม่มีข้อมูล'}
+                        </td>
+                        <td className="px-3 py-2 text-[var(--muted-foreground)]">นับจากวันยื่นถึงวันอนุมัติ</td>
+                      </tr>
+                      {typeof statistics.processing_time_doc_avg_minutes === 'number' && (
+                        <tr>
+                          <td className="px-3 py-2">เวลาตรวจเอกสาร → อนุมัติ (เฉลี่ย)</td>
+                          <td className="px-3 py-2 text-right tabular-nums font-semibold">
+                            {formatDurationThaiFromMinutes(statistics.processing_time_doc_avg_minutes!)}
+                          </td>
+                          <td className="px-3 py-2 text-[var(--muted-foreground)]">
+                            ประมาณ {formatThaiNumber(Math.round(statistics.processing_time_doc_avg_minutes!))} นาที
+                          </td>
+                        </tr>
+                      )}
+                      <tr>
+                        <td className="px-3 py-2">คำร้องคงค้างระหว่างดำเนินการ</td>
+                        <td className="px-3 py-2 text-right tabular-nums font-semibold text-amber-800">
+                          {formatThaiNumber(lpa.inProgress)} คำร้อง
+                        </td>
+                        <td className="px-3 py-2 text-[var(--muted-foreground)]">
+                          รอเอกสาร {formatThaiNumber(lpa.waitDoc)} • รอยื่น {formatThaiNumber(lpa.waitSubmit)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
             </Card>
+
+            {/* 6) ข้อเสนอแนะต่อผู้บริหาร */}
+            <Card className="print:break-inside-avoid">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">ข้อเสนอแนะต่อผู้บริหาร</CardTitle>
+                <CardDescription>เกณฑ์อ้างอิงเพื่อการตัดสินใจและพัฒนาคุณภาพการให้บริการ</CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-slate-700 space-y-2">
+                <p>• <span className="font-medium">ประสิทธิผล:</span> เป้าหมายอัตราอนุมัติสำเร็จ ≥ 80% — ปัจจุบันอยู่ที่ {formatThaiNumber(lpa.completionRate)}% {lpa.completionRate >= 80 ? '(ผ่านเกณฑ์)' : '(ควรปรับปรุง)'}</p>
+                <p>• <span className="font-medium">ระยะเวลา:</span> SLA ที่เหมาะสมคือไม่เกิน 7 วันทำการ {lpa.avgDays != null && lpa.avgDays > 7 ? '— ควรลดขั้นตอนที่ใช้เวลา' : ''}</p>
+                <p>• <span className="font-medium">ความโปร่งใส:</span> ควรเปิดเผยสถิติการให้บริการต่อสาธารณะอย่างน้อยรายไตรมาสเพื่อความน่าเชื่อถือ</p>
+                <p>• <span className="font-medium">การพัฒนา:</span> จุดที่ถูกร้องขอบ่อยควรพิจารณาเพิ่ม/ย้ายมุมกล้อง หรือซ่อมบำรุงอุปกรณ์เพื่อเพิ่มคุณภาพหลักฐาน</p>
+                <p>• <span className="font-medium">การมีส่วนร่วม:</span> หากสัดส่วน &quot;รอยื่นเอกสาร&quot; สูง ให้ทบทวนการสื่อสารและความชัดเจนของรายการเอกสารที่ประชาชนต้องเตรียม</p>
+              </CardContent>
+            </Card>
+
+            {/* ลายเซ็นรับรองสำหรับการพิมพ์ */}
+            <div className="hidden print:block pt-8">
+              <div className="grid grid-cols-2 gap-12 text-sm">
+                <div className="text-center">
+                  <div className="border-t border-slate-900 pt-2 mt-16">ผู้จัดทำรายงาน</div>
+                  <div className="mt-1 text-[var(--muted-foreground)]">(ลงชื่อ) ............................................</div>
+                </div>
+                <div className="text-center">
+                  <div className="border-t border-slate-900 pt-2 mt-16">ผู้บริหาร</div>
+                  <div className="mt-1 text-[var(--muted-foreground)]">(ลงชื่อ) ............................................</div>
+                </div>
+              </div>
+            </div>
           </>
         ) : (
           <Card>

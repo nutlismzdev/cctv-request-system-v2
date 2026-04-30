@@ -71,12 +71,7 @@ function buildHeaders(overrides: Record<string, string | number> = {}): HeadersI
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Content-Type-Options': 'nosniff',
 
-    // ถ้า same-origin จริงๆ เอา 3 บรรทัด CORS ออกได้
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-    'Access-Control-Allow-Headers': 'Range, Accept-Ranges, Content-Type, Content-Range',
-
-    'Cross-Origin-Resource-Policy': 'cross-origin',
+    'Cross-Origin-Resource-Policy': 'same-origin',
     ...Object.fromEntries(Object.entries(overrides).map(([k, v]) => [k, String(v)])),
   }
 }
@@ -183,9 +178,10 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ path: s
 }
 
 /** HEAD — เช่นเดียวกัน ใช้ params: Promise แล้ว await */
-export async function HEAD(_request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+export async function HEAD(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   try {
     const { path: pathSegments } = await ctx.params
+
     const { filePath, size, mtimeMs, filename } = await resolveFilePath(pathSegments)
     const contentType = getContentType(filename)
     const etag = createETag(size, mtimeMs)

@@ -12,10 +12,13 @@ export interface LiffSDK {
   init(options: { liffId: string }): Promise<void>
   isLoggedIn(): boolean
   isInClient(): boolean
-  login(): void
+  login(options?: { redirectUri?: string }): void
   getFriendship(): Promise<LiffFriendship>
   getDecodedIDToken(): LiffDecodedIdToken
   getProfile(): Promise<LiffUserProfile>
+  getOS?(): string
+  getVersion?(): string
+  getLineVersion?(): string | null
   openWindow?(args: { url: string; external?: boolean }): void
   closeWindow(): void
 }

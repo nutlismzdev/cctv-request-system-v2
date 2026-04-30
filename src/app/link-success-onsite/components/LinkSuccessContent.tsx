@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { CheckCircle2, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,6 +10,7 @@ import { THEME_COLORS } from '@/lib/theme-colors'
 import type { LiffSDK } from '@/types/liff'
 
 export function LinkSuccessContent() {
+  const tSuccess = useTranslations('LiffLink.success')
   const searchParams = useSearchParams()
   const status = searchParams.get('status')
 
@@ -86,31 +88,28 @@ export function LinkSuccessContent() {
 
             <div>
               <h1 className="text-2xl font-bold text-green-800 mb-2">
-                {status === 'already_linked' ? 'คำร้องนี้เชื่อมต่อแล้ว' : 'เชื่อมต่อสำเร็จ!'}
+                {status === 'already_linked' ? tSuccess('alreadyLinkedTitle') : tSuccess('title')}
               </h1>
               <p className="text-gray-600">
-                {status === 'already_linked'
-                  ? `คำร้องของคุณ ได้ถูกเชื่อมโยงกับ LINE ของคุณอยู่แล้ว`
-                  : `คำร้องของคุณ ได้ถูกเชื่อมโยงกับ LINE ของคุณเรียบร้อยแล้ว`}
+                {status === 'already_linked' ? tSuccess('alreadyLinkedDescription') : tSuccess('description')}
               </p>
             </div>
 
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <h3 className="font-semibold text-green-800 mb-2">คุณจะได้รับแจ้งเตือนเมื่อ:</h3>
+              <h3 className="font-semibold text-green-800 mb-2">{tSuccess('notifyTitle')}</h3>
               <ul className="text-sm text-green-700 space-y-1 text-left">
-                <li>• สถานะคำร้องมีการเปลี่ยนแปลง</li>
-                <li>• เอกสารพร้อมให้ดาวน์โหลด</li>
-              
+                <li>• {tSuccess('notifyItem1')}</li>
+                <li>• {tSuccess('notifyItem2')}</li>
               </ul>
             </div>
 
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <MessageCircle className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-800">LINE OA จะส่งข้อความยืนยัน</span>
+                <span className="font-medium text-blue-800">{tSuccess('lineConfirmTitle')}</span>
               </div>
               <p className="text-sm text-blue-700">
-                ตรวจสอบข้อความใน LINE Official Account ของเรา
+                {tSuccess('lineConfirmHint')}
               </p>
             </div>
 
@@ -119,11 +118,11 @@ export function LinkSuccessContent() {
                 onClick={handleClose}
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
-                ปิดหน้านี้
+                {tSuccess('close')}
               </Button>
 
               {countdown > 0 && (
-                <p className="text-sm text-gray-500">หน้านี้จะปิดอัตโนมัติใน {countdown} วินาที</p>
+                <p className="text-sm text-gray-500">{tSuccess('autoCloseHint', { seconds: countdown })}</p>
               )}
             </div>
           </CardContent>

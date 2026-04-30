@@ -6,7 +6,36 @@ import createNextIntlPlugin from 'next-intl/plugin'
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 const nextConfig: NextConfig = {
-  /* ใส่ options อื่นๆ ได้ตามต้องการ */
+  experimental: {
+    // ตัด barrel imports ของ libraries ที่ใช้ทั่วโปรเจกต์ — ลด cold start 200-800ms,
+    // ลดเวลา dev boot 15-70%, build เร็วขึ้น ~28%
+    optimizePackageImports: [
+      'lucide-react',
+      'recharts',
+      'date-fns',
+      'sonner',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-label',
+      '@radix-ui/react-navigation-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-progress',
+      '@radix-ui/react-select',
+      '@radix-ui/react-separator',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-switch',
+      '@radix-ui/react-tabs',
+    ],
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'profile.line-scdn.net',
+      },
+    ],
+  },
 
   async headers() {
     return [
@@ -17,20 +46,6 @@ const nextConfig: NextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        // เสิร์ฟไฟล์ผ่าน API routes
-        source: '/api/files/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, must-revalidate',
-          },
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
           },
         ],
       },

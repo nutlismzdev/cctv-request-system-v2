@@ -105,7 +105,7 @@ function SuccessContent() {
                     ) : (
                       <Button
                         className={`w-full h-10 text-sm font-semibold ${THEME_COLORS.primary} hover:${THEME_COLORS.primaryHover} ${THEME_COLORS.primaryForeground} shadow-md`}
-                        onClick={() => window.open('https://lin.ee/Hg6Rig1', '_blank')}
+                        onClick={() => window.open('https://line.me/R/ti/p/@513dlddc', '_blank')}
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
                         {t('addLineFriend')}
@@ -220,7 +220,7 @@ function SuccessContent() {
                     ) : (
                       <Button
                         className={`w-full h-11 text-sm font-semibold ${THEME_COLORS.primary} hover:${THEME_COLORS.primaryHover} ${THEME_COLORS.primaryForeground} shadow-md`}
-                        onClick={() => window.open('https://lin.ee/Hg6Rig1', '_blank')}
+                        onClick={() => window.open('https://line.me/R/ti/p/@513dlddc', '_blank')}
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
                         {t('addLineFriend')}

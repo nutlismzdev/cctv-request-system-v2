@@ -8,6 +8,8 @@ import { accessSync } from 'fs'
 import path, { join } from 'path'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPool } from '@/lib/db'
+import { validateUploadedFile, MAX_FILES_PER_REQUEST } from '@/lib/file-validation'
+import { getAdminFromRequest, requireAdmin } from '@/lib/auth-server'
 
 // ===================== Types for DB rows ======================
 // แถวที่อ่าน "ดิบ" จากฐานข้อมูล (สืบทอด RowDataPacket ได้)
@@ -45,6 +47,15 @@ interface RequestDocumentRow {
 // ==================== File upload utilities ===================
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'attachments')
 
+async function validateReportTrackingToken(reportId: number, trackingToken: FormDataEntryValue | null): Promise<boolean> {
+  if (typeof trackingToken !== 'string' || !trackingToken.trim()) return false
+  const [rows] = await getPool().execute<RowDataPacket[]>(
+    'SELECT report_id FROM reports WHERE report_id = ? AND tracking_token = ? LIMIT 1',
+    [reportId, trackingToken.trim()]
+  )
+  return rows.length > 0
+}
+
 async function ensureUploadDir() {
   try {
     await mkdir(UPLOAD_DIR, { recursive: true })
@@ -61,32 +72,19 @@ function generateUniqueFilename(originalName: string): string {
   return `${timestamp}-${random}${ext}`
 }
 
-function validateFile(file: File): { valid: boolean; reason?: string } {
-  const allowedTypes = [
-    'application/pdf',
-    'image/png',
-    'image/jpeg',
-    'image/jpg',
-    'image/heic',
-  ]
-  const allowedExtensions = /\.(pdf|png|jpg|jpeg|heic)$/i
-  const maxSize = 10 * 1024 * 1024 // 10MB
-
-  if (file.size > maxSize) return { valid: false, reason: 'ไฟล์มีขนาดใหญ่เกิน 10MB' }
-  if (!allowedTypes.includes(file.type) && !allowedExtensions.test(file.name)) {
-    return { valid: false, reason: 'ประเภทไฟล์ไม่ถูกต้อง' }
-  }
-  return { valid: true }
-}
+// Magic-byte validation lives in @/lib/file-validation; attachments accept image + pdf only.
 
 // ===================== GET /attachments =======================
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   let reportId = 0
 
   try {
+    const guard = await requireAdmin(req)
+    if ('response' in guard) return guard.response
+
     const { id } = await params
     reportId = parseInt(id, 10)
     if (isNaN(reportId)) {
@@ -131,11 +129,9 @@ export async function GET(
           })()
         : true // ใน production ไม่เช็คไฟล์เพื่อประสิทธิภาพ
 
-      console.log(`Attachment ${r.doc_id}: DB path "${r.file_path}" -> URL "/uploads/attachments/${cleanFilePath}" (exists: ${fileExists})`)
-
-      // Debug: แสดง URL เต็ม
-      const fullUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:4000'}/uploads/attachments/${cleanFilePath}`
-      console.log(`Full URL for ${r.doc_id}: ${fullUrl}`)
+      if (!fileExists) {
+        console.warn(`Attachment file missing for document ${r.doc_id}`)
+      }
 
       return {
         id: r.doc_id,
@@ -210,6 +206,11 @@ export async function POST(
     }
 
     const formData = await req.formData()
+    const isAdmin = Boolean(await getAdminFromRequest(req))
+    const hasValidTrackingToken = await validateReportTrackingToken(reportId, formData.get('tracking_token'))
+    if (!isAdmin && !hasValidTrackingToken) {
+      return NextResponse.json({ success: false, message: 'ไม่ได้รับอนุญาต' }, { status: 401 })
+    }
 
     files = formData.getAll('files') as File[]
     const category = (formData.get('category') as string) || 'idcopy'
@@ -228,6 +229,12 @@ export async function POST(
     }
     if (!files || files.length === 0) {
       return NextResponse.json({ success: false, message: 'ไม่มีไฟล์ที่อัปโหลด' }, { status: 400 })
+    }
+    if (files.length > MAX_FILES_PER_REQUEST) {
+      return NextResponse.json(
+        { success: false, message: `อัปโหลดได้สูงสุด ${MAX_FILES_PER_REQUEST} ไฟล์ต่อครั้ง` },
+        { status: 400 }
+      )
     }
 
     await ensureUploadDir()
@@ -251,7 +258,7 @@ export async function POST(
     const now = new Date().toISOString()
 
     const preparedFiles = await Promise.all(files.map(async (file, index) => {
-      const validation = validateFile(file)
+      const validation = await validateUploadedFile(file, ['image', 'pdf'])
       if (!validation.valid) {
         console.warn(`Skipping file ${file.name}: ${validation.reason}`)
         return null
@@ -340,6 +347,9 @@ export async function DELETE(
   let attachmentId = ''
 
   try {
+    const guard = await requireAdmin(req)
+    if ('response' in guard) return guard.response
+
     const { id } = await params
     reportId = parseInt(id, 10)
     if (isNaN(reportId)) {

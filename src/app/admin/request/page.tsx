@@ -20,7 +20,7 @@ function getLocalizedPrefix(prefix: string, language?: string): string {
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { isAuthenticated } from '@/lib/auth'
+import { checkAuth as verifyAuth } from '@/lib/auth'
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -34,7 +34,15 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  FileText, Search, RefreshCw, ChevronLeft, ChevronRight, Edit, Trash2, Calendar, User, Phone, Copy, MessageSquare
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  FileText, Search, RefreshCw, ChevronLeft, ChevronRight, Edit, Trash2, Calendar, User, Phone, Copy, MessageSquare, AlertCircle, Loader2
 } from 'lucide-react'
 import { getStatusStyle } from '@/lib/theme-colors'
 
@@ -108,6 +116,15 @@ interface ReportsResponse {
   }
 }
 
+/* -------------------- Quick-pick rejection reasons -------------------- */
+const QUICK_REJECT_REASONS = [
+  'เอกสารไม่ครบถ้วน',
+  'ภาพย้อนหลังเกิน 30 วัน',
+  'ผู้ร้องไม่ใช่ผู้เสียหาย',
+  'ไม่พบกล้องในพื้นที่ที่ระบุ',
+  'ข้อมูลไม่เพียงพอต่อการพิจารณา',
+] as const
+
 /* -------------------- Utilities: Thai date (พ.ศ.) -------------------- */
 const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']
 
@@ -179,6 +196,10 @@ export default function AdminRequestPage() {
   // For inline update status
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
 
+  // Reject-reason dialog
+  const [rejectDialog, setRejectDialog] = useState<{ reportId: number; reason: string } | null>(null)
+  const [rejectSubmitting, setRejectSubmitting] = useState(false)
+
   // Realtime updates
   const lastReportCountRef = useRef(0)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -233,15 +254,16 @@ export default function AdminRequestPage() {
 
   // Check authentication first
   useEffect(() => {
-    const checkAuth = () => {
-      if (!isAuthenticated()) {
+    let cancelled = false
+    verifyAuth().then(user => {
+      if (cancelled) return
+      if (!user) {
         router.push('/login')
         return
       }
       setAuthChecked(true)
-    }
-
-    checkAuth()
+    })
+    return () => { cancelled = true }
   }, [router])
 
   // Note: search and searchInput are kept in sync manually in handleSearch
@@ -311,13 +333,18 @@ export default function AdminRequestPage() {
     router.push(`/admin/request/${reportId}/edit`)
   }
 
-  const handleStatusUpdate = async (reportId: number, newStatus: string) => {
+  const applyStatusUpdate = async (
+    reportId: number,
+    newStatus: string,
+    extra?: { rejection_reason?: string },
+  ) => {
     setUpdatingStatus(reportId)
     try {
+      const body: Record<string, unknown> = { status: newStatus, ...extra }
       const res = await fetch(`/api/reports/${reportId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
 
@@ -334,18 +361,46 @@ export default function AdminRequestPage() {
             setReports(prev => prev.map(r => (r.report_id === reportId ? { ...r, ...data.data } : r)))
           }
         } else {
-          // Fallback: อัปเดตเฉพาะ status
-          setReports(prev => prev.map(r => (r.report_id === reportId ? { ...r, status: newStatus } : r)))
+          // Fallback: อัปเดตเฉพาะ status (+ rejection_reason เมื่อปฏิเสธ)
+          setReports(prev => prev.map(r => (r.report_id === reportId
+            ? { ...r, status: newStatus, ...(extra?.rejection_reason !== undefined ? { rejection_reason: extra.rejection_reason } : {}) }
+            : r)))
         }
         toast.success('อัปเดตสถานะเรียบร้อยแล้ว')
-      } else {
-        toast.error(data.message || 'อัปเดตสถานะไม่สำเร็จ')
+        return true
       }
+      toast.error(data.message || 'อัปเดตสถานะไม่สำเร็จ')
+      return false
     } catch {
       toast.error('เกิดข้อผิดพลาดในการอัปเดตสถานะ')
+      return false
     } finally {
       setUpdatingStatus(null)
     }
+  }
+
+  const handleStatusUpdate = (reportId: number, newStatus: string) => {
+    if (newStatus === 'ปฏิเสธคำร้อง') {
+      const current = reports.find(r => r.report_id === reportId)
+      setRejectDialog({ reportId, reason: current?.rejection_reason ?? '' })
+      return
+    }
+    void applyStatusUpdate(reportId, newStatus)
+  }
+
+  const confirmReject = async () => {
+    if (!rejectDialog) return
+    const reason = rejectDialog.reason.trim()
+    if (!reason) {
+      toast.error('กรุณาระบุเหตุผลในการปฏิเสธ')
+      return
+    }
+    setRejectSubmitting(true)
+    const ok = await applyStatusUpdate(rejectDialog.reportId, 'ปฏิเสธคำร้อง', {
+      rejection_reason: reason,
+    })
+    setRejectSubmitting(false)
+    if (ok) setRejectDialog(null)
   }
 
   const handleDelete = async (reportId: number) => {
@@ -572,32 +627,44 @@ export default function AdminRequestPage() {
 
                     {/* สถานะ (จุดสี + Select พื้นหลังตามสถานะ) */}
                     <TableCell className="border border-[var(--border)] px-4 py-3.5 align-top">
-                      <div className="flex items-center justify-center gap-2">
-                        <span className={`h-2.5 w-2.5 rounded-full ${style.dot}`} />
-                        <Select
-                          value={r.status}
-                          onValueChange={(newStatus) => handleStatusUpdate(r.report_id, newStatus)}
-                          disabled={updatingStatus === r.report_id}
-                        >
-                          <SelectTrigger
-                            className={`h-8 w-44 text-xs font-medium border-2 ${style.bg} ${style.border} ${style.text}`}
-                            aria-label={`เปลี่ยนสถานะคำร้อง #${r.report_id}`}
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className={`h-2.5 w-2.5 rounded-full ${style.dot}`} />
+                          <Select
+                            value={r.status}
+                            onValueChange={(newStatus) => handleStatusUpdate(r.report_id, newStatus)}
+                            disabled={updatingStatus === r.report_id}
                           >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="รอดำเนินการ">รอดำเนินการ</SelectItem>
-                            <SelectItem value="รอยื่นเอกสาร">รอยื่นเอกสาร</SelectItem>
-                            <SelectItem value="รอเอกสารอนุมัติ">รอเอกสารอนุมัติ</SelectItem>
-                            <SelectItem value="เอกสารอนุมัติเรียบร้อย">อนุมัติแล้ว</SelectItem>
-                            <SelectItem value="ปฏิเสธคำร้อง">ปฏิเสธ</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {updatingStatus === r.report_id && (
-                          <div className="ml-1">
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-[var(--primary)] border-t-transparent" />
-                          </div>
-                        )}
+                            <SelectTrigger
+                              className={`h-8 w-44 text-xs font-medium border-2 ${style.bg} ${style.border} ${style.text}`}
+                              aria-label={`เปลี่ยนสถานะคำร้อง #${r.report_id}`}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="รอดำเนินการ">รอดำเนินการ</SelectItem>
+                              <SelectItem value="รอยื่นเอกสาร">รอยื่นเอกสาร</SelectItem>
+                              <SelectItem value="รอเอกสารอนุมัติ">รอเอกสารอนุมัติ</SelectItem>
+                              <SelectItem value="เอกสารอนุมัติเรียบร้อย">อนุมัติแล้ว</SelectItem>
+                              <SelectItem value="ปฏิเสธคำร้อง">ปฏิเสธ</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {updatingStatus === r.report_id && (
+                            <div className="ml-1">
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-[var(--primary)] border-t-transparent" />
+                            </div>
+                          )}
+                        </div>
+                        {r.status === 'ปฏิเสธคำร้อง' && r.rejection_reason ? (
+                          <button
+                            type="button"
+                            onClick={() => setRejectDialog({ reportId: r.report_id, reason: r.rejection_reason ?? '' })}
+                            className="w-full max-w-[14rem] rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-left text-xs text-red-800 hover:bg-red-100 transition"
+                            title="คลิกเพื่อแก้ไขเหตุผล"
+                          >
+                            <span className="font-medium">เหตุผล:</span> {r.rejection_reason}
+                          </button>
+                        ) : null}
                       </div>
                     </TableCell>
 
@@ -713,29 +780,40 @@ export default function AdminRequestPage() {
                 </div>
 
                 {/* สถานะ (จุดสี + Select) */}
-                <div className="flex items-center gap-2">
-                  <span className={`h-2.5 w-2.5 rounded-full ${style.dot}`} />
-                  <Select
-                    value={r.status}
-                    onValueChange={(newStatus) => handleStatusUpdate(r.report_id, newStatus)}
-                    disabled={updatingStatus === r.report_id}
-                  >
-                    <SelectTrigger className={`h-8 w-36 text-xs font-medium border-2 ${style.bg} ${style.border} ${style.text}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="รอดำเนินการ">รอดำเนินการ</SelectItem>
-                      <SelectItem value="รอยื่นเอกสาร">รอยื่นเอกสาร</SelectItem>
-                      <SelectItem value="รอเอกสารอนุมัติ">รอเอกสาร</SelectItem>
-                      <SelectItem value="เอกสารอนุมัติเรียบร้อย">อนุมัติแล้ว</SelectItem>
-                      <SelectItem value="ปฏิเสธคำร้อง">ปฏิเสธ</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {updatingStatus === r.report_id && (
-                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-[var(--primary)] border-t-transparent" />
-                  )}
+                <div className="flex flex-col items-end gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2.5 w-2.5 rounded-full ${style.dot}`} />
+                    <Select
+                      value={r.status}
+                      onValueChange={(newStatus) => handleStatusUpdate(r.report_id, newStatus)}
+                      disabled={updatingStatus === r.report_id}
+                    >
+                      <SelectTrigger className={`h-8 w-36 text-xs font-medium border-2 ${style.bg} ${style.border} ${style.text}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="รอดำเนินการ">รอดำเนินการ</SelectItem>
+                        <SelectItem value="รอยื่นเอกสาร">รอยื่นเอกสาร</SelectItem>
+                        <SelectItem value="รอเอกสารอนุมัติ">รอเอกสาร</SelectItem>
+                        <SelectItem value="เอกสารอนุมัติเรียบร้อย">อนุมัติแล้ว</SelectItem>
+                        <SelectItem value="ปฏิเสธคำร้อง">ปฏิเสธ</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {updatingStatus === r.report_id && (
+                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-[var(--primary)] border-t-transparent" />
+                    )}
+                  </div>
                 </div>
               </div>
+              {r.status === 'ปฏิเสธคำร้อง' && r.rejection_reason ? (
+                <button
+                  type="button"
+                  onClick={() => setRejectDialog({ reportId: r.report_id, reason: r.rejection_reason ?? '' })}
+                  className="mt-2 w-full rounded-md border border-red-200 bg-red-50 px-3 py-2 text-left text-xs text-red-800 hover:bg-red-100 transition"
+                >
+                  <span className="font-medium">เหตุผลที่ปฏิเสธ:</span> {r.rejection_reason}
+                </button>
+              ) : null}
 
               <div className="mt-3 flex items-center justify-end gap-2">
                 <Button
@@ -821,6 +899,128 @@ export default function AdminRequestPage() {
           </div>
         </div>
       )}
+
+      <Dialog
+        open={rejectDialog !== null}
+        onOpenChange={(open) => { if (!open && !rejectSubmitting) setRejectDialog(null) }}
+      >
+        <DialogContent
+          className="
+            p-0 gap-0 overflow-hidden border-0 shadow-2xl
+            w-[calc(100%-1.5rem)] sm:w-full sm:max-w-md
+            flex flex-col max-h-[calc(100dvh-2rem)]
+          "
+        >
+          <div className="h-1.5 bg-gradient-to-r from-red-500 via-rose-500 to-red-600" aria-hidden />
+
+          <div className="px-5 pt-5 pb-3 sm:px-6 sm:pt-6">
+            <DialogHeader className="space-y-3 text-left">
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-red-50 ring-4 ring-red-100/60">
+                  <AlertCircle className="h-5 w-5 text-red-600" aria-hidden />
+                </span>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <DialogTitle className="text-base sm:text-lg font-semibold text-slate-900">
+                    ปฏิเสธคำร้อง
+                  </DialogTitle>
+                  {rejectDialog ? (() => {
+                    const r = reports.find(x => x.report_id === rejectDialog.reportId)
+                    return (
+                      <p className="truncate text-xs sm:text-sm text-slate-500">
+                        #{rejectDialog.reportId}
+                        {r?.full_name ? ` · ${getLocalizedPrefix(r.prefix, r.language)} ${r.full_name}` : ''}
+                      </p>
+                    )
+                  })() : null}
+                </div>
+              </div>
+              <DialogDescription className="text-sm text-slate-600 leading-relaxed">
+                เหตุผลที่ระบุจะถูกบันทึกในระบบและแสดงในรายงาน PDF ประจำเดือน เพื่อให้ตรวจสอบย้อนหลังได้
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="px-5 sm:px-6 pb-4 space-y-4 flex-1 overflow-y-auto">
+            <div className="space-y-2">
+              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">เหตุผลที่ใช้บ่อย</p>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_REJECT_REASONS.map((reason) => {
+                  const active = rejectDialog?.reason.trim() === reason
+                  return (
+                    <button
+                      key={reason}
+                      type="button"
+                      disabled={rejectSubmitting}
+                      onClick={() => setRejectDialog((prev) => (prev ? { ...prev, reason } : prev))}
+                      className={[
+                        'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+                        'active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed',
+                        active
+                          ? 'border-red-300 bg-red-50 text-red-700 shadow-inner'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-red-300 hover:bg-red-50 hover:text-red-700',
+                      ].join(' ')}
+                    >
+                      {reason}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="reject-reason" className="text-sm font-medium text-slate-800">
+                เหตุผลที่ปฏิเสธ <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                id="reject-reason"
+                rows={4}
+                autoFocus
+                placeholder="ระบุเหตุผลให้ชัดเจน หรือเลือกจากรายการด้านบน"
+                value={rejectDialog?.reason ?? ''}
+                onChange={(e) => setRejectDialog((prev) => (prev ? { ...prev, reason: e.target.value } : prev))}
+                disabled={rejectSubmitting}
+                maxLength={500}
+                className="min-h-[112px] resize-none text-sm leading-relaxed focus-visible:border-red-300 focus-visible:ring-red-200/60"
+              />
+              <div className="flex items-center justify-end text-xs">
+                <span
+                  className={[
+                    'tabular-nums',
+                    (rejectDialog?.reason.length ?? 0) >= 480 ? 'text-amber-600 font-medium' : 'text-slate-400',
+                  ].join(' ')}
+                >
+                  {(rejectDialog?.reason ?? '').length}/500
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-5 sm:px-6 py-3.5 border-t border-slate-200 bg-slate-50/70 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setRejectDialog(null)}
+              disabled={rejectSubmitting}
+              className="w-full sm:w-auto h-10"
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              onClick={() => void confirmReject()}
+              disabled={rejectSubmitting || !(rejectDialog?.reason ?? '').trim()}
+              className="w-full sm:w-auto h-10 bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-600/20 disabled:bg-red-300 disabled:shadow-none"
+            >
+              {rejectSubmitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  กำลังบันทึก…
+                </span>
+              ) : (
+                'ยืนยันการปฏิเสธ'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

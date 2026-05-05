@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise'
+import { NextRequest } from 'next/server'
 import { z } from 'zod'
 
 // ------------ Zod schema for report update ------------
@@ -63,13 +64,17 @@ const updateReportSchema = z.object({
 
 // ------------ Import shared database connection ------------
 import { getPool } from '@/lib/db'
+import { requireAdmin } from '@/lib/auth-server'
 
 // ------------ Import LINE notification function ------------
 import { sendNotificationToReportOwner } from '@/lib/line-notification'
 
 // ------------ PATCH /api/reports/[id] - Update report status ------------
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const guard = await requireAdmin(req)
+    if ('response' in guard) return guard.response
+
     const resolvedParams = await params
     const { id } = resolvedParams
     const reportId = parseInt(id, 10)
@@ -338,8 +343,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 // ------------ DELETE /api/reports/[id] - Delete report ------------
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const guard = await requireAdmin(req)
+    if ('response' in guard) return guard.response
+
     const resolvedParams = await params
     const { id } = resolvedParams
     const reportId = parseInt(id, 10)
@@ -388,8 +396,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 }
 
 // ------------ GET /api/reports/[id] - Get single report ------------
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const guard = await requireAdmin(req)
+    if ('response' in guard) return guard.response
+
     const resolvedParams = await params
     const { id } = resolvedParams
     const reportId = parseInt(id, 10)

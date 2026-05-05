@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 
-import { isAuthenticated } from '@/lib/auth'
+import { checkAuth as verifyAuth } from '@/lib/auth'
 import {
   Search, MapPin, Network, Info, Save, AlertTriangle, Clock, History, FileText, RefreshCw,
 } from 'lucide-react'
@@ -231,11 +231,16 @@ export default function NewCameraIssuePage() {
 
   // Auth
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/login')
-      return
-    }
-    setAuthChecked(true)
+    let cancelled = false
+    verifyAuth().then(user => {
+      if (cancelled) return
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      setAuthChecked(true)
+    })
+    return () => { cancelled = true }
   }, [router])
 
   // areas

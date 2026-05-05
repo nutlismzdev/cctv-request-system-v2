@@ -264,11 +264,16 @@
           }
         },
         "date": {
-          "label": "Incident Date"
+          "label": "Incident Date",
+          "selected": "Selected: {value}",
+          "placeholder": "—"
         },
         "time": {
-          "label": "Incident Time"
+          "label": "Incident Time",
+          "selected": "Selected: {value}",
+          "placeholder": "—"
         },
+        "dateTimeHint": "",
         "location": {
           "label": "Incident Location",
           "placeholder": "e.g. intersection in front of market"

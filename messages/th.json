@@ -264,11 +264,16 @@
           }
         },
         "date": {
-          "label": "วันที่เกิดเหตุ"
+          "label": "วันที่เกิดเหตุ",
+          "selected": "วันที่ที่เลือก: {value}",
+          "placeholder": "—"
         },
         "time": {
-          "label": "เวลาที่เกิดเหตุ"
+          "label": "เวลาที่เกิดเหตุ",
+          "selected": "เวลาที่เลือก: {value}",
+          "placeholder": "—"
         },
+        "dateTimeHint": "",
         "location": {
           "label": "สถานที่เกิดเหตุ",
           "placeholder": "เช่น สี่แยกหน้าตลาด"

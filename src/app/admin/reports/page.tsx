@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   Users,
   MapPin,
+  CalendarRange,
 } from 'lucide-react'
 // ✅ Dynamic import recharts to avoid loading ~300KB in initial bundle (bundle-dynamic-imports)
 // — webpack dedupe ทุก reference เข้า chunk เดียวกัน
@@ -44,7 +45,7 @@ const BarChart = dynamic(() => import('recharts').then(m => ({ default: m.BarCha
 const Bar = dynamic(() => import('recharts').then(m => ({ default: m.Bar })), { ssr: false })
 const ReTooltip = dynamic(() => import('recharts').then(m => ({ default: m.Tooltip })), { ssr: false })
 
-import { isAuthenticated } from '@/lib/auth'
+import { checkAuth as verifyAuth } from '@/lib/auth'
 
 /* =============================================================================
  * Types
@@ -219,6 +220,75 @@ function StatCard({
   )
 }
 
+function DateRangePicker({
+  dateFrom,
+  dateTo,
+  appliedRange,
+  loading,
+  onDateFromChange,
+  onDateToChange,
+  onApply,
+  onClear,
+}: {
+  dateFrom: string
+  dateTo: string
+  appliedRange: { from: string; to: string } | null
+  loading: boolean
+  onDateFromChange: (value: string) => void
+  onDateToChange: (value: string) => void
+  onApply: () => void
+  onClear: () => void
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center">
+      <div className="inline-flex min-w-0 flex-col rounded-lg border bg-background shadow-xs sm:flex-row sm:items-center">
+        <label className="flex min-w-0 items-center gap-2 border-b px-3 py-2 text-sm sm:border-b-0 sm:border-r">
+          <span className="shrink-0 text-xs font-medium text-[var(--muted-foreground)]">ตั้งแต่</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => onDateFromChange(e.target.value)}
+            max={dateTo || undefined}
+            className="h-8 min-w-0 bg-transparent text-sm outline-none"
+            aria-label="วันที่เริ่มต้น"
+          />
+        </label>
+        <label className="flex min-w-0 items-center gap-2 border-b px-3 py-2 text-sm sm:border-b-0 sm:border-r">
+          <span className="shrink-0 text-xs font-medium text-[var(--muted-foreground)]">ถึง</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => onDateToChange(e.target.value)}
+            min={dateFrom || undefined}
+            className="h-8 min-w-0 bg-transparent text-sm outline-none"
+            aria-label="วันที่สิ้นสุด"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-10 rounded-none px-3 sm:h-12 sm:rounded-r-lg"
+          onClick={onApply}
+          disabled={loading || !dateFrom || !dateTo}
+        >
+          ใช้ช่วงวันที่
+        </Button>
+      </div>
+      {appliedRange && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-1 text-xs font-medium text-[var(--primary)]">
+            {formatThaiDate(appliedRange.from)} → {formatThaiDate(appliedRange.to)}
+          </span>
+          <Button variant="outline" size="sm" className="h-8" onClick={onClear} disabled={loading}>
+            ล้าง
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* =============================================================================
  * Main Page
  * ========================================================================== */
@@ -270,11 +340,16 @@ export default function AdminReportsPage() {
 
   // ตรวจสิทธิ์เข้าใช้งาน (ให้ประสบการณ์ลื่นไหล)
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/login')
-      return
-    }
-    setAuthChecked(true)
+    let cancelled = false
+    verifyAuth().then(user => {
+      if (cancelled) return
+      if (!user) {
+        router.push('/login')
+        return
+      }
+      setAuthChecked(true)
+    })
+    return () => { cancelled = true }
   }, [router])
 
   // ดึงข้อมูลสถิติ — รองรับทั้งโหมด days (preset) และโหมด from/to (กำหนดช่วงวันที่เอง)
@@ -411,153 +486,140 @@ export default function AdminReportsPage() {
   // ---------- Page ----------
   return (
     <div className="min-h-screen bg-[var(--background)] text-[15px] md:text-base leading-relaxed print:bg-white">
-      {/* แถบหัวรายงาน (ราชการไทย:ชื่อหน่วยงาน+ช่วงเวลา+ปุ่มการกระทำ) */}
-      <div className="w-full border-b bg-[var(--card)]/90 backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/70 print:hidden">
-        <div className="px-4 lg:px-6 py-4 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)]/10 border">
-              <BarChart3 className="h-5 w-5 text-[var(--primary)]" aria-hidden />
+      {/* แถบหัวรายงาน (ราชการไทย:ชื่อหน่วยงาน+toolbar ควบคุมรายงาน) */}
+      <div className="w-full border-b bg-[var(--card)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--card)]/80 print:hidden">
+        <div className="px-4 py-5 lg:px-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border bg-[var(--primary)]/10">
+                <BarChart3 className="h-5 w-5 text-[var(--primary)]" aria-hidden />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl font-semibold tracking-tight text-[var(--foreground)] md:text-2xl">
+                  รายงานสรุปคำร้องขอดูภาพจากกล้อง CCTV
+                </h1>
+              
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-                รายงานสรุปคำร้องขอดูภาพจากกล้อง CCTV
-              </h1>
-              <p className="text-xs md:text-sm text-[var(--muted-foreground)]">
-                เทศบาลนครหัวหิน • แดชบอร์ดสรุปผลการให้บริการประชาชน
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <Select
-              value={timeRange}
-              onValueChange={(v) => {
-                setTimeRange(v)
-                setAppliedRange(null)
-                setDateFrom('')
-                setDateTo('')
-              }}
-              disabled={Boolean(appliedRange)}
-            >
-              <SelectTrigger className="h-9 w-40" aria-label="ช่วงเวลา">
-                <SelectValue placeholder="เลือกช่วงเวลา" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">7 วันย้อนหลัง</SelectItem>
-                <SelectItem value="30">30 วันย้อนหลัง</SelectItem>
-                <SelectItem value="90">90 วันย้อนหลัง</SelectItem>
-                <SelectItem value="365">12 เดือนย้อนหลัง</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (appliedRange) fetchStatistics({ from: appliedRange.from, to: appliedRange.to })
-                else fetchStatistics({ days: timeRange })
-              }}
-              disabled={loading}
-              className="h-9"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              <span className="ml-2">รีเฟรช</span>
-            </Button>
-
-            <Button variant="outline" size="sm" onClick={handlePrint} className="h-9">
-              <Printer className="h-4 w-4" />
-              <span className="ml-2">พิมพ์รายงาน</span>
-            </Button>
-
-            {csvBlobUrl && (
-              <a
-                href={csvBlobUrl}
-                download={`cctv-report-summary-${appliedRange ? `${appliedRange.from}_to_${appliedRange.to}` : `${timeRange}d`}.csv`}
-                className="inline-flex h-9 items-center gap-2 rounded-md border px-3 text-sm hover:bg-muted"
+            <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (appliedRange) fetchStatistics({ from: appliedRange.from, to: appliedRange.to })
+                  else fetchStatistics({ days: timeRange })
+                }}
+                disabled={loading}
+                className="h-9"
               >
-                <Download className="h-4 w-4" />
-                ส่งออก CSV
-              </a>
-            )}
-          </div>
-        </div>
-
-        {/* แถบเลือกช่วงวันที่กำหนดเอง */}
-        <div className="px-4 lg:px-6 py-3 border-t flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium text-[var(--foreground)]">กรองตามช่วงวันที่:</span>
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-[var(--muted-foreground)]">ตั้งแต่</span>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              max={dateTo || undefined}
-              className="h-9 rounded-md border bg-background px-3 text-sm"
-              aria-label="วันที่เริ่มต้น"
-            />
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-[var(--muted-foreground)]">ถึง</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              min={dateFrom || undefined}
-              className="h-9 rounded-md border bg-background px-3 text-sm"
-              aria-label="วันที่สิ้นสุด"
-            />
-          </label>
-          <Button variant="default" size="sm" className="h-9" onClick={applyDateRange} disabled={loading || !dateFrom || !dateTo}>
-            ใช้ช่วงวันที่นี้
-          </Button>
-          {appliedRange && (
-            <>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--primary)]/10 px-3 py-1 text-xs font-medium text-[var(--primary)]">
-                กรองแล้ว: {formatThaiDate(appliedRange.from)} → {formatThaiDate(appliedRange.to)}
-              </span>
-              <Button variant="outline" size="sm" className="h-9" onClick={clearDateRange} disabled={loading}>
-                ล้างช่วงวันที่
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>รีเฟรช</span>
               </Button>
-            </>
-          )}
-        </div>
 
-        {/* แถบออกรายงาน PDF ประจำเดือน */}
-        <div className="px-4 lg:px-6 py-3 border-t flex flex-wrap items-center gap-3 bg-blue-50/50">
-          <span className="text-sm font-medium text-[var(--foreground)]">ออกรายงาน PDF ประจำเดือน:</span>
-          <Select value={pdfMonth} onValueChange={setPdfMonth}>
-            <SelectTrigger className="h-9 w-36" aria-label="เดือน">
-              <SelectValue placeholder="เลือกเดือน" />
-            </SelectTrigger>
-            <SelectContent>
-              {THAI_MONTHS_SELECT.map((m) => (
-                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <Button variant="outline" size="sm" onClick={handlePrint} className="h-9">
+                <Printer className="h-4 w-4" />
+                <span>พิมพ์</span>
+              </Button>
 
-          <Select value={pdfYear} onValueChange={setPdfYear}>
-            <SelectTrigger className="h-9 w-36" aria-label="ปี พ.ศ.">
-              <SelectValue placeholder="เลือกปี" />
-            </SelectTrigger>
-            <SelectContent>
-              {getPdfYearOptions().map((yr) => (
-                <SelectItem key={yr.value} value={yr.value}>{yr.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              {csvBlobUrl && (
+                <a
+                  href={csvBlobUrl}
+                  download={`cctv-report-summary-${appliedRange ? `${appliedRange.from}_to_${appliedRange.to}` : `${timeRange}d`}.csv`}
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+                >
+                  <Download className="h-4 w-4" />
+                  CSV
+                </a>
+              )}
+            </div>
+          </div>
 
-          <Button
-            variant="default"
-            size="sm"
-            className="h-9"
-            onClick={() => {
-              window.open(`/api/admin/reports/monthly-pdf?month=${pdfMonth}&year=${pdfYear}`, '_blank')
-            }}
-          >
-            <FileText className="h-4 w-4" />
-            <span className="ml-2">ออกรายงาน PDF ประจำเดือน</span>
-          </Button>
+          <div className="mt-4 rounded-xl border bg-muted/25 p-3">
+            <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center">
+              <div className="flex min-w-0 flex-1 flex-col gap-3 xl:flex-row xl:flex-wrap xl:items-center">
+                <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                  <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--foreground)]">
+                    <CalendarRange className="h-4 w-4 text-[var(--primary)]" aria-hidden />
+                    ช่วงข้อมูล
+                  </span>
+                  <Select
+                    value={timeRange}
+                    onValueChange={(v) => {
+                      setTimeRange(v)
+                      setAppliedRange(null)
+                      setDateFrom('')
+                      setDateTo('')
+                    }}
+                    disabled={Boolean(appliedRange)}
+                  >
+                    <SelectTrigger className="h-10 w-full bg-background sm:w-44" aria-label="ช่วงเวลา">
+                      <SelectValue placeholder="เลือกช่วงเวลา" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7 วันย้อนหลัง</SelectItem>
+                      <SelectItem value="30">30 วันย้อนหลัง</SelectItem>
+                      <SelectItem value="90">90 วันย้อนหลัง</SelectItem>
+                      <SelectItem value="365">12 เดือนย้อนหลัง</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <DateRangePicker
+                  dateFrom={dateFrom}
+                  dateTo={dateTo}
+                  appliedRange={appliedRange}
+                  loading={loading}
+                  onDateFromChange={setDateFrom}
+                  onDateToChange={setDateTo}
+                  onApply={applyDateRange}
+                  onClear={clearDateRange}
+                />
+              </div>
+
+              <div className="h-px bg-border 2xl:h-10 2xl:w-px" />
+
+              <div className="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:justify-end">
+                <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--foreground)]">
+                  <FileText className="h-4 w-4 text-blue-700" aria-hidden />
+                  PDF ประจำเดือน
+                </span>
+                <Select value={pdfMonth} onValueChange={setPdfMonth}>
+                  <SelectTrigger className="h-10 w-full bg-background lg:w-36" aria-label="เดือน">
+                    <SelectValue placeholder="เลือกเดือน" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {THAI_MONTHS_SELECT.map((m) => (
+                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={pdfYear} onValueChange={setPdfYear}>
+                  <SelectTrigger className="h-10 w-full bg-background lg:w-36" aria-label="ปี พ.ศ.">
+                    <SelectValue placeholder="เลือกปี" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getPdfYearOptions().map((yr) => (
+                      <SelectItem key={yr.value} value={yr.value}>{yr.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-10"
+                  onClick={() => {
+                    window.open(`/api/admin/reports/monthly-pdf?month=${pdfMonth}&year=${pdfYear}`, '_blank')
+                  }}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>ออกรายงาน</span>
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -566,9 +628,9 @@ export default function AdminReportsPage() {
         <div className="mb-4 flex items-start gap-2 text-[13px] text-[var(--muted-foreground)] print:hidden">
           <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
           <p>
-            ข้อมูลสรุปการให้บริการประชาชน — แสดงตัวชี้วัดด้านประสิทธิผลของการให้บริการ,
+            ข้อมูลสรุปการให้บริการประชาชน — ด้านประสิทธิผลของการให้บริการ,
             อัตราการอนุมัติ/ปฏิเสธ, ระยะเวลาดำเนินการเฉลี่ย และพื้นที่ที่ประชาชนร้องขอบ่อย
-            เพื่อใช้ตัดสินใจเชิงบริหารและพัฒนาคุณภาพบริการ
+            
           </p>
         </div>
 
@@ -1223,21 +1285,7 @@ export default function AdminReportsPage() {
               </CardContent>
             </Card>
 
-            {/* 6) ข้อเสนอแนะต่อผู้บริหาร */}
-            <Card className="print:break-inside-avoid">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">ข้อเสนอแนะต่อผู้บริหาร</CardTitle>
-                <CardDescription>เกณฑ์อ้างอิงเพื่อการตัดสินใจและพัฒนาคุณภาพการให้บริการ</CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm text-slate-700 space-y-2">
-                <p>• <span className="font-medium">ประสิทธิผล:</span> เป้าหมายอัตราอนุมัติสำเร็จ ≥ 80% — ปัจจุบันอยู่ที่ {formatThaiNumber(lpa.completionRate)}% {lpa.completionRate >= 80 ? '(ผ่านเกณฑ์)' : '(ควรปรับปรุง)'}</p>
-                <p>• <span className="font-medium">ระยะเวลา:</span> SLA ที่เหมาะสมคือไม่เกิน 7 วันทำการ {lpa.avgDays != null && lpa.avgDays > 7 ? '— ควรลดขั้นตอนที่ใช้เวลา' : ''}</p>
-                <p>• <span className="font-medium">ความโปร่งใส:</span> ควรเปิดเผยสถิติการให้บริการต่อสาธารณะอย่างน้อยรายไตรมาสเพื่อความน่าเชื่อถือ</p>
-                <p>• <span className="font-medium">การพัฒนา:</span> จุดที่ถูกร้องขอบ่อยควรพิจารณาเพิ่ม/ย้ายมุมกล้อง หรือซ่อมบำรุงอุปกรณ์เพื่อเพิ่มคุณภาพหลักฐาน</p>
-                <p>• <span className="font-medium">การมีส่วนร่วม:</span> หากสัดส่วน &quot;รอยื่นเอกสาร&quot; สูง ให้ทบทวนการสื่อสารและความชัดเจนของรายการเอกสารที่ประชาชนต้องเตรียม</p>
-              </CardContent>
-            </Card>
-
+          
             {/* ลายเซ็นรับรองสำหรับการพิมพ์ */}
             <div className="hidden print:block pt-8">
               <div className="grid grid-cols-2 gap-12 text-sm">

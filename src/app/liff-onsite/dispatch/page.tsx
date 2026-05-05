@@ -106,7 +106,6 @@ function DispatchInner() {
   const searchParams = useSearchParams()
   const hasRunRef = useRef(false)
 
-  const [target, setTarget] = useState<OnsiteLiffTarget | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isLiffReady, setIsLiffReady] = useState(false)
   const [isFriend, setIsFriend] = useState(false)
@@ -184,7 +183,6 @@ function DispatchInner() {
           return
         }
         storeRedirectTarget(resolved)
-        if (!cancelled) setTarget(resolved)
 
         // 2) Load + init LIFF SDK ที่ Endpoint URL พื้นฐาน — ไม่ navigate ออก
         stage = 'load-sdk'
@@ -305,8 +303,6 @@ function DispatchInner() {
   }
 
   // ---------------------- UI ----------------------
-  const reportId = target?.reportId || ''
-
   const renderContent = () => {
     switch (currentStep) {
       case 'checking':

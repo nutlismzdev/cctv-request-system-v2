@@ -28,6 +28,13 @@ import {
   Command, CommandInput, CommandList, CommandEmpty, CommandItem, CommandGroup,
 } from '@/components/ui/command'
 import RequestLoadingSkeleton from '@/components/request-loading-skeleton'
+import {
+  formatThaiDateLong,
+  formatThaiDateTimeLong,
+  formatThaiTime,
+  normalizeIsoDate,
+  normalizeTime,
+} from '@/lib/thai-datetime'
 
 
 /* -------------------- Config -------------------- */
@@ -565,6 +572,65 @@ function StepApplicant(props: {
 }
 
 // Step 2: Incident
+/* -------------------- Date / Time Incident Fields -------------------- */
+const setIncidentDateAs = (v: unknown) => normalizeIsoDate(typeof v === 'string' ? v : '')
+const setIncidentTimeAs = (v: unknown) => normalizeTime(typeof v === 'string' ? v : '')
+
+function DateTimeIncidentFields(props: {
+  register: ReturnType<typeof useForm<FormData>>['register']
+  errors: ReturnType<typeof useForm<FormData>>['formState']['errors']
+  watch: ReturnType<typeof useForm<FormData>>['watch']
+  t: ReturnType<typeof useTranslations>
+}) {
+  const { register, errors, watch, t } = props
+  const datePreview = formatThaiDateLong(watch('incident_date'))
+  const timePreview = formatThaiTime(watch('incident_time'))
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="incident_date" className="text-base sm:text-lg font-medium">
+            {t('incident.date.label')} <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="incident_date"
+            type="date"
+            aria-invalid={!!errors.incident_date}
+            className="h-12 text-base"
+            {...register('incident_date', { setValueAs: setIncidentDateAs })}
+          />
+          <p className="text-sm text-slate-600 min-h-[1.25rem]" aria-live="polite">
+            {datePreview
+              ? t('incident.date.selected', { value: datePreview })
+              : <span className="text-slate-400">{t('incident.date.placeholder')}</span>}
+          </p>
+          <FieldError message={errors.incident_date?.message} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="incident_time" className="text-base sm:text-lg font-medium">
+            {t('incident.time.label')} <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="incident_time"
+            type="time"
+            aria-invalid={!!errors.incident_time}
+            className="h-12 text-base"
+            {...register('incident_time', { setValueAs: setIncidentTimeAs })}
+          />
+          <p className="text-sm text-slate-600 min-h-[1.25rem]" aria-live="polite">
+            {timePreview
+              ? t('incident.time.selected', { value: timePreview })
+              : <span className="text-slate-400">{t('incident.time.placeholder')}</span>}
+          </p>
+          <FieldError message={errors.incident_time?.message} />
+        </div>
+      </div>
+      <p className="text-xs text-slate-500">{t('incident.dateTimeHint')}</p>
+    </div>
+  )
+}
+
 function StepIncident(props: {
   register: ReturnType<typeof useForm<FormData>>['register']
   setValue: ReturnType<typeof useForm<FormData>>['setValue']
@@ -777,18 +843,7 @@ function StepIncident(props: {
             t={t}
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="incident_date" className="text-base sm:text-lg font-medium">{t('incident.date.label')} <span className="text-red-500">*</span></Label>
-              <Input id="incident_date" type="date" aria-invalid={!!errors.incident_date} className="h-12 text-base" {...register('incident_date')} />
-              <FieldError message={errors.incident_date?.message} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="incident_time" className="text-base sm:text-lg font-medium">{t('incident.time.label')} <span className="text-red-500">*</span></Label>
-              <Input id="incident_time" type="time" aria-invalid={!!errors.incident_time} className="h-12 text-base" {...register('incident_time')} />
-              <FieldError message={errors.incident_time?.message} />
-            </div>
-          </div>
+          <DateTimeIncidentFields register={register} errors={errors} watch={watch} t={t} />
 
           <div className="space-y-2">
             <Label htmlFor="incident_location" className="text-base sm:text-lg font-medium">{t('incident.location.label')} <span className="text-red-500">*</span></Label>
@@ -944,7 +999,7 @@ function StepReviewConsent(props: {
     phone: watch('phone_number') || '—',
     category: selectedCategoryName || '—',
     type: watch('request_type') || '—',
-    when: watch('incident_date') && watch('incident_time') ? `${watch('incident_date')} ${watch('incident_time')}` : '—',
+    when: formatThaiDateTimeLong(watch('incident_date'), watch('incident_time')) || '—',
     where: watch('incident_location') || '—',
     address: buildAddress() || '—',
     involvement: role ? ((role === 'ญาติ' || role === 'ผู้เกี่ยวข้อง') && roleExplain ? `${role} (${roleExplain})` : role) : '—',

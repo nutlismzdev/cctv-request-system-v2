@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { FileText, Settings, BarChart3, Bell, User, LogOut, Menu, X, Home } from 'lucide-react'
+import { FileText, Settings, BarChart3, Bell, LogOut, Menu, X, Home, ShieldCheck } from 'lucide-react'
 import { logout } from '@/lib/auth'
 import { THEME_COLORS } from '@/lib/theme-colors'
 
@@ -77,8 +77,8 @@ export function AdminNavbar() {
     return () => clearInterval(interval)
   }, [])
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     router.push('/login')
   }
 
@@ -226,15 +226,21 @@ export function AdminNavbar() {
                   className={`h-9 px-2 ${THEME_COLORS.mutedForeground} hover:${THEME_COLORS.foreground} hover:bg-[var(--accent)]/20`}
                   aria-label="เมนูผู้ใช้"
                 >
-                  <div className={`h-7 w-7 ${THEME_COLORS.muted} ${THEME_COLORS.border} rounded-full flex items-center justify-center`}>
-                    <User className={`h-4 w-4 ${THEME_COLORS.mutedForeground}`} />
+                  <div className="relative h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 via-cyan-500 to-emerald-500 p-[2px] shadow-sm">
+                    <div className="flex h-full w-full items-center justify-center rounded-full bg-white/95">
+                      <ShieldCheck className="h-4 w-4 text-blue-700" />
+                    </div>
+                    <span
+                      className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500"
+                      aria-hidden="true"
+                    />
                   </div>
                   <span className="hidden md:block ml-2">Admin</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem>
-                  <User className="h-4 w-4 mr-2" />
+                  <ShieldCheck className="h-4 w-4 mr-2 text-blue-700" />
                   โปรไฟล์
                 </DropdownMenuItem>
                 <DropdownMenuItem>

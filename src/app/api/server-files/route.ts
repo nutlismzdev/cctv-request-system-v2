@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import { join, extname, basename } from 'path'
+import { requireAdmin } from '@/lib/auth-server'
 
 // ============================================
 // Configuration
@@ -100,8 +101,11 @@ async function listPdfFiles(folderPath: string): Promise<ServerFile[]> {
 // ============================================
 // GET: List ไฟล์ PDF ทั้งหมดจาก D:\Scan
 // ============================================
-export async function GET(): Promise<NextResponse<ListFilesResponse>> {
+export async function GET(request: NextRequest): Promise<NextResponse<ListFilesResponse>> {
   try {
+    const guard = await requireAdmin(request)
+    if ('response' in guard) return guard.response as NextResponse<ListFilesResponse>
+
     const files = await listPdfFiles(SCAN_PATH)
     const totalSize = files.reduce((sum, f) => sum + f.size, 0)
 
@@ -140,6 +144,9 @@ export async function GET(): Promise<NextResponse<ListFilesResponse>> {
 // ============================================
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    const guard = await requireAdmin(request)
+    if ('response' in guard) return guard.response as NextResponse
+
     const body = await request.json()
     const { fileName, reportId, category = 'idcopy' } = body
 
@@ -195,6 +202,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       `${baseUrl}/api/reports/${reportId}/attachments`,
       {
         method: 'POST',
+        headers: {
+          cookie: request.headers.get('cookie') || '',
+        },
         body: formData,
       }
     )

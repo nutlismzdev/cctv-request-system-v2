@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { isAuthenticated } from '@/lib/auth'
+import { checkAuth as verifyAuth } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -36,10 +36,12 @@ export default function HeatmapPage() {
 
   // Check auth
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push('/login')
-      return
-    }
+    let cancelled = false
+    verifyAuth().then(user => {
+      if (cancelled) return
+      if (!user) router.push('/login')
+    })
+    return () => { cancelled = true }
   }, [router])
 
   // Load Leaflet

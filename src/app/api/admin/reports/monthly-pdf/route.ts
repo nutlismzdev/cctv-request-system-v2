@@ -37,6 +37,14 @@ const THAI_MONTHS_FULL = [
   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'
 ] as const
 
+const THAI_MONTHS_SHORT = [
+  'ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+  'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'
+] as const
+
+/** Characters where it is OK to break a line (whitespace + light punctuation). */
+const SOFT_BREAK_RE = /[\s,.;:/()\[\]\-—]/
+
 /** Truncate text to fit within maxWidth */
 function fitText(font: PDFFont, text: string, fontSize: number, maxWidth: number): string {
   try {
@@ -51,6 +59,44 @@ function fitText(font: PDFFont, text: string, fontSize: number, maxWidth: number
     if (text.length > maxChars) return text.slice(0, maxChars - 1) + '…'
     return text
   }
+}
+
+/**
+ * Wrap text to fit within maxWidth.
+ * Prefers whitespace/punctuation breaks (so English words stay intact);
+ * falls back to character-level wrap for Thai text or unbreakable strings.
+ */
+function wrapText(font: PDFFont, text: string, fontSize: number, maxWidth: number): string[] {
+  const value = (text ?? '').toString()
+  if (!value) return ['']
+  const lines: string[] = []
+  for (const para of value.split(/\r?\n/)) {
+    if (!para) { lines.push(''); continue }
+    const chars = Array.from(para)
+    let buf = ''
+    for (let i = 0; i < chars.length; i++) {
+      const ch = chars[i]
+      const next = buf + ch
+      if (textWidth(font, next, fontSize) > maxWidth && buf) {
+        // Look back for a soft-break point within the current buffer.
+        let breakAt = -1
+        for (let j = buf.length - 1; j >= Math.max(0, buf.length - 40); j--) {
+          if (SOFT_BREAK_RE.test(buf[j])) { breakAt = j; break }
+        }
+        if (breakAt > 0) {
+          lines.push(buf.slice(0, breakAt + 1).replace(/\s+$/, ''))
+          buf = buf.slice(breakAt + 1).replace(/^\s+/, '') + ch
+        } else {
+          lines.push(buf)
+          buf = ch
+        }
+      } else {
+        buf = next
+      }
+    }
+    if (buf) lines.push(buf)
+  }
+  return lines.length ? lines : ['']
 }
 
 /** Measure text width safely */
@@ -86,6 +132,12 @@ interface TypeRow extends RowDataPacket { request_type: string | null; count: nu
 interface CategoryRow extends RowDataPacket { category_name: string | null; count: number }
 interface LocationRow extends RowDataPacket { incident_location: string; count: number }
 interface ProcessingTimeRow extends RowDataPacket { avg_days: number | null }
+interface RejectedRow extends RowDataPacket {
+  report_id: number
+  full_name: string | null
+  created_at: Date | string | null
+  rejection_reason: string | null
+}
 
 // ============================= PDF Drawing Helpers =============================
 
@@ -276,6 +328,16 @@ export async function GET(req: Request) {
     )
     const avgDays = processingTimeRows[0]?.avg_days != null ? Number(processingTimeRows[0].avg_days) : null
 
+    // 7) Rejected cases with reason (for detail section)
+    const [rejectedRows] = await pool.execute<RejectedRow[]>(
+      `SELECT report_id, full_name, created_at, rejection_reason
+       FROM reports
+       WHERE status = 'ปฏิเสธคำร้อง'
+         AND MONTH(created_at) = ? AND YEAR(created_at) = ?
+       ORDER BY created_at ASC`,
+      [monthParam, yearCE]
+    )
+
     // =================== Build PDF ===================
     const pdfDoc = await PDFDocument.create()
     const font = await loadThaiFont(pdfDoc)
@@ -403,6 +465,150 @@ export async function GET(req: Request) {
         x: MARGIN_LEFT, y, size: FONT_SIZE, font, color: COLOR_BLACK,
       })
       y -= LINE_HEIGHT * 1.5
+    }
+
+    // === Rejected cases detail ===
+    if (rejectedRows.length > 0) {
+      const fontSize = FONT_SIZE_TABLE
+      const dateFontSize = fontSize - 1
+      const rowLine = fontSize * 1.4
+      const padding = 5
+      // 3 columns — name & submission date stack inside the "ผู้ยื่น" cell
+      // so the reason cell gets ~22% more width for long text.
+      const colW = {
+        no: CONTENT_W * 0.06,
+        who: CONTENT_W * 0.28,
+        reason: CONTENT_W * 0.66,
+      }
+
+      const formatDateShortTH = (d: Date | string | null): string => {
+        if (!d) return '-'
+        const date = d instanceof Date ? d : new Date(d)
+        if (isNaN(date.getTime())) return '-'
+        const day = date.getDate()
+        const month = THAI_MONTHS_SHORT[date.getMonth()]
+        const yBE = date.getFullYear() + 543
+        return `${day} ${month} ${yBE}`
+      }
+
+      const drawHeaderRow = (yTop: number): number => {
+        const headerSize = fontSize + 1
+        const headerH = rowLine + padding * 2
+        let x = MARGIN_LEFT
+        const headers: { text: string; width: number }[] = [
+          { text: 'ลำดับ', width: colW.no },
+          { text: 'ผู้ยื่นคำร้อง / วันที่ยื่น', width: colW.who },
+          { text: 'เหตุผลที่ปฏิเสธ', width: colW.reason },
+        ]
+        for (const h of headers) {
+          page.drawRectangle({
+            x, y: yTop - headerH,
+            width: h.width, height: headerH,
+            color: COLOR_GRAY_HEADER,
+            borderColor: COLOR_BLACK, borderWidth: 0.5,
+            borderOpacity: 1,
+          })
+          const tw = textWidth(font, h.text, headerSize)
+          page.drawText(h.text, {
+            x: x + (h.width - tw) / 2,
+            y: yTop - padding - headerSize,
+            size: headerSize, font, color: COLOR_BLACK,
+          })
+          x += h.width
+        }
+        return yTop - headerH
+      }
+
+      // Title + ensure space for at least the header
+      if (y - LINE_HEIGHT * 2 - rowLine * 3 < MARGIN_BOTTOM) {
+        page = pdfDoc.addPage([PAGE_W, PAGE_H])
+        y = PAGE_H - MARGIN_TOP
+      }
+
+      page.drawText(`6. รายการคำร้องที่ปฏิเสธพร้อมเหตุผล (${rejectedRows.length} เรื่อง)`, {
+        x: MARGIN_LEFT, y, size: FONT_SIZE, font, color: COLOR_BLACK,
+      })
+      y -= LINE_HEIGHT
+      y = drawHeaderRow(y)
+
+      for (let i = 0; i < rejectedRows.length; i++) {
+        const r = rejectedRows[i]
+        const noText = String(i + 1)
+        const nameText = (r.full_name ?? '').trim() || '-'
+        const dateText = formatDateShortTH(r.created_at)
+        const reasonText = (r.rejection_reason ?? '').trim() || 'ไม่ระบุเหตุผล'
+
+        const nameLines = wrapText(font, nameText, fontSize, colW.who - padding * 2)
+        const reasonLines = wrapText(font, reasonText, fontSize, colW.reason - padding * 2)
+        // The "who" cell visually has nameLines + a date line below
+        const whoVisualLines = nameLines.length + 1
+        const maxLines = Math.max(1, whoVisualLines, reasonLines.length)
+        const rowH = maxLines * rowLine + padding * 2
+
+        // Page break if row won't fit
+        if (y - rowH < MARGIN_BOTTOM) {
+          page = pdfDoc.addPage([PAGE_W, PAGE_H])
+          y = PAGE_H - MARGIN_TOP
+          y = drawHeaderRow(y)
+        }
+
+        // Row borders — three side-by-side rectangles
+        let x = MARGIN_LEFT
+        for (const w of [colW.no, colW.who, colW.reason]) {
+          page.drawRectangle({
+            x, y: y - rowH,
+            width: w, height: rowH,
+            borderColor: COLOR_BLACK, borderWidth: 0.5,
+            borderOpacity: 1,
+            opacity: 0,
+          })
+          x += w
+        }
+
+        // No. — vertically centered, single line
+        {
+          const tw = textWidth(font, noText, fontSize)
+          page.drawText(noText, {
+            x: MARGIN_LEFT + (colW.no - tw) / 2,
+            y: y - rowH / 2 - fontSize / 2 + 1,
+            size: fontSize, font, color: COLOR_BLACK,
+          })
+        }
+
+        // Who — name (top, bold weight via same font but full color) + date (bottom, gray)
+        {
+          const cellX = MARGIN_LEFT + colW.no
+          let lineY = y - padding - fontSize
+          for (const lineText of nameLines) {
+            page.drawText(lineText, {
+              x: cellX + padding, y: lineY,
+              size: fontSize, font, color: COLOR_BLACK,
+            })
+            lineY -= rowLine
+          }
+          page.drawText(dateText, {
+            x: cellX + padding, y: lineY + (rowLine - dateFontSize) / 2,
+            size: dateFontSize, font, color: COLOR_GRAY_TEXT,
+          })
+        }
+
+        // Reason — wrapped lines
+        {
+          const cellX = MARGIN_LEFT + colW.no + colW.who
+          let lineY = y - padding - fontSize
+          for (const lineText of reasonLines) {
+            page.drawText(lineText, {
+              x: cellX + padding, y: lineY,
+              size: fontSize, font, color: COLOR_BLACK,
+            })
+            lineY -= rowLine
+          }
+        }
+
+        y -= rowH
+      }
+
+      y -= LINE_HEIGHT * 0.8
     }
 
     // ============ Page numbers ============

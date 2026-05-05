@@ -6,6 +6,7 @@ import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { join, resolve, extname, relative } from 'node:path'
 import { Readable } from 'node:stream'
+import { requireAdmin } from '@/lib/auth-server'
 
 const UPLOAD_ROOT = join(process.cwd(), 'public', 'uploads')
 
@@ -76,6 +77,17 @@ function buildHeaders(overrides: Record<string, string | number> = {}): HeadersI
   }
 }
 
+function isProtectedUploadPath(pathSegments: string[]): boolean {
+  return pathSegments[0] === 'attachments'
+}
+
+function buildPrivateHeaders(overrides: Record<string, string | number> = {}): HeadersInit {
+  return buildHeaders({
+    'Cache-Control': 'private, no-store',
+    ...overrides,
+  })
+}
+
 /** ป้องกัน path traversal และบังคับให้อยู่ใต้ UPLOAD_ROOT */
 async function resolveFilePath(pathSegments: string[]): Promise<{
   filePath: string; size: number; mtimeMs: number; filename: string
@@ -101,6 +113,11 @@ async function resolveFilePath(pathSegments: string[]): Promise<{
 export async function GET(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   try {
     const { path: pathSegments } = await ctx.params
+    const protectedFile = isProtectedUploadPath(pathSegments)
+    if (protectedFile) {
+      const guard = await requireAdmin(request)
+      if ('response' in guard) return guard.response
+    }
 
     let fileMeta: { filePath: string; size: number; mtimeMs: number; filename: string }
     try {
@@ -119,7 +136,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ path: s
     if (inm === etag || (ims && new Date(ims).getTime() >= fileMeta.mtimeMs)) {
       return new Response(null, {
         status: 304,
-        headers: buildHeaders({
+        headers: (protectedFile ? buildPrivateHeaders : buildHeaders)({
           'Content-Type': contentType,
           'ETag': etag,
           'Last-Modified': lastModified,
@@ -133,7 +150,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ path: s
       if (!byteRange) {
         return new Response(null, {
           status: 416,
-          headers: buildHeaders({
+          headers: (protectedFile ? buildPrivateHeaders : buildHeaders)({
             'Content-Range': `bytes */${fileMeta.size}`,
             'ETag': etag,
             'Last-Modified': lastModified,
@@ -147,7 +164,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ path: s
         const stream = createReadStream(fileMeta.filePath, { start, end })
         return new Response(toReadableStream(stream), {
           status: 206,
-          headers: buildHeaders({
+          headers: (protectedFile ? buildPrivateHeaders : buildHeaders)({
             'Content-Type': contentType,
             'Content-Length': chunkSize,
             'Content-Range': `bytes ${start}-${end}/${fileMeta.size}`,
@@ -164,7 +181,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ path: s
     const stream = createReadStream(fileMeta.filePath)
     return new Response(toReadableStream(stream), {
       status: 200,
-      headers: buildHeaders({
+      headers: (protectedFile ? buildPrivateHeaders : buildHeaders)({
         'Content-Type': contentType,
         'Content-Length': fileMeta.size,
         'ETag': etag,
@@ -181,6 +198,11 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ path: s
 export async function HEAD(request: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   try {
     const { path: pathSegments } = await ctx.params
+    const protectedFile = isProtectedUploadPath(pathSegments)
+    if (protectedFile) {
+      const guard = await requireAdmin(request)
+      if ('response' in guard) return guard.response
+    }
 
     const { filePath, size, mtimeMs, filename } = await resolveFilePath(pathSegments)
     const contentType = getContentType(filename)
@@ -190,7 +212,7 @@ export async function HEAD(request: NextRequest, ctx: { params: Promise<{ path: 
     await stat(filePath)
     return new Response(null, {
       status: 200,
-      headers: buildHeaders({
+      headers: (protectedFile ? buildPrivateHeaders : buildHeaders)({
         'Content-Type': contentType,
         'Content-Length': size,
         'ETag': etag,

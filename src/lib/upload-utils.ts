@@ -28,11 +28,13 @@ export const compressImage = async (
       return
     }
 
+    const objectUrl = URL.createObjectURL(file)
+    const cleanup = () => URL.revokeObjectURL(objectUrl)
+
     const img = new Image()
     img.onload = () => {
       let { width, height } = img
 
-      // Calculate new dimensions
       if (width > maxWidth) {
         height = (height * maxWidth) / width
         width = maxWidth
@@ -40,25 +42,51 @@ export const compressImage = async (
 
       canvas.width = width
       canvas.height = height
-
       ctx.drawImage(img, 0, 0, width, height)
 
       canvas.toBlob((blob) => {
+        cleanup()
         if (blob) {
-          const compressedFile = new File([blob], file.name, {
+          resolve(new File([blob], file.name, {
             type: file.type,
             lastModified: Date.now(),
-          })
-          resolve(compressedFile)
+          }))
         } else {
-          resolve(file) // Fallback to original
+          resolve(file)
         }
       }, file.type, quality)
     }
 
-    img.onerror = () => resolve(file) // Fallback to original
-    img.src = URL.createObjectURL(file)
+    img.onerror = () => {
+      cleanup()
+      resolve(file)
+    }
+    img.src = objectUrl
   })
+}
+
+/**
+ * Download a file via fetch+blob to force "save as" on all browsers/in-app webviews.
+ * Falls back to opening the URL in a new tab if blob fetch fails.
+ */
+export const downloadFile = async (url: string, filename?: string): Promise<void> => {
+  try {
+    const res = await fetch(url, { credentials: 'same-origin' })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const blob = await res.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = objectUrl
+    a.download = filename || url.split('/').pop() || 'download'
+    a.rel = 'noopener'
+    a.style.display = 'none'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000)
+  } catch {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
 }
 
 /**
@@ -83,31 +111,27 @@ export const validateFiles = async (
     allowExtensions = ['png', 'jpg', 'jpeg', 'heic', 'mp4', 'mov', 'avi', 'm4v', 'webm', 'pdf']
   } = options
 
-  const valid: File[] = []
   const invalid: { file: File; reason: string }[] = []
+  const toCompress: File[] = []
+  const passThrough: File[] = []
 
   for (const file of Array.from(files)) {
-    // Determine max size based on file type
     const isVideo = file.type.startsWith('video/') ||
       /\.(mp4|mov|avi|m4v|webm)$/i.test(file.name)
 
-    const defaultMaxSize = isVideo ? 500 * 1024 * 1024 : 10 * 1024 * 1024 // 500MB for videos, 10MB for images
+    const defaultMaxSize = isVideo ? 500 * 1024 * 1024 : 10 * 1024 * 1024
     const effectiveMaxSize = maxSize || defaultMaxSize
 
-    // Check file size
     if (file.size > effectiveMaxSize) {
-      const reason = isVideo
-        ? `วิดีโอขนาดใหญ่เกิน ${humanSize(effectiveMaxSize)} (${humanSize(file.size)}) - วิดีโอต้องไม่เกิน 500MB`
-        : `รูปภาพขนาดใหญ่เกิน ${humanSize(effectiveMaxSize)} (${humanSize(file.size)}) - รูปภาพต้องไม่เกิน 10MB`
-
       invalid.push({
         file,
-        reason
+        reason: isVideo
+          ? `วิดีโอขนาดใหญ่เกิน ${humanSize(effectiveMaxSize)} (${humanSize(file.size)}) - วิดีโอต้องไม่เกิน 500MB`
+          : `รูปภาพขนาดใหญ่เกิน ${humanSize(effectiveMaxSize)} (${humanSize(file.size)}) - รูปภาพต้องไม่เกิน 10MB`
       })
       continue
     }
 
-    // Check file type
     const isValidType = allowedTypes.includes(file.type) ||
       allowExtensions.some(ext => file.name.toLowerCase().endsWith(`.${ext}`))
 
@@ -116,23 +140,28 @@ export const validateFiles = async (
       continue
     }
 
-    // Compress large images
-    if (file.type.startsWith('image/') && file.size > compressionThreshold) {
-      try {
-        console.log(`Compressing image: ${file.name} (${humanSize(file.size)})`)
-        const compressedFile = await compressImage(file)
-        console.log(`Compressed to: ${humanSize(compressedFile.size)}`)
-        valid.push(compressedFile)
-      } catch (error) {
-        console.warn(`Compression failed for ${file.name}, using original:`, error)
-        valid.push(file) // Fallback to original
-      }
-    } else {
-      valid.push(file)
-    }
+    // HEIC cannot be decoded by canvas — skip compression.
+    const compressible = file.type.startsWith('image/') &&
+      !/heic|heif/i.test(file.type) &&
+      !/\.heic$/i.test(file.name) &&
+      file.size > compressionThreshold
+
+    if (compressible) toCompress.push(file)
+    else passThrough.push(file)
   }
 
-  return { valid, invalid }
+  // Compress all eligible images in parallel.
+  const compressed = await Promise.all(
+    toCompress.map(async (file) => {
+      try {
+        return await compressImage(file)
+      } catch {
+        return file
+      }
+    })
+  )
+
+  return { valid: [...passThrough, ...compressed], invalid }
 }
 
 /**

@@ -1,6 +1,27 @@
 // src/app/api/admin/requests/[id]/cctv/route.ts
 import { NextRequest } from 'next/server'
+import { z } from 'zod'
 import { query } from '@/lib/db'
+
+const cctvMetadataSchema = z.object({
+  media_type: z.enum(['image', 'video']),
+  file_name: z.string().min(1).max(255).regex(/^[^<>:"/\\|?*]+$/, 'ชื่อไฟล์มีอักขระต้องห้าม'),
+  // file_path is a server-relative reference — must be a bare filename, no traversal
+  file_path: z.string().min(1).max(255).regex(/^[A-Za-z0-9._-]+$/, 'รูปแบบ file_path ไม่ถูกต้อง'),
+  file_size: z.number().int().positive().max(500 * 1024 * 1024),
+  mime_type: z.string().min(1).max(100),
+  camera_id: z.union([z.string(), z.number(), z.null()]).optional(),
+  camera_location: z.string().max(255).nullable().optional(),
+  captured_at: z.string().max(64).nullable().optional(),
+  description: z.string().max(2000).nullable().optional(),
+  access_level: z.enum(['restricted', 'public', 'internal']).optional(),
+  uploaded_by: z.union([z.string(), z.number()]).nullable().optional(),
+  duration_seconds: z.number().int().nonnegative().nullable().optional(),
+  resolution_width: z.number().int().positive().nullable().optional(),
+  resolution_height: z.number().int().positive().nullable().optional(),
+  recording_start: z.string().max(64).nullable().optional(),
+  recording_end: z.string().max(64).nullable().optional(),
+})
 
 
 type ApprovalStatus = 'อนุมัติ' | 'รอดำเนินการ' | 'กำลังตรวจสอบ' | 'ปฏิเสธ'
@@ -186,7 +207,20 @@ export async function POST(
       return Response.json({ success: false, message: 'ไม่พบคำร้องที่ระบุ' }, { status: 404 })
     }
 
-    const body = await req.json()
+    let rawBody: unknown
+    try {
+      rawBody = await req.json()
+    } catch {
+      return Response.json({ success: false, message: 'รูปแบบคำขอไม่ถูกต้อง' }, { status: 400 })
+    }
+    const parsed = cctvMetadataSchema.safeParse(rawBody)
+    if (!parsed.success) {
+      return Response.json(
+        { success: false, message: 'ข้อมูลไฟล์ไม่ถูกต้อง', issues: parsed.error.issues },
+        { status: 400 }
+      )
+    }
+    const body = parsed.data
 
     if (body.media_type === 'image') {
       const sql = `

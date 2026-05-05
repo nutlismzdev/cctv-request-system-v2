@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     // ถ้าไม่พบใน statusTokenStore ให้ลองหาใน lineTokenStore
     if (!tokenData) {
-      const reportIdFromLineToken = validateLineToken(token!)
+      const reportIdFromLineToken = await validateLineToken(token!)
       if (reportIdFromLineToken) {
         // สร้าง token data สำหรับ LINE token (ยังมีอายุ 24 ชั่วโมง)
         tokenData = { reportId: reportIdFromLineToken, expires: Date.now() + (24 * 60 * 60 * 1000) }

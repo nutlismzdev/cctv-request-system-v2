@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { query } from '@/lib/db';
+import { requireAdmin } from '@/lib/auth-server';
 
 // Type definitions for request data
 interface ReportCount {
@@ -15,6 +16,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  const guard = await requireAdmin(req);
+  if ('response' in guard) return guard.response;
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -114,6 +117,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin(req);
+  if ('response' in guard) return guard.response;
   try {
     const body = await req.json();
 

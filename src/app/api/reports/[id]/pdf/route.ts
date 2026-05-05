@@ -8,6 +8,8 @@ import fontkit from '@pdf-lib/fontkit'
 import { RowDataPacket } from 'mysql2/promise'
 import fs from 'fs/promises'
 import path from 'path'
+import { NextRequest } from 'next/server'
+import { requireAdmin } from '@/lib/auth-server'
 
 // ============================= Config =============================
 const DEFAULT_FONT_SIZE = 16 // มาตรฐานราชการไทย
@@ -40,20 +42,28 @@ const THAI_MONTHS_FULL = [
   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'
 ] as const
 
+/**
+ * Normalize a year so it is always Common Era before we add 543.
+ * Some Android/Samsung browsers under th-TH locale emit Buddhist-era
+ * years (e.g. 2569) from <input type="date">, so a naive `+ 543`
+ * would produce 3112 on the PDF.
+ */
+const toCeYear = (y: number): number => (y >= 2400 ? y - 543 : y)
+
 /** yyyy-mm-dd | Date | string → "D เดือนไทย YYYY+543" (พ.ศ.) */
 function toThaiDateStringThaiFull(v: unknown): string {
   if (!v) return ''
   if (typeof v === 'string') {
     const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/)
     if (m) {
-      const yBE = parseInt(m[1], 10) + 543
+      const yBE = toCeYear(parseInt(m[1], 10)) + 543
       const moIdx = Math.max(0, Math.min(11, parseInt(m[2], 10) - 1))
       const d = String(parseInt(m[3], 10))
       return `${d} ${THAI_MONTHS_FULL[moIdx]} ${yBE}`
     }
     const dObj = new Date(v)
     if (!isNaN(dObj.getTime())) {
-      const yBE = dObj.getFullYear() + 543
+      const yBE = toCeYear(dObj.getFullYear()) + 543
       const moIdx = dObj.getMonth()
       const d = String(dObj.getDate())
       return `${d} ${THAI_MONTHS_FULL[moIdx]} ${yBE}`
@@ -61,7 +71,7 @@ function toThaiDateStringThaiFull(v: unknown): string {
     return v
   }
   if (v instanceof Date) {
-    const yBE = v.getFullYear() + 543
+    const yBE = toCeYear(v.getFullYear()) + 543
     const moIdx = v.getMonth()
     const d = String(v.getDate())
     return `${d} ${THAI_MONTHS_FULL[moIdx]} ${yBE}`
@@ -1028,10 +1038,13 @@ async function drawAttachmentsPage(pdfDoc: PDFDocument, font: PDFFont, attachmen
 
 // ============================== Route ============================
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const guard = await requireAdmin(request)
+    if ('response' in guard) return guard.response
+
     const { searchParams } = new URL(request.url)
     const debug = searchParams.get('debug') === '1'
     const mode = searchParams.get('mode') || 'draw' // 'grid' | 'draw'

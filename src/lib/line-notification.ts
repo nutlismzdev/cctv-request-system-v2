@@ -5,64 +5,60 @@ import crypto from 'crypto'
 
 const LINE_API_BASE = 'https://api.line.me/v2/bot'
 
-// ---------- LINE Notification Token Store ----------
-type LineTokenData = { reportId: number; expires: number }
+// ---------- LINE Notification Token Store (MySQL-backed) ----------
+// Tokens used to be a Map on globalThis — they were lost on every server restart and
+// did not survive scale-out. They now live in `line_tracking_tokens` (see
+// database/line_tracking_tokens.sql) with TTL enforced via expires_at.
 
-declare global {
-  var lineTokenStore: Map<string, LineTokenData> | undefined
-}
+const LINE_TOKEN_TTL_MS = 24 * 60 * 60 * 1000 // 24h
+let lastCleanupAt = 0
 
-interface GlobalWithLineStore {
-  lineTokenStore?: Map<string, LineTokenData>
-}
-
-const globalForLineStore = globalThis as GlobalWithLineStore
-if (!globalForLineStore.lineTokenStore) {
-  globalForLineStore.lineTokenStore = new Map<string, LineTokenData>()
-}
-const lineTokenStore = globalForLineStore.lineTokenStore!
-
-// ---------- LINE Token Utilities ----------
 /**
  * สร้าง LINE notification token ใหม่ที่มีอายุ 24 ชั่วโมง
  */
-function createLineNotificationToken(reportId: number): string {
+async function createLineNotificationToken(reportId: number): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex')
-  const expires = Date.now() + (24 * 60 * 60 * 1000) // 24 ชั่วโมง
-
-  lineTokenStore.set(token, { reportId, expires })
-
-  // Cleanup expired tokens (เรียกเป็นระยะ)
-  cleanupExpiredLineTokens()
-
+  const expiresAt = new Date(Date.now() + LINE_TOKEN_TTL_MS)
+  await getPool().execute(
+    `INSERT INTO line_tracking_tokens (token, report_id, expires_at)
+     VALUES (?, ?, ?)`,
+    [token, reportId, expiresAt]
+  )
+  // Best-effort cleanup at most once per hour
+  if (Date.now() - lastCleanupAt > 60 * 60 * 1000) {
+    lastCleanupAt = Date.now()
+    getPool()
+      .execute('DELETE FROM line_tracking_tokens WHERE expires_at < NOW()')
+      .catch(err => console.warn('LINE token cleanup failed:', err))
+  }
   return token
+}
+
+interface LineTokenRow extends RowDataPacket {
+  report_id: number
+  expires_at: Date
 }
 
 /**
  * ตรวจสอบ LINE token และคืนค่า reportId ถ้ายังไม่หมดอายุ
  */
-export function validateLineToken(token: string): number | null {
-  const tokenData = lineTokenStore.get(token)
-  if (!tokenData) return null
-
-  if (tokenData.expires < Date.now()) {
-    lineTokenStore.delete(token)
+export async function validateLineToken(token: string): Promise<number | null> {
+  const [rows] = await getPool().execute<LineTokenRow[]>(
+    `SELECT report_id, expires_at
+     FROM line_tracking_tokens
+     WHERE token = ?
+     LIMIT 1`,
+    [token]
+  )
+  if (rows.length === 0) return null
+  const row = rows[0]
+  if (new Date(row.expires_at).getTime() < Date.now()) {
+    await getPool()
+      .execute('DELETE FROM line_tracking_tokens WHERE token = ?', [token])
+      .catch(() => {})
     return null
   }
-
-  return tokenData.reportId
-}
-
-/**
- * ลบ tokens ที่หมดอายุแล้ว
- */
-function cleanupExpiredLineTokens() {
-  const now = Date.now()
-  for (const [token, data] of lineTokenStore.entries()) {
-    if (data.expires < now) {
-      lineTokenStore.delete(token)
-    }
-  }
+  return row.report_id
 }
 
 // Type definitions for database rows
@@ -345,7 +341,7 @@ export async function sendNotificationToReportOwner(reportId: number, status: st
     }
 
     // สร้าง LINE notification token ใหม่ที่มีอายุ 24 ชั่วโมง
-    const lineToken = createLineNotificationToken(reportId)
+    const lineToken = await createLineNotificationToken(reportId)
 
     return await sendLineNotification(r.line_user_id, {
       report_id: reportId,

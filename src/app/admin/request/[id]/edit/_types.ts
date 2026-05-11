@@ -57,6 +57,12 @@ export interface Report {
   location_verified_by?: number | null
   location_verified_at?: string | null
   location_verified_officer_name?: string | null
+
+  // LINE link status — มาจาก JOIN line_users ใน /api/reports/[id]
+  // line_is_friend = false → ส่ง pushMessage ไม่ได้ (ลิงก์วิดีโออัตโนมัติส่งไม่ถึง)
+  line_user_id?: number | null
+  line_is_friend?: boolean | number | null
+  line_display_name?: string | null
 }
 
 export interface Officer {

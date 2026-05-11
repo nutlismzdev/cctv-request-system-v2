@@ -37,6 +37,7 @@ import {
   normalizeIsoDate,
   normalizeTime,
 } from '@/lib/thai-datetime'
+import PDPAConsentModal from '@/components/PDPAConsentModal'
 
 /* -------------------- Constants -------------------- */
 const PREFIXES_KEYS = ['นาย', 'นาง', 'นางสาว'] as const
@@ -2092,6 +2093,8 @@ export default function RequestPage() {
   const [gateState, setGateState] = useState<GateState>('booting')
   const [gateError, setGateError] = useState('')
   const [profile, setProfile] = useState<LiffUserProfile | null>(null)
+  const [pdpaAccepted, setPdpaAccepted] = useState(false)
+  const [pdpaRejected, setPdpaRejected] = useState(false)
   const [doneReportId, setDoneReportId] = useState<number | null>(null)
   const [attachmentIssue, setAttachmentIssue] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -2181,6 +2184,21 @@ export default function RequestPage() {
     const liff = liffRef.current
     if (liff?.isInClient()) { liff.closeWindow(); return }
     window.close()
+  }, [])
+
+  // PDPA consent ไม่ถูก persist — แสดง modal ทุกครั้งที่เข้าหน้า /request
+  const handlePdpaAccept = useCallback(() => {
+    setPdpaAccepted(true)
+    setPdpaRejected(false)
+  }, [])
+
+  const handlePdpaReject = useCallback(() => {
+    setPdpaAccepted(false)
+    setPdpaRejected(true)
+  }, [])
+
+  const handlePdpaReconsider = useCallback(() => {
+    setPdpaRejected(false)
   }, [])
 
   const handleSubmit = useCallback(async () => {
@@ -2280,6 +2298,10 @@ export default function RequestPage() {
     )
   }
 
+  if (pdpaRejected) {
+    return <PdpaRejectedScreen onReconsider={handlePdpaReconsider} onClose={closeWindow} />
+  }
+
   const viewProps: ViewProps = {
     onSubmit: handleSubmit,
     form,
@@ -2300,5 +2322,51 @@ export default function RequestPage() {
     locale,
   }
 
-  return isDesktop ? <DesktopView {...viewProps} /> : <MobileView {...viewProps} />
+  return (
+    <>
+      <PDPAConsentModal
+        isOpen={!pdpaAccepted}
+        onAccept={handlePdpaAccept}
+        onReject={handlePdpaReject}
+        lineUserIdStr={profile?.userId ?? null}
+        pagePath="/request"
+      />
+      {isDesktop ? <DesktopView {...viewProps} /> : <MobileView {...viewProps} />}
+    </>
+  )
+}
+
+function PdpaRejectedScreen({ onReconsider, onClose }: { onReconsider: () => void; onClose: () => void }) {
+  return (
+    <div className="min-h-dvh flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 via-white to-sky-50/60 px-4 py-12">
+      <div className="w-full max-w-sm">
+        <GateBrand />
+        <Card className="rounded-3xl border-0 shadow-2xl shadow-slate-200/70">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center gap-5 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600 ring-1 ring-amber-200">
+                <ShieldCheck className="h-7 w-7" aria-hidden="true" />
+              </span>
+              <div className="space-y-1.5">
+                <p className="text-lg font-bold text-slate-900">ไม่สามารถดำเนินการต่อได้</p>
+                <p className="text-sm leading-relaxed text-slate-600">
+                  การยินยอมตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
+                  เป็นเงื่อนไขจำเป็นในการยื่นคำร้องขอภาพ CCTV
+                  หากท่านเปลี่ยนใจสามารถกลับมาให้ความยินยอมเพื่อดำเนินการต่อได้
+                </p>
+              </div>
+              <div className="flex w-full flex-col gap-2">
+                <Button className="h-11 rounded-lg" onClick={onReconsider}>
+                  กลับไปอ่านอีกครั้ง
+                </Button>
+                <Button variant="outline" className="h-11 rounded-lg" onClick={onClose}>
+                  ปิดหน้าต่าง
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
 }

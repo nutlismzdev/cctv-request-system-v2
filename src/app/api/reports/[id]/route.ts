@@ -460,9 +460,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         r.longitude,
         r.location_verified_by,
         r.location_verified_at,
-        c.category_name
+        c.category_name,
+        r.line_user_id,
+        lu.is_friend AS line_is_friend,
+        lu.display_name AS line_display_name
       FROM reports r
       LEFT JOIN categories c ON r.category_id = c.category_id
+      LEFT JOIN line_users lu ON r.line_user_id = lu.line_user_id
       WHERE r.report_id = ?`,
       [reportId]
     )

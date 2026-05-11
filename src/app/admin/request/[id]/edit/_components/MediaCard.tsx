@@ -81,6 +81,7 @@ export function MediaCard({ media: m, index, onOpenFullscreen, onDelete, onToggl
               height={160}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               loading="lazy"
+              unoptimized
             />
 
             <div className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">

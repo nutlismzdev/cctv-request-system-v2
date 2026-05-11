@@ -15,10 +15,11 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { preload } from 'react-dom'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Suspense } from 'react'
-import { CheckCircle2, MessageCircle, AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
+import { CheckCircle2, MessageCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { THEME_COLORS } from '@/lib/theme-colors'
@@ -28,9 +29,13 @@ import type { LiffSDK } from '@/types/liff'
 
 const ONSITE_LIFF_STORAGE_KEY = 'liff-onsite-redirect'
 const ONSITE_LIFF_STORAGE_MAX_AGE_MS = 30 * 60 * 1000
+const ADD_FRIEND_AWAIT_KEY = 'lineoa-onsite-awaiting-friend'
+const ADD_FRIEND_URL = 'https://line.me/R/ti/p/@513dlddc'
+const LIFF_SDK_URL = 'https://static.line-scdn.net/liff/edge/2/sdk.js'
 
 type OnsiteLiffTarget = { reportId: string; token: string }
-type Step = 'checking' | 'add-friend' | 'linking' | 'success' | 'error'
+// 'pending-friend' = ผูกคำร้องสำเร็จแล้ว แต่ยังต้องเพิ่มเพื่อนเพื่อรับลิงก์วิดีโอ
+type Step = 'checking' | 'linking' | 'pending-friend' | 'success' | 'error'
 
 interface LinkStatus {
   success: boolean
@@ -52,7 +57,7 @@ function ensureSDK(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (getLiff()) return resolve()
     const script = document.createElement('script')
-    script.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'
+    script.src = LIFF_SDK_URL
     script.async = true
     script.onload = () => resolve()
     script.onerror = () => reject(new Error('โหลด LIFF SDK ไม่สำเร็จ'))
@@ -102,7 +107,13 @@ function parseLiffState(raw: string | null): OnsiteLiffTarget | null {
 }
 
 function DispatchInner() {
+  // Rule: rendering-resource-hints — เริ่ม fetch LIFF SDK พร้อมๆ กับที่ React render
+  // ถึงตอน useEffect เรียก ensureSDK() ใน setTimeout ของ event loop ถัดไป
+  // browser จะมี script cache อยู่แล้ว → ลด cold start 100-300ms
+  preload(LIFF_SDK_URL, { as: 'script' })
+
   const tSuccess = useTranslations('LiffLink.success')
+  const tPending = useTranslations('LiffLink.pendingFriend')
   const searchParams = useSearchParams()
   const hasRunRef = useRef(false)
 
@@ -112,9 +123,10 @@ function DispatchInner() {
   const [profile, setProfile] = useState<LiffProfile | null>(null)
   const [linkStatus, setLinkStatus] = useState<LinkStatus | null>(null)
   const [currentStep, setCurrentStep] = useState<Step>('checking')
+  const [isPolling, setIsPolling] = useState(false)
 
   const linkReport = useCallback(
-    async (reportId: string, token: string, userId: string) => {
+    async (reportId: string, token: string, userId: string, friendFlag: boolean) => {
       setCurrentStep('linking')
       const numericId = Number(reportId)
       if (!Number.isFinite(numericId) || numericId <= 0 || !token || !userId) {
@@ -126,13 +138,20 @@ function DispatchInner() {
         const res = await fetch('/api/line/link', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ report_id: numericId, tracking_token: token, userId }),
+          body: JSON.stringify({
+            report_id: numericId,
+            tracking_token: token,
+            userId,
+            is_friend: friendFlag,
+          }),
         })
         const result: LinkStatus = await res.json()
-        liffLog('dispatch:link-result', { ok: res.ok, result })
-        if (res.ok && result.success) {
-          setLinkStatus(result)
-          setCurrentStep('success')
+        liffLog('dispatch:link-result', { ok: res.ok, result, friendFlag })
+        // 409 = already linked → ถือว่า success (แค่ไม่ link ซ้ำ) ผู้ใช้ยังต้องเพิ่มเพื่อนถ้ายังไม่ใช่
+        const alreadyLinked = res.status === 409
+        if ((res.ok && result.success) || alreadyLinked) {
+          setLinkStatus(alreadyLinked ? { success: true, error: result.error } : result)
+          setCurrentStep(friendFlag ? 'success' : 'pending-friend')
         } else {
           setErrorMsg(result.error || 'เกิดข้อผิดพลาดในการผูกคำร้อง')
           setCurrentStep('error')
@@ -229,28 +248,23 @@ function DispatchInner() {
           return
         }
 
-        // 4) Get friendship — ถ้า throw ให้ถือว่ายังไม่เป็นเพื่อน (ไม่หยุด flow)
-        stage = 'get-friendship'
+        // 4-5) Parallel: getFriendship + getProfile
+        // Rule: async-parallel — เรียก LINE backend คนละ endpoint ไม่ขึ้นต่อกัน
+        // เดิม sequential (~400-800ms) → parallel (~200-400ms)
+        // ⚠️ สำคัญ: ไม่ block flow ที่ friendship — ผูกคำร้องก่อนเสมอ แล้วบังคับเพิ่มเพื่อนหลัง link สำเร็จ
+        stage = 'get-friendship-and-profile'
         liffLog('dispatch:stage', { stage })
-        let isFriendFlag = false
-        try {
-          const friendship = await liff.getFriendship()
-          isFriendFlag = friendship.friendFlag
-        } catch (friendErr) {
-          liffLog('dispatch:friendship-failed', { err: friendErr })
-          isFriendFlag = false
-        }
+        const [friendshipResult, prof] = await Promise.all([
+          liff.getFriendship().catch((friendErr) => {
+            liffLog('dispatch:friendship-failed', { err: friendErr })
+            return { friendFlag: false }
+          }),
+          liff.getProfile(),
+        ])
         if (cancelled) return
+        const isFriendFlag = friendshipResult.friendFlag
         setIsFriend(isFriendFlag)
-        if (!isFriendFlag) {
-          setCurrentStep('add-friend')
-          return
-        }
 
-        // 5) Get profile + link
-        stage = 'get-profile'
-        liffLog('dispatch:stage', { stage })
-        const prof = await liff.getProfile()
         const idToken = liff.getDecodedIDToken?.() ?? null
         const lineUserId = prof.userId || idToken?.sub || ''
         if (!lineUserId) {
@@ -266,8 +280,8 @@ function DispatchInner() {
         })
 
         stage = 'link-report'
-        liffLog('dispatch:stage', { stage, userId: lineUserId })
-        await linkReport(resolved.reportId, resolved.token, lineUserId)
+        liffLog('dispatch:stage', { stage, userId: lineUserId, isFriendFlag })
+        await linkReport(resolved.reportId, resolved.token, lineUserId, isFriendFlag)
       } catch (err) {
         if (cancelled) return
         const e = err as { code?: string; message?: string }
@@ -285,20 +299,91 @@ function DispatchInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleAddFriend = () => {
+  const handleAddFriend = useCallback(() => {
+    setIsPolling(true)
+    try { sessionStorage.setItem(ADD_FRIEND_AWAIT_KEY, '1') } catch {}
     const liff = getLiff()
+    // external: false → เปิด in-app window ของ LINE → กลับมาที่ dispatch ได้เนียน
+    // เมื่อ user ปิด add-friend window → pageshow/visibilitychange จะ trigger re-check
     try {
       if (liff?.openWindow) {
-        liff.openWindow({ url: 'https://line.me/R/ti/p/@513dlddc', external: true })
-      } else {
-        window.open('https://line.me/R/ti/p/@513dlddc', '_blank', 'noreferrer')
+        liff.openWindow({ url: ADD_FRIEND_URL, external: false })
+        return
       }
-    } catch {
-      window.open('https://line.me/R/ti/p/@513dlddc', '_blank', 'noreferrer')
+    } catch {}
+    window.location.href = ADD_FRIEND_URL
+  }, [])
+
+  const handleRecheck = useCallback(async () => {
+    const liff = getLiff()
+    if (!liff) return
+    setIsPolling(true)
+    try {
+      const friendship = await liff.getFriendship()
+      if (friendship.friendFlag) {
+        setIsFriend(true)
+        setCurrentStep('success')
+        try { sessionStorage.removeItem(ADD_FRIEND_AWAIT_KEY) } catch {}
+      }
+    } catch (err) {
+      liffLog('dispatch:recheck-failed', { err })
+    } finally {
+      setIsPolling(false)
     }
-  }
+  }, [])
+
+  // Polling + page-visibility listeners ตอนรอ user เพิ่มเพื่อน
+  // ไม่ต้องให้ user กดปุ่มตรวจเอง — กลับมา tab/visibility = re-check ทันที
+  useEffect(() => {
+    if (currentStep !== 'pending-friend') return
+    if (typeof window === 'undefined') return
+    const liff = getLiff()
+    if (!liff) return
+
+    let cancelled = false
+
+    const checkOnce = async () => {
+      try {
+        const result = await Promise.race([
+          liff.getFriendship(),
+          new Promise<never>((_, reject) =>
+            window.setTimeout(() => reject(new Error('timeout')), 2500)
+          ),
+        ])
+        if (cancelled) return
+        if (result.friendFlag) {
+          setIsFriend(true)
+          setCurrentStep('success')
+          try { sessionStorage.removeItem(ADD_FRIEND_AWAIT_KEY) } catch {}
+        }
+      } catch {
+        /* swallow */
+      }
+    }
+
+    const interval = window.setInterval(() => { void checkOnce() }, 2000)
+
+    const onPageShow = () => { void checkOnce() }
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void checkOnce()
+    }
+    const onFocus = () => { void checkOnce() }
+
+    window.addEventListener('pageshow', onPageShow)
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+      window.removeEventListener('pageshow', onPageShow)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [currentStep])
 
   const handleClose = () => {
+    try { sessionStorage.removeItem(ADD_FRIEND_AWAIT_KEY) } catch {}
     getLiff()?.closeWindow()
   }
 
@@ -313,23 +398,56 @@ function DispatchInner() {
             <p className="text-sm text-gray-600">กรุณารอสักครู่</p>
           </div>
         )
-      case 'add-friend':
+      case 'pending-friend':
         return (
-          <div className="text-center space-y-4">
-            <AlertCircle className="h-12 w-12 mx-auto text-orange-500 mb-4" />
-            <h2 className="text-xl font-bold">กรุณาเพิ่มเพื่อน LINE OA</h2>
-            <p className="text-sm text-gray-600">
-              คุณต้องเป็นเพื่อนกับ CCTV เทศบาลนครหัวหิน Official ก่อนจึงจะสามารถผูกคำร้องได้
-            </p>
-            <div className="flex flex-col gap-3">
-              <Button onClick={handleAddFriend} className="w-full bg-green-600 hover:bg-green-700 text-white">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                เพิ่มเพื่อน LINE OA
+          <div className="text-center space-y-5">
+            {/* ป้าย "ผูกคำร้องเรียบร้อย" — ยืนยันว่าขั้นตอน QR-link สำเร็จแล้ว */}
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+              {tPending('linkedBadge')}
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-slate-900">{tPending('title')}</h2>
+              <p className="text-sm leading-relaxed text-slate-500">
+                {tPending('description')}
+              </p>
+            </div>
+
+            {/* Critical warning — เน้นว่าถ้าไม่กด รับวิดีโอไม่ได้ */}
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-left">
+              <div className="flex gap-2.5">
+                <AlertCircle className="mt-0.5 h-5 w-5 flex-none text-amber-600" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-amber-900">{tPending('criticalTitle')}</p>
+                  <p className="text-xs leading-relaxed text-amber-800">{tPending('criticalNote')}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Button
+                onClick={handleAddFriend}
+                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white text-base font-semibold shadow-md shadow-green-600/25"
+              >
+                <MessageCircle className="w-5 h-5 mr-2" />
+                {tPending('addFriendButton')}
               </Button>
-              <Button variant="outline" onClick={() => window.location.reload()} className="w-full">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                กลับไปตรวจสอบใหม่
-              </Button>
+
+              {isPolling ? (
+                <p className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {tPending('polling')}
+                </p>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => void handleRecheck()}
+                  className="w-full"
+                >
+                  {tPending('recheck')}
+                </Button>
+              )}
             </div>
           </div>
         )

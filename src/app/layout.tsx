@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { Toaster } from '@/components/ui/sonner'
 import { ConditionalNavbar } from '@/components/conditional-navbar'
+import { ConditionalFooter } from '@/components/conditional-footer'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getLocale, setRequestLocale } from 'next-intl/server'
 import './globals.css'
@@ -79,6 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider messages={messages}>
           <ConditionalNavbar />
           {children}
+          <ConditionalFooter />
           <Toaster richColors position="top-right" />
         </NextIntlClientProvider>
       </body>

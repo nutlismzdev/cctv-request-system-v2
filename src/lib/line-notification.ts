@@ -64,6 +64,7 @@ export async function validateLineToken(token: string): Promise<number | null> {
 // Type definitions for database rows
 interface LineUserRow extends RowDataPacket {
   line_user_id_str: string
+  is_friend: number | boolean | null
 }
 
 interface ReportRow extends RowDataPacket {
@@ -107,23 +108,49 @@ export interface NotificationData {
  */
 export async function sendLineNotification(lineUserId: number, data: NotificationData) {
   try {
-    // หา line_user_id_str จาก numeric id
+    // หา line_user_id_str + is_friend จาก numeric id
     const [lineUsers] = await getPool().execute(
-      'SELECT line_user_id_str FROM line_users WHERE line_user_id = ? LIMIT 1',
+      'SELECT line_user_id_str, is_friend FROM line_users WHERE line_user_id = ? LIMIT 1',
       [lineUserId]
     ) as RowDataPacket[][]
     if (lineUsers.length === 0) throw new Error('LINE user not found')
 
-    const toUserIdStr = (lineUsers[0] as LineUserRow).line_user_id_str
-
-    const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
-    if (!accessToken) throw new Error('LINE_CHANNEL_ACCESS_TOKEN not configured')
+    const lineUser = lineUsers[0] as LineUserRow
+    const toUserIdStr = lineUser.line_user_id_str
+    const isFriend = Boolean(lineUser.is_friend)
 
     const message = createNotificationMessage(data)
     if (!message) {
       // ไม่มีข้อความตามสถานะนี้ → ไม่ยิง API
-      return { skipped: true }
+      return { skipped: true, reason: 'no_message' as const }
     }
+
+    // ⚠️ ต้องเป็นเพื่อนกับ OA ก่อน LINE Messaging API ถึงจะส่ง pushMessage ได้
+    // ถ้าไม่ใช่ → ยิงไปก็ได้ error 403 → log ไว้เป็นความตั้งใจ (skipped) ไม่ใช่ failure
+    if (!isFriend) {
+      try {
+        await getPool().execute(
+          `INSERT INTO activity_logs (
+            activity_type, entity_type, entity_id,
+            actor_type, actor_id, action, description,
+            metadata, ip_address
+          ) VALUES (
+            'admin_action', 'report', ?,
+            'system', 'line_notification', 'NOTIFICATION_SKIPPED_NOT_FRIEND',
+            'ผู้ยื่นยังไม่ได้เพิ่มเพื่อน LINE OA — ส่งแจ้งเตือนไม่ได้',
+            JSON_OBJECT('line_user_id', ?),
+            'system'
+          )`,
+          [data.report_id, lineUserId]
+        )
+      } catch (e) {
+        console.warn('activity_logs insert failed (NOTIFICATION_SKIPPED_NOT_FRIEND):', e)
+      }
+      return { skipped: true, reason: 'not_friend' as const }
+    }
+
+    const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
+    if (!accessToken) throw new Error('LINE_CHANNEL_ACCESS_TOKEN not configured')
 
     const res = await fetch(`${LINE_API_BASE}/message/push`, {
       method: 'POST',
@@ -164,25 +191,25 @@ export async function sendLineNotification(lineUserId: number, data: Notificatio
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       console.error('LINE notification error:', error)
-      // บันทึกว่า fail (non-prod)
-      try {
-        await getPool().execute(
-          `INSERT INTO activity_logs (
-            activity_type, entity_type, entity_id,
-            actor_type, actor_id, action, description,
-            metadata, ip_address
-          ) VALUES (
-            'admin_action', 'report', ?,
-            'system', 'line_notification', 'NOTIFICATION_FAILED',
-            'ส่งแจ้งเตือน LINE ไม่สำเร็จ',
-            NULL,
-            'system'
-          )`,
-          [data.report_id]
-        )
-      } catch (e) {
-        console.warn('activity_logs insert failed (NOTIFICATION_FAILED):', e)
-      }
+    }
+    // log fail ทุก env — admin จำเป็นต้องเห็นว่าส่งไม่สำเร็จเพื่อ follow-up ได้
+    try {
+      await getPool().execute(
+        `INSERT INTO activity_logs (
+          activity_type, entity_type, entity_id,
+          actor_type, actor_id, action, description,
+          metadata, ip_address
+        ) VALUES (
+          'admin_action', 'report', ?,
+          'system', 'line_notification', 'NOTIFICATION_FAILED',
+          'ส่งแจ้งเตือน LINE ไม่สำเร็จ',
+          JSON_OBJECT('error', ?),
+          'system'
+        )`,
+        [data.report_id, error instanceof Error ? error.message : String(error)]
+      )
+    } catch (e) {
+      console.warn('activity_logs insert failed (NOTIFICATION_FAILED):', e)
     }
     throw error
   }

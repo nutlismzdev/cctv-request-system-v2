@@ -214,11 +214,14 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-h1, h2, h3, .heading { font-weight: 600; letter-spacing: -0.01em; }
-.small-note { font-weight: 500; }
-h1 { font-size: clamp(1.75rem, 2.5vw + 1rem, 2.75rem); }
-h2 { font-size: clamp(1.5rem, 2vw + 0.8rem, 2.25rem); }
-h3 { font-size: clamp(1.25rem, 1.5vw + 0.6rem, 1.75rem); }
+/* ใส่ใน @layer base เพื่อให้ Tailwind utilities เช่น text-[15px], text-2xl override ได้ตามปกติ */
+@layer base {
+  h1, h2, h3, .heading { font-weight: 600; letter-spacing: -0.01em; }
+  .small-note { font-weight: 500; }
+  h1 { font-size: clamp(1.75rem, 2.5vw + 1rem, 2.75rem); }
+  h2 { font-size: clamp(1.5rem, 2vw + 0.8rem, 2.25rem); }
+  h3 { font-size: clamp(1.25rem, 1.5vw + 0.6rem, 1.75rem); }
+}
 
 input, select, textarea { font: inherit; }
 input, select, textarea, [contenteditable], .input-base { font-size: max(16px, 1em) !important; }

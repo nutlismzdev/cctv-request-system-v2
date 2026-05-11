@@ -160,6 +160,14 @@ function SuccessContent() {
     ? `https://liff.line.me/${liffId}?reportId=${encodeURIComponent(String(reportId))}&token=${encodeURIComponent(String(trackingToken))}`
     : ''
 
+  // Rule: rendering-hydration-no-flicker
+  // เดิมใช้ useState + matchMedia → SSR render desktop ก่อน, hydrate แล้วค่อย switch
+  //   ทำให้ mobile user เห็น layout desktop กระพริบ ~50-100ms
+  // เปลี่ยนเป็น CSS-only responsive (Tailwind md:hidden / hidden md:grid)
+  //   → render ทั้งสอง layout ใน HTML, browser ใช้ CSS @media ซ่อนตัวที่ไม่เกี่ยว
+  //   → ไม่มี JS state, ไม่มี hydration mismatch, ไม่มี flicker
+  // Trade-off: HTML payload เพิ่มเล็กน้อย (มี dual layout) — ยอมรับได้
+
   return (
     <div className="relative min-h-dvh overflow-hidden bg-background">
       {/* Atmospheric background — dot grid + soft radial accents */}
@@ -196,10 +204,55 @@ function SuccessContent() {
          
         </header>
 
-        {/* ─── Two-column section: QR (left) | Info (right) ──────── */}
+        {canAutoLink && (
+          /* ─── Mobile self-service: hero CTA, no QR — แสดงเฉพาะ viewport <md ─── */
+          <section
+            aria-labelledby="line-section-mobile"
+            className="md:hidden mx-auto w-full max-w-md"
+          >
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                <ScanLine className="h-3 w-3" />
+                ขั้นตอนเชื่อมคำร้อง
+              </div>
+              <h2 id="line-section-mobile" className="mt-3 text-lg font-bold text-foreground">
+                {t('mobileCtaTitle')}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {t('mobileSubtitle')}
+              </p>
+
+              <a
+                href={liffAutoLinkUrl}
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#06C755] px-4 py-3.5 text-base font-semibold text-white shadow-md shadow-[#06C755]/25 transition-all active:scale-[0.98]"
+              >
+                <MessageCircle className="h-5 w-5" />
+                {t('mobileCtaButton')}
+              </a>
+
+              <ul className="mt-5 space-y-2.5 text-sm text-foreground/80">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-600" strokeWidth={2.5} />
+                  <span>{t('mobileBullet1')}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-600" strokeWidth={2.5} />
+                  <span>{t('mobileBullet2')}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none text-emerald-600" strokeWidth={2.5} />
+                  <span>{t('mobileBullet3')}</span>
+                </li>
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {/* ─── Two-column section: QR (left) | Info (right) — desktop/officer ─── */}
+        {/* เมื่อ canAutoLink: ซ่อนบน mobile (มี mobile section แทน), เมื่อไม่มี: แสดงตลอดเป็น fallback */}
         <section
           aria-labelledby="line-section"
-          className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] md:gap-10 lg:gap-14 items-stretch"
+          className={`${canAutoLink ? 'hidden md:grid' : 'grid'} gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] md:gap-10 lg:gap-14 items-stretch`}
         >
           {/* QR card */}
           <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 md:p-8 shadow-sm flex flex-col items-center text-center">

@@ -242,6 +242,7 @@ export function FullscreenMediaModal({ media, onClose }: FullscreenMediaModalPro
             className="object-contain"
             sizes="100vw"
             priority
+            unoptimized
           />
         )}
       </div>

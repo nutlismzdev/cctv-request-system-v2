@@ -1,10 +1,12 @@
 // app/api/line/link/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
+import type { ResultSetHeader, RowDataPacket } from 'mysql2/promise'
 import { getPool } from '@/lib/db'
 
 export async function POST(req: NextRequest) {
   try {
-    const { report_id, tracking_token, userId } = await req.json()
+    const { report_id, tracking_token, userId, is_friend } = await req.json()
+    const friendFlag = Boolean(is_friend)
 
     // Validate required parameters
     if (!report_id || !tracking_token || !userId) {
@@ -14,11 +16,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // capture IP ตั้งแต่ตอนนี้ — req.headers อ่านใน after() ภายหลังไม่ได้
+    const ipAddress =
+      req.headers.get('x-forwarded-for') ||
+      req.headers.get('x-real-ip') ||
+      'unknown'
+
     // Verify report exists and tracking token matches
-    const [reports] = await getPool().execute(
+    const [reports] = await getPool().execute<RowDataPacket[]>(
       'SELECT report_id, status, line_user_id FROM reports WHERE report_id = ? AND tracking_token = ?',
       [report_id, tracking_token]
-    ) as import('mysql2/promise').RowDataPacket[][]
+    )
 
     if (reports.length === 0) {
       return NextResponse.json(
@@ -41,28 +49,26 @@ export async function POST(req: NextRequest) {
     await getPool().execute('START TRANSACTION')
 
     try {
-      // UPSERT line_users table
-      await getPool().execute(`
+      // UPSERT line_users + รับ line_user_id กลับใน 1 query เดียว
+      // - is_friend สะท้อนสถานะจริงตอน link (จาก liff.getFriendship() ฝั่ง client)
+      // - webhook follow event จะมา update เป็น true ถ้าผู้ใช้เพิ่มเพื่อนทีหลัง
+      // - LAST_INSERT_ID(line_user_id) trick: บังคับให้ MySQL คืน existing id ผ่าน insertId
+      //   ตอน ON DUPLICATE KEY → ตัด SELECT รอบ 2 ออก (~10-30ms)
+      const [upsertResult] = await getPool().execute<ResultSetHeader>(`
         INSERT INTO line_users (line_user_id_str, is_friend, friend_added_at, last_active_at)
-        VALUES (?, true, NOW(), NOW())
+        VALUES (?, ?, IF(?, NOW(), NULL), NOW())
         ON DUPLICATE KEY UPDATE
+          line_user_id = LAST_INSERT_ID(line_user_id),
           is_friend = VALUES(is_friend),
-          friend_added_at = IF(friend_added_at IS NULL, VALUES(friend_added_at), friend_added_at),
+          friend_added_at = COALESCE(friend_added_at, VALUES(friend_added_at)),
           last_active_at = VALUES(last_active_at),
           updated_at = NOW()
-      `, [userId])
+      `, [userId, friendFlag ? 1 : 0, friendFlag ? 1 : 0])
 
-      // Get the line_user_id
-      const [lineUsers] = await getPool().execute(
-        'SELECT line_user_id FROM line_users WHERE line_user_id_str = ?',
-        [userId]
-      ) as import('mysql2/promise').RowDataPacket[][]
-
-      if (lineUsers.length === 0) {
-        throw new Error('Failed to create/retrieve line_user')
+      const lineUserId = upsertResult.insertId
+      if (!lineUserId) {
+        throw new Error('Failed to retrieve line_user_id from upsert')
       }
-
-      const lineUserId = lineUsers[0].line_user_id
 
       // Link report with LINE user
       await getPool().execute(
@@ -73,26 +79,27 @@ export async function POST(req: NextRequest) {
       // Commit transaction
       await getPool().execute('COMMIT')
 
-      // Log activity
-      await getPool().execute(`
-        INSERT INTO activity_logs (
-          activity_type, entity_type, entity_id,
-          actor_type, actor_id, action, description,
-          metadata, ip_address
-        ) VALUES (
-          'report_updated', 'report', ?,
-          'applicant', ?, 'LINE_LINK',
-          'ผูกคำร้องกับ LINE User',
-          JSON_OBJECT('line_user_id', ?, 'userId', ?),
-          ?
-        )
-      `, [
-        report_id,
-        userId,
-        lineUserId,
-        userId,
-        req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
-      ])
+      // Rule: server-after-nonblocking — log activity หลัง response ส่งไปแล้ว
+      // ผู้ใช้ไม่ต้องรอ DB INSERT ก่อนเห็น "ผูกแล้ว ✓" (~50-150ms saved)
+      after(async () => {
+        try {
+          await getPool().execute(`
+            INSERT INTO activity_logs (
+              activity_type, entity_type, entity_id,
+              actor_type, actor_id, action, description,
+              metadata, ip_address
+            ) VALUES (
+              'report_updated', 'report', ?,
+              'applicant', ?, 'LINE_LINK',
+              'ผูกคำร้องกับ LINE User',
+              JSON_OBJECT('line_user_id', ?, 'userId', ?),
+              ?
+            )
+          `, [report_id, userId, lineUserId, userId, ipAddress])
+        } catch (e) {
+          console.warn('LINE link activity log failed:', e)
+        }
+      })
 
       return NextResponse.json({
         success: true,

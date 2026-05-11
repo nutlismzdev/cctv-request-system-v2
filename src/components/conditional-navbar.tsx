@@ -9,9 +9,11 @@ const Navbar = dynamic(() => import('./navbar').then(m => ({ default: m.Navbar }
 export function ConditionalNavbar() {
   const pathname = usePathname() ?? '/'
   const isAdmin = /^\/admin(?:\/|$)/.test(pathname)
+  const isLogin = /^\/login(?:\/|$)/.test(pathname)
 
-  // Admin routes now use admin/layout.tsx, so skip navbar here to avoid duplication
-  if (isAdmin) return null
+  // Admin routes now use admin/layout.tsx, so skip navbar here to avoid duplication.
+  // Login page renders its own full-screen layout.
+  if (isAdmin || isLogin) return null
 
   return <Navbar />
 }

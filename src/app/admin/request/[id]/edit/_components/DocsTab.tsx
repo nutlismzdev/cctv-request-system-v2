@@ -117,6 +117,7 @@ export function DocsTab({ attachments, uploadDocsWithCategory, deleteAttachment,
                     height={128}
                     className="w-full h-32 object-cover"
                     loading="lazy"
+                    unoptimized
                   />
                   <div className="absolute inset-x-0 bottom-0 bg-black/40 text-white text-xs px-2 py-1 truncate">
                     {f.file_name}

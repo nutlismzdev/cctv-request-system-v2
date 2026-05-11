@@ -1,11 +1,11 @@
 
-• ตั้งใน LINE Developers Console ครับ ต้องทำใน LINE Login Channel ที่สร้าง LIFF app 2008141300-2BMrmr94
+• ตั้งใน LINE Developers Console ครับ ต้องทำใน LINE Login Channel ที่สร้าง LIFF app 2009893013-vCBlMHC5
 
   ขั้นตอน:
 
   1. เข้า https://developers.line.biz/console/
   2. เลือก Provider เดียวกับระบบนี้
-  3. เข้า LINE Login Channel ที่มี LIFF ID 2008141300-2BMrmr94
+  3. เข้า LINE Login Channel ที่มี LIFF ID 2009893013-vCBlMHC5
   4. ไปแท็บ Basic settings
   5. หาเมนู Linked LINE Official Account
   6. กด Edit
@@ -19,17 +19,31 @@
   - บัญชีคุณต้องเป็น admin ทั้ง LINE Login Channel และ LINE OA
   - 1 LINE Login Channel ผูก OA ได้ 1 ตัวเท่านั้น
 
-  หลังจากผูกแล้ว ให้ไปที่แท็บ LIFF ของ channel เดิม แล้วเช็ค LIFF app:
+  หลังจากผูกแล้ว ให้ไปที่แท็บ LIFF ของ channel เดิม แล้วเช็ค LIFF apps ทั้งสองตัว:
 
-  - Endpoint URL: https://cctvtest.itac-huahincity.com/request
-  - Scope ต้องมี profile
+  **LIFF app สำหรับ /request (online flow)**
+  - LIFF ID: `2009893013-vCBlMHC5` (ค่าใน `NEXT_PUBLIC_LINE_LIFF_ID`)
+  - Endpoint URL: `https://cctvrequest.itac-huahincity.com/request`
+  - Scope ต้องมี `profile`, `openid`
   - Add friend option ควรเปิดเป็น On (normal) หรือ On (aggressive)
+
+  **LIFF app สำหรับ /liff-onsite/dispatch (onsite link flow)**
+  - LIFF ID: `2009893013-FBmGbusJ` (ค่าใน `NEXT_PUBLIC_LINE_LIFF_ONSITE_ID`)
+  - Endpoint URL: `https://cctvrequest.itac-huahincity.com/liff-onsite/dispatch`
+  - Scope ต้องมี `profile`, `openid`
+  - Add friend option จะเปิดหรือไม่ก็ได้ (flow มี fallback ใน code อยู่แล้ว — ดู §"หมายเหตุ Add friend option" ด้านล่าง)
 
   ความหมายของ Add friend option:
 
   - On (normal) แสดงตัวเลือกเพิ่มเพื่อนบน consent screen
   - On (aggressive) แสดงหน้าชวนเพิ่มเพื่อนหลัง consent screen
   - Off ไม่ชวนเพิ่มเพื่อน แต่โค้ดยังเช็ค getFriendship() ได้ถ้าผูก OA แล้ว
+
+  **หมายเหตุ Add friend option (ตั้งแต่ 2026-05):**
+  หลัง refactor `liff-onsite/dispatch` เป็นแบบ link-first ระบบไม่ต้องการ Add friend option บังคับ
+  ถ้าตั้ง `aggressive` ผู้ใช้ใหม่จะเห็น "เพิ่มเพื่อน" ใน consent screen → skip pending-friend step ไป
+  ถ้าไม่ตั้ง / ไม่สามารถตั้งได้ (เช่น channel link ไม่ได้) → flow ใหม่จะแสดงหน้า pending-friend
+  พร้อม polling auto-detect แทน — UX ยังใช้งานได้ครบ
 
   - https://developers.line.biz/en/docs/line-login/link-a-bot/
   - https://developers.line.biz/en/docs/liff/registering-liff-apps/
@@ -67,7 +81,7 @@
   สิ่งที่ควรเช็คตอนนี้:
 
   1. เข้า LINE Developers
-  2. เปิด Provider ที่มี LIFF ID 2008141300-2BMrmr94
+  2. เปิด Provider ที่มี LIFF ID 2009893013-vCBlMHC5
   3. ดูว่าใน Provider เดียวกันนี้มี Messaging API channel ของ OA ที่คุณใช้หรือไม่
   4. ถ้าไม่มี แปลว่า OA อยู่คนละ Provider
 

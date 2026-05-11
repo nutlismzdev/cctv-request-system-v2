@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, FileText, RefreshCw, Save } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, FileText, RefreshCw, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatThaiDateBE, getLocalizedPrefix, STATUS_TONE } from '../_utils'
 import type { Report } from '../_types'
@@ -11,6 +11,38 @@ interface EditPageHeaderProps {
   report: Report
   saving: boolean
   onSave: () => void
+}
+
+// แสดงสถานะการเชื่อมต่อ LINE OA ของผู้ยื่น — สำคัญก่อนอนุมัติ
+// ถ้า linked แต่ยังไม่เป็นเพื่อน → ส่งลิงก์วิดีโออัตโนมัติส่งไม่ถึง
+function LineLinkBadge({ report }: { report: Report }) {
+  if (report.line_user_id == null) {
+    return (
+      <div className="flex items-center gap-2 px-2 py-1 rounded-md border border-slate-200 bg-slate-50 text-slate-600">
+        <span className="h-2.5 w-2.5 rounded-full bg-slate-400" />
+        <span>LINE: ยังไม่ผูก</span>
+      </div>
+    )
+  }
+  const isFriend = Boolean(report.line_is_friend)
+  if (isFriend) {
+    return (
+      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700">
+        <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+        <span>LINE: ผูกแล้ว — เป็นเพื่อน</span>
+        {report.line_display_name && (
+          <span className="text-emerald-600/80">({report.line_display_name})</span>
+        )}
+      </div>
+    )
+  }
+  return (
+    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-amber-300 bg-amber-50 text-amber-800">
+      <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2.5} />
+      <span className="font-medium">ผู้ยื่นยังไม่ได้เพิ่มเพื่อน LINE OA</span>
+      <span className="text-amber-700/90">— ส่งลิงก์วิดีโออัตโนมัติไม่ได้</span>
+    </div>
+  )
 }
 
 export function EditPageHeader({ report, saving, onSave }: EditPageHeaderProps) {
@@ -70,6 +102,7 @@ export function EditPageHeader({ report, saving, onSave }: EditPageHeaderProps) 
                 อัปเดตล่าสุด <span className="font-medium text-[var(--foreground)]">{formatThaiDateBE(report.updated_at)}</span>
               </div>
             )}
+            <LineLinkBadge report={report} />
           </div>
         </div>
       </div>

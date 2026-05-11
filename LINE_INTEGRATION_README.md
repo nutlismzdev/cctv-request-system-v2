@@ -68,8 +68,10 @@ LINE_CHANNEL_SECRET=your_line_channel_secret
 LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token
 
 # LIFF Configuration (Login Channel) - จากขั้นตอนที่ 2
-NEXT_PUBLIC_LIFF_ID=your_liff_id_from_login_channel
-NEXT_PUBLIC_LINE_OA_BASIC_ID=@huahin_cctv
+# LIFF app สำหรับ /request (online flow)
+NEXT_PUBLIC_LINE_LIFF_ID=your_liff_id_for_request
+# LIFF app สำหรับ /liff-onsite/dispatch (onsite QR auto-link)
+NEXT_PUBLIC_LINE_LIFF_ONSITE_ID=your_liff_id_for_onsite_dispatch
 
 # LINE Group Notification (สำหรับส่งแจ้งเตือนไปยังกลุ่มเจ้าหน้าที่)
 LINE_GROUP_ACCESS_TOKEN=your_group_access_token
@@ -78,6 +80,8 @@ LINE_GROUP_ID=your_group_id
 # Base URL for notifications
 NEXT_PUBLIC_BASE_URL=https://your-domain.com
 ```
+
+> **Note**: `NEXT_PUBLIC_LIFF_ID` (ไม่มี `_LINE_`) เป็นชื่อเก่าที่ยังรองรับเป็น fallback แต่แนะนำใช้ `NEXT_PUBLIC_LINE_LIFF_ID` + `NEXT_PUBLIC_LINE_LIFF_ONSITE_ID` ในระบบใหม่
 
 ### 6. ตั้งค่า QR Code (ไม่บังคับ)
 อัปเดตไฟล์ `public/qrcode/M_513dlddc_BW.png` เป็น QR Code ของ LINE OA ของคุณ
@@ -104,8 +108,9 @@ NEXT_PUBLIC_BASE_URL=https://your-domain.com
 
 ### `/api/line/link`
 - **Method**: POST
-- **Body**: `{ report_id, tracking_token, userId }`
+- **Body**: `{ report_id, tracking_token, userId, is_friend? }`
 - **Description**: ผูก LINE user กับคำร้อง
+- **Note (2026-05)**: รับ optional `is_friend: boolean` จาก client (ค่าจาก `liff.getFriendship().friendFlag`) เพื่อเก็บสถานะเพื่อนตามจริงใน `line_users.is_friend` ถ้าไม่ส่งจะ default เป็น `false` — webhook follow event จะ sync ค่าใหม่ภายหลังเมื่อผู้ใช้กดเพิ่มเพื่อน
 
 ### `/api/line/link`
 - **Method**: GET
@@ -115,8 +120,37 @@ NEXT_PUBLIC_BASE_URL=https://your-domain.com
 ### `/api/line/webhook`
 - **Method**: POST
 - **Description**: Webhook สำหรับรับข้อความจาก LINE
+- **Note**: ทุก event ที่มี `userId` จะ upsert `line_users.is_friend = true` (LINE จะส่ง event ก็ต่อเมื่อ user เป็นเพื่อนแล้ว) ทำให้ DB sync friendship อัตโนมัติเมื่อ user เพิ่มเพื่อนภายหลังการ link
 
 **Note**: เมื่อสร้างคำร้องใหม่ ระบบจะส่ง LINE notification ไปยังกลุ่มโดยอัตโนมัติผ่านฟังก์ชัน `sendGroupNotificationForNewReport`
+
+## Notification Behavior (2026-05)
+
+`src/lib/line-notification.ts` `sendLineNotification()` — เพิ่ม guard ก่อนยิง LINE API:
+
+1. ดึง `is_friend` จาก `line_users` ก่อนยิง push
+2. ถ้า `is_friend = false` → **ไม่ยิง API** เพราะ LINE Messaging API ไม่อนุญาตให้ส่งให้ user ที่ไม่ได้เป็นเพื่อน
+   - Log: `NOTIFICATION_SKIPPED_NOT_FRIEND` ใน `activity_logs`
+   - Return: `{ skipped: true, reason: 'not_friend' }` (ไม่ throw)
+3. ถ้ายิงแล้ว LINE API คืน error → log `NOTIFICATION_FAILED` ใน `activity_logs` พร้อม error message ใน metadata (log ทุก env รวม production — ก่อน 2026-05 log เฉพาะ dev)
+
+### Activity Log Actions ที่เกี่ยวข้อง
+
+| Action | ความหมาย | env |
+|---|---|---|
+| `NOTIFICATION_SENT` | ส่ง push สำเร็จ | dev only |
+| `NOTIFICATION_SKIPPED_NOT_FRIEND` | ผู้ยื่นยังไม่เพิ่มเพื่อน — skip ไม่ยิง API | ทุก env |
+| `NOTIFICATION_FAILED` | ยิงไปแล้ว LINE API error | ทุก env |
+
+## Admin LINE Link Badge (2026-05)
+
+หน้า `/admin/request/[id]/edit` แสดง badge สถานะ LINE link ของผู้ยื่นใน `EditPageHeader`:
+
+- 🟢 **เขียว** "ผูกแล้ว — เป็นเพื่อน" (พร้อมส่ง noti)
+- 🟡 **เหลือง** "ผู้ยื่นยังไม่ได้เพิ่มเพื่อน LINE OA — ส่งลิงก์วิดีโออัตโนมัติไม่ได้" (ต้อง follow-up ก่อนอนุมัติ)
+- ⚪ **เทา** "ยังไม่ผูก" (คำร้องไม่มี LINE link)
+
+ข้อมูลมาจาก `GET /api/reports/{id}` ที่ JOIN `line_users` แล้วคืน `line_user_id` / `line_is_friend` / `line_display_name`
 
 ## ฐานข้อมูล Schema
 

@@ -40,7 +40,7 @@
         "weekend": "Sat–Sun: 08:00–16:00",
         "hoursFull": "Business hours: Mon–Fri 08:30–16:30; Sat–Sun 08:00–16:00",
         "place": "Contact place",
-        "center": "Public Safety & Security Coordination Center",
+        "center": "CCTV Control Center",
         "floor": "Hua Hin City Municipality, 3rd Floor",
         "phoneLabel": "Phone",
         "phoneShort": "Tel.",
@@ -440,7 +440,7 @@
     },
     "org": {
       "name": "Hua Hin City Municipality",
-      "unit": "3rd Floor, Peace and Security Coordination Center",
+      "unit": "3rd Floor, CCTV Control Center",
       "address": "114 Petchkasem Road, Hua Hin Sub-district, Hua Hin District, Prachuap Khiri Khan Province 77110",
       "telMain": "0-3251-1047 Ext. 310"
     }
@@ -465,7 +465,13 @@
     "newRequest": "Submit New Request",
   "footerNote": "For additional questions, please contact Tel. 032-511-047 Ext. 310 or via LINE Official Account",
   "loading": "Loading...",
-  "unknownReportId": "Unknown"
+  "unknownReportId": "Unknown",
+  "mobileCtaTitle": "Open LINE to link your request",
+  "mobileSubtitle": "The CCTV video download link will be delivered through LINE OA upon approval",
+  "mobileCtaButton": "Open in LINE",
+  "mobileBullet1": "Auto-link your LINE to this request",
+  "mobileBullet2": "Final step: Add LINE OA as friend to receive the video link",
+  "mobileBullet3": "Get notified when documents are approved"
 },
 "LiffLink": {
   "success": {
@@ -486,6 +492,18 @@
     "lineConfirmHint": "Please check the message in our LINE Official Account",
     "autoCloseHint": "This page will close automatically in {seconds} seconds",
     "close": "Close"
+  },
+  "pendingFriend": {
+    "linkedBadge": "Request linked ✓",
+    "title": "Final step — Add LINE OA as friend",
+    "description": "The CCTV video download link will only be delivered through LINE OA.",
+    "criticalTitle": "Adding as friend is required",
+    "criticalNote": "Without adding as friend, staff cannot deliver the video link to you when your request is approved.",
+    "addFriendButton": "Add LINE OA Friend",
+    "polling": "Checking… come back here after tapping \"Add Friend\" in the LINE app",
+    "recheck": "Check again",
+    "afterAddedTitle": "Friend added ✓",
+    "afterAddedNote": "You're set to receive notifications and the video download link."
   }
 }
 }

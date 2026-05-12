@@ -1115,10 +1115,10 @@ function DesktopView(props: {
           <h1 id="hero-title" className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
             {t('hero.title')}
           </h1>
-          <p className="mt-3 text-base sm:text-lg text-blue-50 max-w-3xl">
+          <p className="mt-3 text-base sm:text-lg text-white/90 max-w-3xl">
             {t('hero.subtitle')}
           </p>
-          <ul className="mt-6 flex flex-wrap items-center gap-4 text-blue-50">
+          <ul className="mt-6 flex flex-wrap items-center gap-4 text-white/90">
             <li className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" /> {t('hero.features.security')}</li>
             <li className="flex items-center gap-2"><Clock className="h-5 w-5" /> {t('hero.features.tracking')}</li>
             <li className="flex items-center gap-2"><FileText className="h-5 w-5" /> {t('hero.features.complete')}</li>
@@ -1273,7 +1273,7 @@ function MobileView(props: {
         <div className="relative px-4 sm:px-5 pt-16 py-6 sm:py-8">
         
           <h1 id="m-hero-title" className="mt-3 text-xl sm:text-2xl font-bold text-white">{t('hero.mobileTitle')}</h1>
-          <p className="mt-2 text-base text-blue-100">{t('hero.mobileSubtitle')}</p>
+          <p className="mt-2 text-base text-white/85">{t('hero.mobileSubtitle')}</p>
 
           {/* Minimal Stepper */}
           <div className="mt-4">

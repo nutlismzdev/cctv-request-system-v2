@@ -125,7 +125,7 @@ export function DocsTab({ attachments, uploadDocsWithCategory, deleteAttachment,
                   <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => downloadFile(f.url, f.file_name)}
-                      className="rounded-md border bg-white/90 p-1 text-[var(--primary)] hover:bg-blue-50"
+                      className="rounded-md border bg-white/90 p-1 text-[var(--primary)] hover:bg-[var(--primary)]/5"
                       aria-label="ดาวน์โหลดรูปภาพ"
                       title="ดาวน์โหลด"
                     >
@@ -185,7 +185,7 @@ export function DocsTab({ attachments, uploadDocsWithCategory, deleteAttachment,
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-[var(--primary)] hover:text-[var(--primary)] hover:bg-blue-50 border-blue-200"
+                        className="text-[var(--primary)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/5 border-[var(--primary)]/20"
                         onClick={() => downloadFile(f.url, f.file_name)}
                         title="ดาวน์โหลด"
                       >

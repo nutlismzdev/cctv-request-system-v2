@@ -14,7 +14,7 @@ export function UploadProgressBar({ progress, onCancel }: UploadProgressBarProps
   if (!progress.uploading) return null
 
   return (
-    <div className="mt-6 p-6 border-2 border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 via-blue-50/50 to-indigo-50/50 rounded-2xl shadow-lg backdrop-blur-sm">
+    <div className="mt-6 p-6 border-2 border-[var(--primary)]/20 bg-gradient-to-r from-[var(--primary)]/5 via-[var(--primary)]/8 to-[var(--primary)]/10 rounded-2xl shadow-lg backdrop-blur-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -104,7 +104,7 @@ export function UploadProgressBar({ progress, onCancel }: UploadProgressBarProps
           className={`h-4 rounded-full transition-all duration-700 ease-out shadow-lg relative ${
             progress.status === 'error' ? 'bg-gradient-to-r from-red-400 to-red-600' :
             progress.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' :
-            'bg-gradient-to-r from-[var(--primary)] via-blue-500 to-indigo-600'
+            'bg-gradient-to-r from-[var(--primary)] via-[#123e86] to-[#001a4d]'
           }`}
           style={{ width: `${progress.progress}%` }}
         >

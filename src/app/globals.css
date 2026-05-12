@@ -53,29 +53,33 @@
 }
 
 /* ========= Design tokens (Light) ========= */
-/* Modern Blue */
+/* Royal Navy */
 :root {
   --radius: 0.5rem;
   scroll-padding-top: 5rem;
+  --royal-navy: #002366;
+  --royal-navy-hover: #001a4d;
+  --royal-navy-soft: #edf3ff;
+  --royal-navy-border: #c9d8ee;
 
   --background: oklch(1 0 0);
-  --foreground: oklch(0.180 0.045 234.567);
-  --card: oklch(0.995 0.005 240);
-  --card-foreground: oklch(0.180 0.045 234.567);
+  --foreground: #071936;
+  --card: #fbfdff;
+  --card-foreground: #071936;
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.180 0.045 234.567);
+  --popover-foreground: #071936;
 
-  --primary: oklch(0.420 0.180 234.567);
+  --primary: var(--royal-navy);
   --primary-foreground: oklch(1 0 0);
 
-  --secondary: oklch(0.920 0.012 240);
-  --secondary-foreground: oklch(0.280 0.035 234.567);
+  --secondary: #eef4fc;
+  --secondary-foreground: #001a4d;
 
-  --muted: oklch(0.945 0.008 240);
-  --muted-foreground: oklch(0.450 0.025 240);
+  --muted: #f1f5fb;
+  --muted-foreground: #4f5f76;
 
-  --accent: oklch(0.965 0.015 240);
-  --accent-foreground: oklch(0.380 0.140 234.567);
+  --accent: #e9f1fc;
+  --accent-foreground: var(--royal-navy);
 
   --destructive: oklch(0.580 0.160 15);
   --destructive-foreground: oklch(1 0 0);
@@ -86,24 +90,24 @@
   --warning: oklch(0.650 0.140 65);
   --warning-foreground: oklch(1 0 0);
 
-  --border: oklch(0.890 0.008 240);
-  --input: oklch(0.890 0.008 240);
-  --ring: oklch(0.420 0.180 234.567);
+  --border: #d7e1ef;
+  --input: #d7e1ef;
+  --ring: var(--royal-navy);
 
-  --chart-1: oklch(0.420 0.180 234.567);
-  --chart-2: oklch(0.520 0.120 220);
+  --chart-1: var(--royal-navy);
+  --chart-2: #1f6feb;
   --chart-3: oklch(0.380 0.140 280);
   --chart-4: oklch(0.480 0.100 200);
   --chart-5: oklch(0.350 0.080 160);
 
-  --sidebar: oklch(0.975 0.008 240);
-  --sidebar-foreground: oklch(0.280 0.035 234.567);
-  --sidebar-primary: oklch(0.420 0.180 234.567);
+  --sidebar: #f6f9fd;
+  --sidebar-foreground: #001a4d;
+  --sidebar-primary: var(--royal-navy);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.945 0.012 240);
-  --sidebar-accent-foreground: oklch(0.380 0.140 234.567);
-  --sidebar-border: oklch(0.890 0.008 240);
-  --sidebar-ring: oklch(0.420 0.180 234.567);
+  --sidebar-accent: #e9f1fc;
+  --sidebar-accent-foreground: var(--royal-navy);
+  --sidebar-border: #d7e1ef;
+  --sidebar-ring: var(--royal-navy);
 
   --font-sans: var(--font-sarabun), "Noto Sans Thai", "Prompt", system-ui, 
                -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -111,25 +115,25 @@
 
 /* ========= Dark ========= */
 .dark {
-  --background: oklch(0.120 0.025 235);
-  --foreground: oklch(0.980 0.005 240);
+  --background: #050d1f;
+  --foreground: #f4f8ff;
 
-  --card: oklch(0.140 0.030 235);
-  --card-foreground: oklch(0.980 0.005 240);
-  --popover: oklch(0.140 0.030 235);
-  --popover-foreground: oklch(0.980 0.005 240);
+  --card: #081630;
+  --card-foreground: #f4f8ff;
+  --popover: #081630;
+  --popover-foreground: #f4f8ff;
 
-  --primary: oklch(0.640 0.140 234.567);
-  --primary-foreground: oklch(0.080 0.020 235);
+  --primary: #8fb7ff;
+  --primary-foreground: #00143d;
 
-  --secondary: oklch(0.180 0.035 235);
-  --secondary-foreground: oklch(0.920 0.008 240);
+  --secondary: #0f2140;
+  --secondary-foreground: #e8f1ff;
 
-  --muted: oklch(0.180 0.035 235);
-  --muted-foreground: oklch(0.750 0.015 240);
+  --muted: #0f2140;
+  --muted-foreground: #b8c7dc;
 
-  --accent: oklch(0.200 0.040 235);
-  --accent-foreground: oklch(0.740 0.120 234.567);
+  --accent: #10284f;
+  --accent-foreground: #b9d2ff;
 
   --destructive: oklch(0.680 0.140 15);
   --destructive-foreground: oklch(0.080 0.020 235);
@@ -140,49 +144,49 @@
   --warning: oklch(0.720 0.120 65);
   --warning-foreground: oklch(0.080 0.020 235);
 
-  --border: oklch(0.250 0.020 235);
-  --input: oklch(0.200 0.040 235);
-  --ring: oklch(0.640 0.140 234.567);
+  --border: #1b3154;
+  --input: #10284f;
+  --ring: #8fb7ff;
 
-  --chart-1: oklch(0.640 0.140 234.567);
+  --chart-1: #8fb7ff;
   --chart-2: oklch(0.620 0.120 220);
   --chart-3: oklch(0.680 0.120 280);
   --chart-4: oklch(0.720 0.100 200);
   --chart-5: oklch(0.620 0.100 160);
 
-  --sidebar: oklch(0.100 0.020 235);
-  --sidebar-foreground: oklch(0.920 0.008 240);
-  --sidebar-primary: oklch(0.640 0.140 234.567);
-  --sidebar-primary-foreground: oklch(0.080 0.020 235);
-  --sidebar-accent: oklch(0.160 0.030 235);
-  --sidebar-accent-foreground: oklch(0.740 0.120 234.567);
-  --sidebar-border: oklch(0.200 0.040 235);
-  --sidebar-ring: oklch(0.640 0.140 234.567);
+  --sidebar: #050d1f;
+  --sidebar-foreground: #e8f1ff;
+  --sidebar-primary: #8fb7ff;
+  --sidebar-primary-foreground: #00143d;
+  --sidebar-accent: #10284f;
+  --sidebar-accent-foreground: #b9d2ff;
+  --sidebar-border: #1b3154;
+  --sidebar-ring: #8fb7ff;
 }
 
 /* ===== การปรับแต่งเพิ่มเติมสำหรับงานราชการ ===== */
 
 :root {
   --status-draft: oklch(0.750 0.015 240);
-  --status-pending: oklch(0.420 0.180 234.567);
+  --status-pending: var(--royal-navy);
   --status-approved: oklch(0.520 0.120 142);
   --status-rejected: oklch(0.580 0.160 15);
   --status-urgent: oklch(0.580 0.180 30);
 
-  --status-in-progress: oklch(0.420 0.180 234.567);
-  --status-under-review: oklch(0.965 0.015 240);
+  --status-in-progress: var(--royal-navy);
+  --status-under-review: var(--royal-navy-soft);
   --status-completed: oklch(0.520 0.120 142);
 }
 
 .dark {
   --status-draft: oklch(0.450 0.020 240);
-  --status-pending: oklch(0.640 0.140 234.567);
+  --status-pending: #8fb7ff;
   --status-approved: oklch(0.620 0.100 142);
   --status-rejected: oklch(0.680 0.140 15);
   --status-urgent: oklch(0.680 0.160 30);
 
-  --status-in-progress: oklch(0.640 0.140 234.567);
-  --status-under-review: oklch(0.740 0.120 234.567);
+  --status-in-progress: #8fb7ff;
+  --status-under-review: #b9d2ff;
   --status-completed: oklch(0.620 0.100 142);
 }
 
@@ -320,10 +324,10 @@ input, select, textarea, [contenteditable], .input-base { font-size: max(16px, 1
     height: 6px; background-color: rgba(255,255,255,.2); border-radius: 3px; cursor: pointer; position: relative; width: 100%; margin: 0 8px; transition: height .2s ease;
   }
   .video-react .video-react-progress-holder:hover { height: 8px; }
-  .video-react .video-react-play-progress { background: linear-gradient(90deg, #0336FF 0%, #0066FF 100%); border-radius: 3px; height: 100%; position: relative; }
+  .video-react .video-react-play-progress { background: linear-gradient(90deg, var(--royal-navy) 0%, #174b9a 100%); border-radius: 3px; height: 100%; position: relative; }
   .video-react .video-react-load-progress { background-color: rgba(255,255,255,.4); border-radius: 3px; height: 100%; position: absolute; top: 0; left: 0; width: 100%; }
   .video-react .video-react-slider-handle {
-    background-color: #0336FF; border: 2px solid #fff; border-radius: 50%;
+    background-color: var(--royal-navy); border: 2px solid #fff; border-radius: 50%;
     width: 16px; height: 16px; position: absolute; top: 50%; transform: translate(-50%, -50%);
     cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,.3); transition: all .2s ease; z-index: 10;
   }
@@ -341,7 +345,7 @@ input, select, textarea, [contenteditable], .input-base { font-size: max(16px, 1
 /* Loading spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
 .video-react .video-react-loading-spinner {
-  border-color: #0336FF; border-width: 3px; width: 40px; height: 40px; border-top-color: transparent; animation: spin 1s linear infinite;
+  border-color: var(--royal-navy); border-width: 3px; width: 40px; height: 40px; border-top-color: transparent; animation: spin 1s linear infinite;
 }
 
 /* Error state */
@@ -396,4 +400,396 @@ input, select, textarea, [contenteditable], .input-base { font-size: max(16px, 1
 .report-card {
   content-visibility: auto;
   contain-intrinsic-size: 200px;
+}
+
+/* =====================================================================
+   CCTV Hua Hin — Design system classes (from Claude Design handoff)
+   Scoped utilities + visual primitives. Use alongside shadcn primitives.
+   Tokens reuse the project's existing oklch palette so palette stays in sync.
+   ===================================================================== */
+:root {
+  --cctv-line-green: #06C755;
+  --cctv-line-green-dark: #04A847;
+  --cctv-gold: oklch(0.74 0.13 75);
+  --cctv-gold-soft: oklch(0.95 0.05 75);
+  --cctv-primary-soft: color-mix(in oklch, var(--royal-navy) 10%, white);
+  --cctv-success: var(--success);
+  --cctv-success-soft: oklch(0.96 0.04 142);
+  --cctv-destructive-soft: oklch(0.97 0.03 15);
+  --cctv-warning: var(--warning);
+  --cctv-warning-soft: oklch(0.97 0.04 65);
+  --cctv-border-strong: oklch(0.820 0.010 240);
+  --cctv-fg-muted: oklch(0.450 0.025 240);
+  --cctv-fg-subtle: oklch(0.620 0.020 240);
+  --cctv-bg-muted: oklch(0.978 0.006 240);
+  --cctv-shadow-card: 0 1px 0 rgba(15,23,42,0.04), 0 8px 24px -12px rgba(15,23,42,0.12);
+  --cctv-shadow-md: 0 4px 6px -1px rgba(15,23,42,0.06), 0 2px 4px -2px rgba(15,23,42,0.06);
+  --cctv-shadow-lg: 0 10px 25px -5px rgba(15,23,42,0.10), 0 4px 10px -3px rgba(15,23,42,0.06);
+}
+.dark {
+  --cctv-primary-soft: color-mix(in oklch, #8fb7ff 18%, #050d1f);
+  --cctv-success-soft: oklch(0.22 0.05 142);
+  --cctv-destructive-soft: oklch(0.22 0.06 15);
+  --cctv-warning-soft: oklch(0.22 0.05 65);
+  --cctv-border-strong: oklch(0.300 0.020 240);
+  --cctv-fg-muted: oklch(0.750 0.015 240);
+  --cctv-fg-subtle: oklch(0.620 0.015 240);
+  --cctv-bg-muted: oklch(0.150 0.030 240);
+  --cctv-gold: oklch(0.78 0.14 80);
+  --cctv-gold-soft: oklch(0.32 0.08 80);
+}
+
+/* Dot-grid civic background w/ subtle primary halo */
+.cctv-bg-dot {
+  background-color: var(--background);
+  background-image: radial-gradient(rgba(148,163,184,0.30) 1px, transparent 1px);
+  background-size: 14px 14px;
+  position: relative;
+}
+.cctv-bg-dot::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(800px circle at 10% -10%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 50%),
+    radial-gradient(700px circle at 90% 110%, color-mix(in oklch, var(--primary) 6%, transparent), transparent 55%);
+  pointer-events: none; z-index: 0;
+}
+.cctv-bg-dot > * { position: relative; z-index: 1; }
+
+/* Typography helpers */
+.cctv-eyebrow {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--primary);
+}
+.cctv-muted { color: var(--cctv-fg-muted); }
+.cctv-subtle { color: var(--cctv-fg-subtle); font-size: 13px; }
+
+/* Card — 1.5px border + layered shadow */
+.cctv-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--cctv-shadow-card);
+  overflow: hidden;
+}
+.cctv-card-elev {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--cctv-shadow-lg);
+}
+.cctv-card-head {
+  padding: 14px 22px;
+  background: linear-gradient(180deg, var(--cctv-bg-muted), transparent);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.cctv-card-body { padding: 22px; }
+@media (max-width: 640px) {
+  .cctv-card-head { padding: 12px 16px; }
+  .cctv-card-body { padding: 16px; }
+}
+
+/* Numbered step badge */
+.cctv-num {
+  width: 26px; height: 26px; flex: 0 0 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--primary); color: var(--primary-foreground);
+  border-radius: 8px; font-size: 13px; font-weight: 700;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 2px 6px color-mix(in oklch, var(--primary) 30%, transparent);
+}
+
+/* Hua Hin official header strip */
+.cctv-official {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, var(--cctv-primary-soft), transparent);
+  border-bottom: 1px solid var(--border);
+}
+.cctv-official .seal {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, color-mix(in oklch, var(--cctv-gold) 80%, white), var(--cctv-gold) 60%, color-mix(in oklch, var(--cctv-gold) 70%, black));
+  border: 2px solid var(--card);
+  box-shadow: 0 0 0 1.5px var(--cctv-gold), 0 2px 6px rgba(0,0,0,0.1);
+  position: relative; flex: 0 0 36px;
+}
+.cctv-official .seal::before {
+  content: ''; position: absolute; inset: 5px;
+  border-radius: 50%; border: 1px dashed rgba(255,255,255,0.55);
+}
+.cctv-official .org-line1 {
+  font-size: 12px; font-weight: 500; color: var(--cctv-fg-muted); letter-spacing: 0.02em;
+}
+.cctv-official .org-line2 {
+  font-size: 14px; font-weight: 700; color: var(--foreground); letter-spacing: -0.005em;
+}
+
+/* Status pill */
+.cctv-status {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+}
+.cctv-status .dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 6px; }
+.cctv-status-info { background: var(--cctv-primary-soft); color: var(--primary); }
+.cctv-status-info .dot { background: var(--primary); }
+.cctv-status-success { background: var(--cctv-success-soft); color: var(--cctv-success); }
+.cctv-status-success .dot { background: var(--cctv-success); }
+.cctv-status-warn { background: var(--cctv-warning-soft); color: var(--cctv-warning); }
+.cctv-status-warn .dot { background: var(--cctv-warning); }
+.cctv-status-danger { background: var(--cctv-destructive-soft); color: var(--destructive); }
+.cctv-status-danger .dot { background: var(--destructive); }
+
+/* Step segments (mobile) */
+.cctv-steps { display: flex; align-items: center; gap: 8px; }
+.cctv-steps .seg {
+  flex: 1; height: 5px; border-radius: 999px;
+  background: var(--border); position: relative; overflow: hidden;
+}
+.cctv-steps .seg.done { background: var(--primary); }
+.cctv-steps .seg.cur { background: linear-gradient(90deg, var(--primary) 50%, var(--border) 50%); }
+
+/* Section header w/ rule */
+.cctv-section-head {
+  display: flex; align-items: center; gap: 14px;
+  margin: 24px 0 14px;
+}
+.cctv-section-head .num {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px; font-weight: 500; color: var(--cctv-fg-muted);
+  letter-spacing: 0.05em;
+}
+.cctv-section-head .rule { flex: 1; height: 1px; background: var(--border); }
+
+/* TOC */
+.cctv-toc { position: sticky; top: 84px; }
+.cctv-toc-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  font-size: 14px; color: var(--cctv-fg-muted);
+  cursor: pointer;
+  transition: background-color .12s, color .12s, border-color .12s;
+  border-left: 2px solid transparent;
+}
+.cctv-toc-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.cctv-toc-item:hover { background: var(--cctv-bg-muted); color: var(--foreground); }
+.cctv-toc-item.active {
+  background: var(--cctv-primary-soft); color: var(--primary);
+  border-left-color: var(--primary); font-weight: 600;
+}
+.cctv-toc-num {
+  font-variant-numeric: tabular-nums; font-size: 12px;
+  width: 22px; opacity: 0.6; flex: 0 0 22px;
+}
+
+/* Timeline */
+.cctv-timeline { position: relative; padding-left: 28px; }
+.cctv-timeline::before {
+  content: ''; position: absolute; left: 11px; top: 4px; bottom: 4px;
+  width: 2px; background: var(--border);
+}
+.cctv-timeline-item { position: relative; padding-bottom: 18px; }
+.cctv-timeline-item:last-child { padding-bottom: 0; }
+.cctv-timeline-item::before {
+  content: ''; position: absolute; left: -24px; top: 4px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--card); border: 2.5px solid var(--border);
+}
+.cctv-timeline-item.done::before { background: var(--cctv-success); border-color: var(--cctv-success); }
+.cctv-timeline-item.cur::before {
+  background: var(--card); border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--primary) 25%, transparent);
+}
+
+/* Hero "CCTV night scene" container */
+.cctv-hero-scene {
+  position: relative; overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--cctv-shadow-md);
+  background: linear-gradient(135deg, #001236, var(--royal-navy));
+}
+.cctv-hero-scene .scan-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.04) 1px,transparent 1px);
+  background-size: 24px 24px;
+}
+.cctv-hero-scene .dark-fade {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(10,22,40,0.55) 0%, rgba(10,22,40,0.85) 100%);
+}
+.cctv-rec-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #ef4444; box-shadow: 0 0 6px #ef4444;
+  animation: cctv-rec-pulse 1.6s ease-in-out infinite;
+}
+@keyframes cctv-rec-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cctv-rec-dot { animation: none; }
+}
+
+/* Map pin placeholder */
+.cctv-map {
+  position: relative; height: 160px; border-radius: 8px;
+  border: 1.5px solid var(--border); overflow: hidden;
+  background: linear-gradient(135deg, #e7eef5 0%, #dde6f1 100%);
+}
+.dark .cctv-map { background: linear-gradient(135deg, oklch(0.20 0.04 235), oklch(0.16 0.04 235)); }
+.cctv-map .grid-lines {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,35,102,0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,35,102,0.10) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.cctv-map .road {
+  position: absolute; background: rgba(255,255,255,0.85);
+  box-shadow: 0 0 0 1px rgba(0,35,102,0.08);
+}
+.cctv-map .pin {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -100%);
+  width: 26px; height: 32px;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.18));
+}
+.cctv-map .pulse {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 60px; height: 60px; border-radius: 50%;
+  background: color-mix(in oklch, var(--primary) 30%, transparent);
+  animation: cctv-map-pulse 2s ease-out infinite;
+  transform-origin: center;
+}
+@keyframes cctv-map-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cctv-map .pulse { animation: none; }
+}
+
+/* LINE friend-gate background */
+.cctv-line-hero {
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in oklch, var(--cctv-line-green) 18%, transparent), transparent 60%),
+    linear-gradient(180deg, #f4fbf6 0%, var(--background) 100%);
+}
+.dark .cctv-line-hero {
+  background:
+    radial-gradient(ellipse at 50% 0%, color-mix(in oklch, var(--cctv-line-green) 22%, transparent), transparent 60%),
+    linear-gradient(180deg, oklch(0.14 0.03 142) 0%, var(--background) 100%);
+}
+
+/* LINE button */
+.cctv-btn-line {
+  background: var(--cctv-line-green); color: #fff;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset,
+              0 8px 18px -6px rgba(6,199,85,0.45);
+  transition: background-color .15s, box-shadow .15s;
+  touch-action: manipulation;
+}
+.cctv-btn-line:hover { background: var(--cctv-line-green-dark); }
+.cctv-btn-line:focus-visible {
+  outline: 2px solid var(--cctv-line-green-dark);
+  outline-offset: 2px;
+}
+
+/* Doc-card states */
+.cctv-doc-card {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative;
+  transition: border-color .15s, background-color .15s;
+}
+.cctv-doc-card.uploaded {
+  border-color: var(--cctv-success);
+  background: color-mix(in oklch, var(--cctv-success-soft) 60%, var(--card));
+}
+.cctv-doc-card .accent-strip {
+  position: absolute; top: -1px; left: 14px; right: 14px;
+  height: 3px; background: var(--primary);
+  border-radius: 0 0 4px 4px;
+}
+
+/* Yellow notice "สำเนาถูกต้อง" */
+.cctv-notice-warn {
+  display: flex; gap: 8px;
+  padding: 9px 11px;
+  background: var(--cctv-warning-soft);
+  border: 1px solid color-mix(in oklch, var(--cctv-warning) 25%, transparent);
+  border-radius: 8px;
+  font-size: 12px; line-height: 1.5;
+  color: color-mix(in oklch, var(--cctv-warning) 60%, #5a3e0c);
+}
+.dark .cctv-notice-warn { color: color-mix(in oklch, var(--cctv-warning) 70%, #fff); }
+
+/* Chip */
+.cctv-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 13px; font-weight: 500; color: var(--foreground);
+  cursor: pointer;
+  transition: background-color .12s, color .12s, border-color .12s, box-shadow .12s;
+  touch-action: manipulation;
+}
+.cctv-chip:hover { border-color: var(--primary); color: var(--primary); }
+.cctv-chip:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.cctv-chip.active {
+  background: var(--primary); color: var(--primary-foreground);
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px -4px color-mix(in oklch, var(--primary) 50%, transparent);
+}
+
+/* Hairline rule */
+.cctv-hr { height: 1px; background: var(--border); border: 0; margin: 18px 0; }
+
+/* List w/ primary dot */
+.cctv-list { list-style: none; padding: 0; margin: 0; }
+.cctv-list li {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0;
+  font-size: 14px; line-height: 1.5;
+}
+.cctv-list li::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--primary); margin-top: 9px; flex: 0 0 6px;
+}
+
+/* Sticky bottom nav (mobile-first) — honors safe-area insets for iOS notches */
+.cctv-sticky-nav {
+  display: flex; gap: 10px; align-items: center;
+  padding: 14px 16px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--cctv-shadow-md);
+  position: sticky; bottom: 8px;
+  z-index: 20;
+}
+
+/* Tabular nums helper */
+.cctv-tabular { font-variant-numeric: tabular-nums; }
+
+/* scroll-margin-top for hash-anchored sections (privacy policy etc.) */
+.cctv-bg-dot [id] { scroll-margin-top: 84px; }
+
+/* Reduce all our decorative animations under reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .cctv-bg-dot::before { display: none; }
 }

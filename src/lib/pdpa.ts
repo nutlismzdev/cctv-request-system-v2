@@ -4,8 +4,8 @@
  * เปลี่ยนเวอร์ชันเมื่อมีการแก้ไขเนื้อหา Privacy Notice เพื่อให้ consent_logs สามารถ
  * พิสูจน์ได้ว่าผู้ใช้ยินยอมภายใต้เนื้อหาเวอร์ชันใด
  */
-export const PDPA_PRIVACY_NOTICE_VERSION = '2026-05-08'
-export const PDPA_PRIVACY_NOTICE_EFFECTIVE_AT = '2026-05-08'
+export const PDPA_PRIVACY_NOTICE_VERSION = '2026-05-11'
+export const PDPA_PRIVACY_NOTICE_EFFECTIVE_AT = '2026-05-11'
 
 export const PDPA_CONSENT_TYPES = {
   PRIVACY_NOTICE: 'pdpa_privacy_notice',

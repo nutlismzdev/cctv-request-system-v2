@@ -92,7 +92,7 @@ export function MediaCard({ media: m, index, onOpenFullscreen, onDelete, onToggl
               </div>
             </div>
 
-            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 md:top-4 md:left-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm">
+            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 md:top-4 md:left-4 bg-gradient-to-r from-[var(--primary)] to-[#123e86] text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm">
               <div className="flex items-center gap-1 sm:gap-1.5">
                 <svg className="h-2.5 w-2.5 sm:h-3 sm:w-3" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM4 7v10h16V7H4zm8 2l5 4H7l5-4z" />

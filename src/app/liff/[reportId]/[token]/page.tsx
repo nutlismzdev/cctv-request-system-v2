@@ -184,7 +184,7 @@ export default function LiffLinkPage() {
       case 'checking':
         return (
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[var(--primary)]" />
             <h2 className="text-lg font-semibold mb-2">กำลังตรวจสอบ...</h2>
             <p className="text-sm text-gray-600">กรุณารอสักครู่</p>
           </div>
@@ -199,9 +199,9 @@ export default function LiffLinkPage() {
               คุณต้องเป็นเพื่อนกับ CCTV เทศบาลนครหัวหิน Official ก่อนจึงจะสามารถผูกคำร้องได้
             </p>
 
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 className="font-semibold text-blue-800 mb-2">วิธีเพิ่มเพื่อน</h3>
-              <ol className="text-sm text-blue-700 space-y-1 text-left">
+            <div className="bg-[var(--primary)]/5 p-4 rounded-lg border border-[var(--primary)]/20">
+              <h3 className="font-semibold text-[var(--primary)] mb-2">วิธีเพิ่มเพื่อน</h3>
+              <ol className="text-sm text-[var(--primary)] space-y-1 text-left">
                 <li>1. คลิกปุ่ม &quot;เพิ่มเพื่อน LINE OA&quot; ด้านล่าง</li>
                 <li>2. กด &quot;เพิ่มเพื่อน&quot; ในหน้า LINE</li>
                 <li>3. กลับมาที่หน้านี้เพื่อดำเนินการต่อ</li>
@@ -234,7 +234,7 @@ export default function LiffLinkPage() {
       case 'linking':
         return (
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[var(--primary)]" />
             <h2 className="text-lg font-semibold mb-2">กำลังผูกคำร้อง...</h2>
             <p className="text-sm text-gray-600">กรุณารอสักครู่</p>
             {profile && (
@@ -285,9 +285,9 @@ export default function LiffLinkPage() {
               <p className="text-xs text-gray-600">{tSuccess('linkedNote')}</p>
             )}
 
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 className="font-semibold text-blue-800 mb-2">{tSuccess('notifyTitle')}</h3>
-              <ul className="text-sm text-blue-700 space-y-1 text-left">
+            <div className="bg-[var(--primary)]/5 p-4 rounded-lg border border-[var(--primary)]/20">
+              <h3 className="font-semibold text-[var(--primary)] mb-2">{tSuccess('notifyTitle')}</h3>
+              <ul className="text-sm text-[var(--primary)] space-y-1 text-left">
                 <li>• {tSuccess('notifyItem1')}</li>
                 <li>• {tSuccess('notifyItem2')}</li>
                 <li>• {tSuccess('notifyItem3')}</li>
@@ -296,7 +296,7 @@ export default function LiffLinkPage() {
 
             <Button
               onClick={handleClose}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white"
               disabled={isLoading}
             >
               {tSuccess('close')}

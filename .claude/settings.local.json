@@ -84,7 +84,11 @@
       "PowerShell(npx --no-install tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 80)",
       "PowerShell(npx --no-install tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 50)",
       "PowerShell(npx --no-install tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 30)",
-      "WebFetch(domain:www.etda.or.th)"
+      "WebFetch(domain:www.etda.or.th)",
+      "PowerShell($env:NODE_OPTIONS=\"--stack-trace-limit=100\"; npx next build 2>&1 | Out-String)",
+      "PowerShell($env:NEXT_DEBUG=\"1\"; $env:NEXT_DEBUG_BUILD=\"1\"; $env:NODE_OPTIONS=\"--stack-trace-limit=100 --unhandled-rejections=strict\"; npx next build --debug 2>&1 | Out-String)",
+      "PowerShell($env:NODE_OPTIONS=\"--require ./debug-uncaught.js --stack-trace-limit=200\"; npx next build 2>&1 | Out-String)",
+      "PowerShell(Remove-Item *)"
     ]
   }
 }

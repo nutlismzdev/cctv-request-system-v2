@@ -79,229 +79,186 @@ export default function LoginPage() {
 
   return (
     <div className="login-root">
-      <main className="page">
-        <section className="login-wrap">
-          {/* Brand / hero panel */}
-          <aside className="stage">
-            <div className="stage-photo" />
-            <div className="stage-tint" />
-            <div className="stage-grain" aria-hidden="true" />
+      <section className="login-wrap">
+        {/* Left — full-bleed photo */}
+        <aside className="stage">
+          <div className="stage-photo" />
+          <div className="stage-tint" />
 
-            <div className="stage-spine" aria-hidden="true">
-              <span>FRAME-04 · HUA HIN MUNICIPAL</span>
-              <span>CCTV · CTRL · 2026</span>
-            </div>
+          <span className="brand-mark">
+            <span className="brand-icon" aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo/icon-512.png" alt="" />
+            </span>
+            <span>เทศบาลนครหัวหิน</span>
+          </span>
 
-            <span className="vf-mark" aria-hidden="true" />
+          <div className="stage-overlay">
+            <h2 className="stage-headline">ระบบจัดการคำร้องขอภาพ CCTV</h2>
+            <p className="stage-sub">สำหรับเจ้าหน้าที่ผู้ดูแลระบบ</p>
+          </div>
+        </aside>
 
-            <div className="stage-top">
-              <span className="brand-mark">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="6" width="14" height="12" rx="2" />
-                  <path d="m22 8-6 4 6 4V8z" />
-                </svg>
-                <span>เทศบาลนครหัวหิน</span>
-              </span>
-              <span className="live-pill">
-                <span className="live-dot" />
-                LIVE
-                {clock && <span className="live-time">· {clock}</span>}
-              </span>
-            </div>
-
-            <div className="stage-overlay">
-              <span className="stage-eyebrow">
-                <span className="dot" /> สำหรับเจ้าหน้าที่ผู้ดูแลระบบ
-              </span>
-              <h2 className="stage-headline">
-                ระบบจัดการคำร้อง
-                <br />
-                <span className="accent">ขอภาพ CCTV</span>
-              </h2>
-              <p className="stage-tagline">
-                บริหารจัดการคำร้องขอภาพจากกล้องวงจรปิดอย่างเป็นระบบ
-                ปลอดภัย รวดเร็ว และตรวจสอบย้อนหลังได้
-              </p>
-
-              <ul className="stage-trust" aria-label="คุณสมบัติของระบบ">
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
-                  เข้ารหัสปลอดภัย
-                </li>
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 6v6l4 2" />
-                  </svg>
-                  บันทึกการใช้งาน
-                </li>
-                <li>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 7 9 18l-5-5" />
-                  </svg>
-                  ยืนยันสิทธิ์ผู้ใช้งาน
-                </li>
-              </ul>
-            </div>
-          </aside>
-
-          {/* Login card */}
-          <div className="login-side">
-            <form
-              ref={cardRef}
-              key={shakeKey}
-              className={`login-card${shakeKey > 0 ? ' shake' : ''}`}
-              autoComplete="off"
-              noValidate
-              onSubmit={handleSubmit}
+        {/* Right — login form */}
+        <div className="login-side">
+          <div className="side-bg" aria-hidden="true">
+            <div className="side-beams" />
+            <svg
+              className="side-polys"
+              viewBox="0 0 400 800"
+              preserveAspectRatio="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <div className="card-head">
-                <span className="badge" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </span>
-                <div className="card-head-text">
-                  <h1>ลงชื่อเข้าใช้งาน</h1>
-                  <p>กรุณาป้อนรหัสผ่านของผู้ดูแลระบบเพื่อดำเนินการต่อ</p>
-                </div>
-                <span className="card-rev" aria-hidden="true">REV 2.4</span>
-              </div>
+              <defs>
+                <linearGradient id="poly-a" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#3D8BFF" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#002366" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="poly-b" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#7CB2FF" stopOpacity="0.16" />
+                  <stop offset="100%" stopColor="#002366" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <polygon points="0,0 230,0 70,220" fill="url(#poly-a)" />
+              <polygon points="400,0 400,230 245,40" fill="url(#poly-b)" />
+              <polygon points="0,800 210,800 0,610" fill="url(#poly-b)" />
+              <polygon points="400,800 400,580 260,800" fill="url(#poly-a)" />
+              <polygon points="380,380 322,420 380,460" fill="url(#poly-a)" opacity="0.55" />
+              <polygon points="20,440 78,400 78,480" fill="url(#poly-b)" opacity="0.55" />
+            </svg>
+            <div className="side-orb side-orb-1" />
+            <div className="side-orb side-orb-2" />
+          </div>
 
-              <div className="form">
-                <div className="field">
-                  <div className="label-row">
-                    <label htmlFor="pw">รหัสผ่าน</label>
-                    {password.length > 0 && (
-                      <span className="meta">{password.length} ตัวอักษร</span>
-                    )}
-                  </div>
-                  <div className={`input${errorMsg ? ' has-error' : ''}`}>
-                    <span className="ic-left" aria-hidden="true">
+          <span className="side-status" aria-hidden="true">
+            <span className="status-dot" />
+            <span>SECURE</span>
+            {clock && <span className="status-time">· {clock}</span>}
+          </span>
+
+          <form
+            ref={cardRef}
+            key={shakeKey}
+            className={`login-card${shakeKey > 0 ? ' shake' : ''}`}
+            autoComplete="off"
+            noValidate
+            onSubmit={handleSubmit}
+          >
+            <div className="card-head">
+              <span className="head-accent" aria-hidden="true">
+                <span className="head-accent-bar" />
+                <span className="head-accent-dot" />
+              </span>
+              <h1>ลงชื่อเข้าใช้งาน</h1>
+              <p>ป้อนรหัสผ่านผู้ดูแลระบบ</p>
+            </div>
+
+            <div className="form">
+              <div className="field">
+                <div className="label-row">
+                  <label htmlFor="pw">รหัสผ่าน</label>
+                </div>
+                <div className={`input${errorMsg ? ' has-error' : ''}`}>
+                  <span className="ic-left" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </span>
+                  <input
+                    ref={pwRef}
+                    id="pw"
+                    name="password"
+                    type={showPw ? 'text' : 'password'}
+                    placeholder="ป้อนรหัสผ่าน"
+                    autoComplete="current-password"
+                    value={password}
+                    disabled={isLoading || isSuccess}
+                    onChange={e => {
+                      setPassword(e.target.value)
+                      if (errorMsg) setErrorMsg(null)
+                    }}
+                    onKeyDown={handleCaps}
+                    onKeyUp={handleCaps}
+                    onBlur={() => setCapsOn(false)}
+                  />
+                  <button
+                    type="button"
+                    className="toggle-pw"
+                    aria-pressed={showPw}
+                    aria-label="แสดง/ซ่อนรหัสผ่าน"
+                    onClick={() => {
+                      setShowPw(s => !s)
+                      pwRef.current?.focus()
+                    }}
+                  >
+                    {showPw ? (
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-6.5 0-10-7-10-7a18.7 18.7 0 0 1 4.06-5.06" />
+                        <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19" />
+                        <path d="m1 1 22 22" />
+                        <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
                       </svg>
-                    </span>
-                    <input
-                      ref={pwRef}
-                      id="pw"
-                      name="password"
-                      type={showPw ? 'text' : 'password'}
-                      placeholder="ป้อนรหัสผ่าน"
-                      autoComplete="current-password"
-                      value={password}
-                      disabled={isLoading || isSuccess}
-                      onChange={e => {
-                        setPassword(e.target.value)
-                        if (errorMsg) setErrorMsg(null)
-                      }}
-                      onKeyDown={handleCaps}
-                      onKeyUp={handleCaps}
-                      onBlur={() => setCapsOn(false)}
-                    />
-                    <button
-                      type="button"
-                      className="toggle-pw"
-                      aria-pressed={showPw}
-                      aria-label="แสดง/ซ่อนรหัสผ่าน"
-                      onClick={() => {
-                        setShowPw(s => !s)
-                        pwRef.current?.focus()
-                      }}
-                    >
-                      {showPw ? (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-6.5 0-10-7-10-7a18.7 18.7 0 0 1 4.06-5.06" />
-                          <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c6.5 0 10 7 10 7a18.5 18.5 0 0 1-2.16 3.19" />
-                          <path d="m1 1 22 22" />
-                          <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
-                        </svg>
-                      ) : (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                  <div className={`help-row${errorMsg ? ' error' : ''}`}>
-                    {errorMsg ? (
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <div className={`help-row${errorMsg ? ' error' : ''}`}>
+                  {errorMsg && (
+                    <>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 8v4" />
                         <path d="M12 16h.01" />
                       </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M12 16v-4" />
-                        <path d="M12 8h.01" />
-                      </svg>
-                    )}
-                    <span>{errorMsg ?? 'เฉพาะผู้ดูแลระบบเท่านั้น'}</span>
-                    {capsOn && (
-                      <span className="caps-pill">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m6 14 6-6 6 6" />
-                          <path d="M6 18h12" />
-                        </svg>
-                        CAPS LOCK
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className={`submit${isLoading ? ' is-loading' : ''}${isSuccess ? ' is-success' : ''}`}
-                  disabled={isLoading || isSuccess}
-                >
-                  <span className="label">{isSuccess ? 'เข้าสู่ระบบสำเร็จ' : 'เข้าสู่ระบบ'}</span>
-                  {!isSuccess && (
-                    <svg className="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14" />
-                      <path d="m12 5 7 7-7 7" />
-                    </svg>
+                      <span>{errorMsg}</span>
+                    </>
                   )}
-                  <span className="spinner"><div /></span>
-                </button>
-
-                <div className="shortcut-hint" aria-hidden="true">
-                  <kbd>Enter</kbd>
-                  <span>เพื่อเข้าสู่ระบบ</span>
-                </div>
-
-                <div className="form-foot">
-                  <span className="secure">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      <path d="m9 12 2 2 4-4" />
-                    </svg>
-                    การเชื่อมต่อปลอดภัย
-                  </span>
-                  <Link href="/">กลับหน้าแรก</Link>
+                  {capsOn && (
+                    <span className="caps-pill">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m6 14 6-6 6 6" />
+                        <path d="M6 18h12" />
+                      </svg>
+                      CAPS LOCK
+                    </span>
+                  )}
                 </div>
               </div>
-            </form>
-          </div>
-        </section>
-      </main>
 
-      <footer className="site-footer">
-        <div className="inner">
-          <span>© 2567 เทศบาลนครหัวหิน. สงวนลิขสิทธิ์.</span>
-          <div className="links">
-            <Link href="/">หน้าแรก</Link>
-            <Link href="/request">ยื่นคำร้อง</Link>
-            <Link href="/request/status">ตรวจสอบสถานะ</Link>
-          </div>
+              <button
+                type="submit"
+                className={`submit${isLoading ? ' is-loading' : ''}${isSuccess ? ' is-success' : ''}`}
+                disabled={isLoading || isSuccess}
+              >
+                <span className="label">{isSuccess ? 'เข้าสู่ระบบสำเร็จ' : 'เข้าสู่ระบบ'}</span>
+                {!isSuccess && (
+                  <svg className="arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                )}
+                <span className="spinner"><div /></span>
+              </button>
+
+              <div className="form-foot">
+                <span className="foot-meta" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="m9 12 2 2 4-4" />
+                  </svg>
+                  <span>การเชื่อมต่อปลอดภัย</span>
+                </span>
+                <Link href="/">กลับหน้าแรก</Link>
+              </div>
+            </div>
+          </form>
         </div>
-      </footer>
+      </section>
     </div>
   )
 }

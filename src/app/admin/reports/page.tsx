@@ -94,20 +94,20 @@ function getPdfYearOptions() {
 }
 
 /* =============================================================================
- * Modern Blue tokens — status mapping for current data
- * Design palette: navy primary #0059B2 + bronze accent #92691F
+ * Royal Navy tokens — status mapping for current data
+ * Design palette: royal navy primary #002366 + bronze accent #92691F
  * ========================================================================== */
 const STATUS_COLOR_MAP: Record<string, string> = {
   'เอกสารอนุมัติเรียบร้อย': '#1E8E5A', // done   — green
   'รอเอกสารอนุมัติ':         '#C68A14', // pending — amber
-  'รอยื่นเอกสาร':           '#2563B6', // wait    — blue
+  'รอยื่นเอกสาร':           '#123E86', // wait    — royal navy
   'ปฏิเสธคำร้อง':           '#B43A3A', // reject  — red
 }
 
 /** Top 10 location bars: bronze 1–5, navy 6–10 */
 const LOCATION_COLORS = [
   '#92691F', '#A87827', '#B98A2E', '#CB9A38', '#D9A347',
-  '#0059B2', '#1A6BBE', '#3A7DC2', '#5A91CF', '#7BA6DB',
+  '#002366', '#123E86', '#2D5798', '#5475AD', '#7E99C6',
 ]
 
 /** Category bar: 4 levels of bronze gradient by rank */
@@ -278,7 +278,7 @@ export default function AdminReportsPage() {
         <p>กำลังตรวจสอบสิทธิ์...</p>
         <style dangerouslySetInnerHTML={{ __html: `
           .mb-app-loader { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #F4F6FA; font-family: inherit; color: #5A657A; font-size: 14px; }
-          .mb-app-loader .spinner { width: 36px; height: 36px; border: 3px solid #D1E2F4; border-top-color: #0059B2; border-radius: 50%; animation: mb-spin .8s linear infinite; }
+          .mb-app-loader .spinner { width: 36px; height: 36px; border: 3px solid #DCE7F7; border-top-color: #002366; border-radius: 50%; animation: mb-spin .8s linear infinite; }
           @keyframes mb-spin { to { transform: rotate(360deg); } }
         ` }} />
       </div>
@@ -687,7 +687,7 @@ function PrimaryKpi({
       {spark && spark.length >= 2 ? <Sparkline values={spark} /> : null}
       {progressPct != null && (
         <div className="kpi-progress" aria-hidden>
-          <div style={{ width: `${Math.min(100, Math.max(0, progressPct))}%`, background: progressColor || '#0059B2' }} />
+          <div style={{ width: `${Math.min(100, Math.max(0, progressPct))}%`, background: progressColor || '#002366' }} />
         </div>
       )}
       <div className="foot">
@@ -732,8 +732,8 @@ function Sparkline({ values }: { values: number[] }) {
   const areaPath = `M${pad},${h} L${pts.split(' ').join(' L')} L${w - pad},${h} Z`
   return (
     <svg className="spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
-      <path d={areaPath} fill="rgba(0,89,178,.10)" />
-      <polyline points={pts} fill="none" stroke="#0059B2" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+      <path d={areaPath} fill="rgba(0,35,102,.10)" />
+      <polyline points={pts} fill="none" stroke="#002366" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -749,7 +749,7 @@ function PieSvg({ data, total }: { data: { status: string; count: number; percen
     const large = (end - start) > Math.PI ? 1 : 0
     const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start)
     const x2 = cx + r * Math.cos(end), y2 = cy + r * Math.sin(end)
-    const color = STATUS_COLOR_MAP[s.status] ?? '#2563B6'
+    const color = STATUS_COLOR_MAP[s.status] ?? '#123E86'
     return <path key={s.status} d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`} fill={color} stroke="#fff" strokeWidth={1} />
   })
   return (
@@ -800,26 +800,26 @@ function AreaSvg({ data }: { data: { name: string; v: number }[] }) {
     if (i === data.length - 1) {
       return (
         <g key={`d-${i}`}>
-          <circle cx={cx} cy={cy} r={9} fill="rgba(0,89,178,.15)" />
-          <circle cx={cx} cy={cy} r={5} fill="#0059B2" stroke="#fff" strokeWidth={2} />
-          <text x={cx} y={cy - 14} textAnchor="middle" fontFamily="var(--mb-font-num)" fontSize={11.5} fontWeight={600} fill="#062B55">{formatThaiNumber(d.v)}</text>
+          <circle cx={cx} cy={cy} r={9} fill="rgba(0,35,102,.15)" />
+          <circle cx={cx} cy={cy} r={5} fill="#002366" stroke="#fff" strokeWidth={2} />
+          <text x={cx} y={cy - 14} textAnchor="middle" fontFamily="var(--mb-font-num)" fontSize={11.5} fontWeight={600} fill="#001A4D">{formatThaiNumber(d.v)}</text>
         </g>
       )
     }
-    return <circle key={`d-${i}`} cx={cx} cy={cy} r={3} fill="#fff" stroke="#0059B2" strokeWidth={1.5} />
+    return <circle key={`d-${i}`} cx={cx} cy={cy} r={3} fill="#fff" stroke="#002366" strokeWidth={1.5} />
   })
 
   return (
     <svg className="area-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-label="กราฟแนวโน้มรายเดือน">
       <defs>
         <linearGradient id="mb-area-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0059B2" stopOpacity={0.28} />
-          <stop offset="100%" stopColor="#0059B2" stopOpacity={0} />
+          <stop offset="0%" stopColor="#002366" stopOpacity={0.28} />
+          <stop offset="100%" stopColor="#002366" stopOpacity={0} />
         </linearGradient>
       </defs>
       {grid}
       {areaPath && <path d={areaPath} fill="url(#mb-area-grad)" />}
-      <polyline points={pts} fill="none" stroke="#0059B2" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={pts} fill="none" stroke="#002366" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
       {dots}
       {xLabels}
     </svg>
@@ -849,12 +849,12 @@ function LoadingSkeleton() {
 const MODERN_BLUE_CSS = `
 .mb-root {
   /* tokens */
-  --mb-navy-50:#EAF2FB; --mb-navy-100:#D1E2F4; --mb-navy-200:#A6C5E8; --mb-navy-300:#6FA1D6;
-  --mb-navy-400:#3A7DC2; --mb-navy-500:#0059B2; --mb-navy-600:#00498F; --mb-navy-700:#033A72;
-  --mb-navy-800:#062B55; --mb-navy-900:#081E3D;
+  --mb-navy-50:#EEF4FC; --mb-navy-100:#DCE7F7; --mb-navy-200:#B9CDED; --mb-navy-300:#7E99C6;
+  --mb-navy-400:#2D5798; --mb-navy-500:#002366; --mb-navy-600:#001A4D; --mb-navy-700:#00163F;
+  --mb-navy-800:#001236; --mb-navy-900:#071936;
   --mb-bronze-50:#FBF3E8; --mb-bronze-100:#F2DDB8; --mb-bronze-200:#E6C079;
   --mb-bronze-300:#D9A347; --mb-bronze-400:#B98A2E; --mb-bronze-500:#92691F;
-  --mb-status-done:#1E8E5A; --mb-status-pending:#C68A14; --mb-status-wait:#2563B6; --mb-status-reject:#B43A3A;
+  --mb-status-done:#1E8E5A; --mb-status-pending:#C68A14; --mb-status-wait:#123E86; --mb-status-reject:#B43A3A;
   --mb-bg:#F4F6FA; --mb-surface:#FFFFFF; --mb-surface-2:#F8FAFD;
   --mb-line:#E3E8F0; --mb-line-strong:#CBD3E0;
   --mb-ink-900:#0B1220; --mb-ink-700:#2A3447; --mb-ink-500:#5A657A; --mb-ink-400:#7E899E; --mb-ink-300:#A6AFC0;
@@ -888,7 +888,7 @@ const MODERN_BLUE_CSS = `
   width:44px; height:44px; border-radius:10px;
   background:linear-gradient(135deg,var(--mb-navy-500),var(--mb-navy-700));
   color:#fff; display:grid; place-items:center; position:relative;
-  box-shadow:0 2px 8px rgba(0,89,178,.25);
+  box-shadow:0 2px 8px rgba(0,35,102,.25);
 }
 .mb-root .brand-icon { width:24px; height:24px; }
 .mb-root .brand-text .eyebrow {

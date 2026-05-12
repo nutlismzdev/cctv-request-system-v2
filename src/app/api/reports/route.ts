@@ -69,6 +69,59 @@ const createReportSchema = z.object({
 // ------------ Import shared database connection ------------
 import { getOrCreateLineUserNumericId, getPool, secureResetLineUserId } from '@/lib/db'
 import { sendGroupNotificationForNewReport } from '@/lib/line-notification'
+import { PDPA_CONSENT_TYPES, PDPA_PRIVACY_NOTICE_VERSION } from '@/lib/pdpa'
+import { buildReportSourceFilter } from '@/lib/report-source'
+
+type CreateReportData = z.infer<typeof createReportSchema>
+
+function pickClientIp(req: Request): string {
+  const forwarded = req.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0]?.trim() || 'unknown'
+  return req.headers.get('x-real-ip') || 'unknown'
+}
+
+async function logReportSubmitConsent(
+  req: Request,
+  data: CreateReportData,
+  reportId: number,
+  cleanIdOrPassport: string,
+) {
+  try {
+    const idHash = crypto.createHash('sha256').update(cleanIdOrPassport).digest('hex')
+    const subjectType = data.line_user_id_str ? 'line_user' : 'applicant'
+    await getPool().execute(
+      `INSERT INTO consent_logs (
+         consent_type, policy_version, action,
+         subject_type, line_user_id_str, report_id,
+         id_or_passport_hash, ip_address, user_agent,
+         locale, page_path, metadata
+       ) VALUES (?, ?, 'accepted', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        PDPA_CONSENT_TYPES.PRIVACY_NOTICE,
+        PDPA_PRIVACY_NOTICE_VERSION,
+        subjectType,
+        data.line_user_id_str ?? null,
+        reportId,
+        idHash,
+        pickClientIp(req),
+        req.headers.get('user-agent') || null,
+        data.language,
+        data.line_user_id_str ? '/request' : '/request-onsite',
+        JSON.stringify({
+          source: data.line_user_id_str ? 'online_liff_submit' : 'onsite_submit',
+          consent_field: data.consent,
+        }),
+      ],
+    )
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code
+    if (code === 'ER_NO_SUCH_TABLE') {
+      console.warn('[reports] consent_logs table missing — run database/pdpa_consent_logs.sql')
+      return
+    }
+    console.warn('[reports] consent log insert failed:', error)
+  }
+}
 
 // ------------ POST /api/reports ------------
 export async function POST(req: Request) {
@@ -176,6 +229,8 @@ export async function POST(req: Request) {
       console.log(`Created report with ID: ${res.insertId}`)
     }
 
+    await logReportSubmitConsent(req, data, res.insertId, cleanIdOrPassport)
+
     // กัน auto-link เฉพาะ legacy/web form เท่านั้น; online_liff ตั้ง line_user_id โดยตั้งใจอยู่แล้ว
     if (!data.line_user_id_str) {
       const [checkResult] = await getPool().execute<RowDataPacket[]>(
@@ -262,6 +317,7 @@ export async function GET(req: Request) {
     const search = searchParams.get('search') || undefined
     const categoryIdRaw = searchParams.get('category_id')
     const categoryId = categoryIdRaw ? Number(categoryIdRaw) : undefined
+    const source = searchParams.get('source') || undefined
 
     let where = 'WHERE 1=1'
     const params: Array<string | number> = []
@@ -278,6 +334,11 @@ export async function GET(req: Request) {
       const like = `%${search}%`
       where += ' AND (r.full_name LIKE ? OR r.phone_number LIKE ? OR r.incident_location LIKE ?)'
       params.push(like, like, like)
+    }
+    const sourceFilter = buildReportSourceFilter(source)
+    if (sourceFilter) {
+      where += ` AND ${sourceFilter.sql}`
+      params.push(...sourceFilter.params)
     }
 
     // ⚠ ฝัง offset/limit หลัง sanitize แล้ว (เลี่ยง bind ใน LIMIT ที่ก่อปัญหา)

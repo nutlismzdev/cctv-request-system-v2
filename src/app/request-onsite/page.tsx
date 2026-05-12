@@ -1015,67 +1015,37 @@ function StepReviewConsent(props: {
           </CardTitle>
           <CardDescription className="text-base">{t('review.description')}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm sm:text-base">
-          <div className="flex items-start gap-3">
-            <User className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div>
-              <div className="text-muted-foreground">{t('review.labels.applicant')}</div>
-              <div className="font-medium">{preview.name}</div>
-              <div className="text-muted-foreground mt-1">{preview.address || '—'}</div>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <ShieldCheck className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div>
-              <div className="text-muted-foreground">{t('review.labels.involvement')}</div>
-              <div className="font-medium">{preview.involvement}</div>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Phone className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div>
-              <div className="text-muted-foreground">{t('review.labels.contact')}</div>
-              <div className="font-medium">{preview.phone}</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <FileText className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div>
-              <div className="text-muted-foreground">{t('review.labels.category')}</div>
-              <div className="font-medium">{preview.category}</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Camera className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div>
-              <div className="text-muted-foreground">{t('review.labels.type')}</div>
-              <div className="font-medium">{preview.type}</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Clock className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div>
-              <div className="text-muted-foreground">{t('review.labels.datetime')}</div>
-              <div className="font-medium">{preview.when}</div>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <MapPin className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div>
-              <div className="text-muted-foreground">{t('review.labels.location')}</div>
-              <div className="font-medium">{preview.where}</div>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <FileText className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div>
-              <div className="text-muted-foreground">{t('review.labels.documents')}</div>
-              <div className="font-medium">{preview.supportingDocuments}</div>
-            </div>
-          </div>
+        <CardContent className="p-0">
+          <dl className="divide-y divide-border border-y border-border">
+            {[
+              { icon: User, label: t('review.labels.applicant'), value: preview.name, secondary: preview.address },
+              { icon: ShieldCheck, label: t('review.labels.involvement'), value: preview.involvement },
+              { icon: Phone, label: t('review.labels.contact'), value: preview.phone },
+              { icon: FileText, label: t('review.labels.category'), value: preview.category },
+              { icon: Camera, label: t('review.labels.type'), value: preview.type },
+              { icon: Clock, label: t('review.labels.datetime'), value: preview.when },
+              { icon: MapPin, label: t('review.labels.location'), value: preview.where },
+              { icon: FileText, label: t('review.labels.documents'), value: preview.supportingDocuments },
+            ].map(({ icon: Icon, label, value, secondary }, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-1 gap-y-1 px-4 py-3 sm:grid-cols-[minmax(180px,220px)_1fr] sm:gap-x-6 sm:px-5 sm:py-3.5 even:bg-muted/30 hover:bg-muted/50 transition-colors"
+              >
+                <dt className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Icon className="h-4 w-4 flex-shrink-0" aria-hidden />
+                  <span>{label}</span>
+                </dt>
+                <dd className="m-0 min-w-0 text-sm sm:text-base font-semibold text-foreground [text-wrap:pretty] [overflow-wrap:anywhere]">
+                  {value}
+                  {secondary ? (
+                    <div className="mt-1 text-sm font-normal text-muted-foreground [text-wrap:pretty] [overflow-wrap:anywhere]">
+                      {secondary}
+                    </div>
+                  ) : null}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </CardContent>
       </Card>
 
@@ -1170,10 +1140,10 @@ function DesktopView(props: {
           <h1 id="hero-title" className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">
             {t('hero.title')}
           </h1>
-          <p className="mt-3 text-base sm:text-lg text-blue-50 max-w-3xl">
+          <p className="mt-3 text-base sm:text-lg text-white/90 max-w-3xl">
             {t('hero.subtitle')}
           </p>
-          <ul className="mt-6 flex flex-wrap items-center gap-4 text-blue-50">
+          <ul className="mt-6 flex flex-wrap items-center gap-4 text-white/90">
             <li className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" /> {t('hero.features.security')}</li>
             <li className="flex items-center gap-2"><Clock className="h-5 w-5" /> {t('hero.features.tracking')}</li>
             <li className="flex items-center gap-2"><FileText className="h-5 w-5" /> {t('hero.features.complete')}</li>
@@ -1328,7 +1298,7 @@ function MobileView(props: {
         <div className="relative px-4 sm:px-5 pt-16 py-6 sm:py-8">
         
           <h1 id="m-hero-title" className="mt-3 text-xl sm:text-2xl font-bold text-white">{t('hero.mobileTitle')}</h1>
-          <p className="mt-2 text-base text-blue-100">{t('hero.mobileSubtitle')}</p>
+          <p className="mt-2 text-base text-white/85">{t('hero.mobileSubtitle')}</p>
 
           {/* Minimal Stepper */}
           <div className="mt-4">

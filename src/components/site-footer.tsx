@@ -7,9 +7,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ShieldCheck, Phone, MapPin, ExternalLink } from 'lucide-react'
 import { PDPA_PRIVACY_NOTICE_VERSION } from '@/lib/pdpa'
+import { formatThaiDateLong } from '@/lib/thai-datetime'
 
 const CURRENT_YEAR = new Date().getFullYear()
 const BUDDHIST_YEAR = CURRENT_YEAR + 543
+const PDPA_PRIVACY_NOTICE_VERSION_LABEL = formatThaiDateLong(PDPA_PRIVACY_NOTICE_VERSION)
 
 export function SiteFooter() {
   return (
@@ -42,8 +44,7 @@ export function SiteFooter() {
               </div>
             </div>
             <p className="mt-3 text-xs leading-relaxed text-[var(--muted-foreground)]">
-              ระบบนี้ดำเนินการภายใต้ความรับผิดชอบของเทศบาลนครหัวหิน
-              เพื่อให้บริการแก่ประชาชนตามภารกิจสาธารณะ
+              บริการยื่นคำร้องออนไลน์ เพื่อความสะดวกและรวดเร็ว
             </p>
           </div>
 
@@ -135,11 +136,11 @@ export function SiteFooter() {
               </span>
               <div>
                 <p className="text-sm font-semibold text-[var(--foreground)]">
-                  คุ้มครองข้อมูลส่วนบุคคลตาม PDPA
+                  คุ้มครองข้อมูลส่วนบุคคลตามพระราชบัญญัติฯ
                 </p>
                 <p className="text-xs text-[var(--muted-foreground)]">
                   พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562
-                  · เวอร์ชันประกาศ {PDPA_PRIVACY_NOTICE_VERSION}
+                  · เวอร์ชันประกาศวันที่ {PDPA_PRIVACY_NOTICE_VERSION_LABEL}
                 </p>
               </div>
             </div>

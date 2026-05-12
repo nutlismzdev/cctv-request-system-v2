@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { memo, useState, useEffect, useCallback, useRef } from 'react'
 
 /* ======================= Helper Functions ======================= */
 /** ฟังก์ชันสำหรับแปลง prefix เป็นภาษาที่เลือก */
@@ -42,9 +42,11 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import {
-  FileText, Search, RefreshCw, ChevronLeft, ChevronRight, Edit, Trash2, Calendar, User, Phone, Copy, MessageSquare, AlertCircle, Loader2
+  FileText, Search, RefreshCw, ChevronLeft, ChevronRight, Edit, Trash2, Calendar, User, Phone, Copy, MessageSquare, AlertCircle, Loader2,
+  Globe,
 } from 'lucide-react'
 import { getStatusStyle } from '@/lib/theme-colors'
+import { getReportSource } from '@/lib/report-source'
 
 /* -------------------- Types -------------------- */
 interface Report {
@@ -159,6 +161,27 @@ function formatThaiDateBE(input: string) {
 /* -------------------- Status styles using theme colors -------------------- */
 const styleOf = (status: string) => getStatusStyle(status)
 
+/* -------------------- Submission source badge -------------------- */
+// แสดงเฉพาะกรณี "ยื่นออนไลน์" เท่านั้น — onsite/unknown ไม่แสดง badge (ลด noise ใน table)
+// Memoized: ใน table 1 instance ต่อ row × parent re-render บ่อย (polling 30s, status update)
+// props เป็น primitives → shallow equality ของ memo ทำงานได้ดี ข้าม re-render เมื่อ row data ไม่เปลี่ยน
+const SourceBadge = memo(function SourceBadge({
+  createdBy,
+  compact = false,
+}: { createdBy?: string | null; compact?: boolean }) {
+  const info = getReportSource(createdBy)
+  if (info.kind !== 'online') return null
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700"
+      title={info.label}
+    >
+      <Globe className="h-3 w-3 text-emerald-600" aria-hidden="true" />
+      {compact ? info.shortLabel : info.label}
+    </span>
+  )
+})
+
 /* -------------------- Skeleton -------------------- */
 function TableSkeleton() {
   return (
@@ -191,6 +214,7 @@ export default function AdminRequestPage() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [sourceFilter, setSourceFilter] = useState('all')
   const [refreshing, setRefreshing] = useState(false)
 
   // For inline update status
@@ -207,12 +231,13 @@ export default function AdminRequestPage() {
 
   // ทำให้ fetchReports มีเสถียรภาพ และเป็นผู้จัดการ loading ภายใน
   const fetchReports = useCallback(
-    async (page = 1, searchQuery = '', status = 'all', limit = 10, silent = false) => {
+    async (page = 1, searchQuery = '', status = 'all', limit = 10, silent = false, source = 'all') => {
       if (!silent) setLoading(true)
       try {
         const params = new URLSearchParams({ page: String(page), limit: String(limit) })
         if (searchQuery) params.append('search', searchQuery)
         if (status && status !== 'all') params.append('status', status)
+        if (source && source !== 'all') params.append('source', source)
 
         const res = await fetch(`/api/reports?${params}`)
         const data: ReportsResponse = await res.json()
@@ -271,7 +296,7 @@ export default function AdminRequestPage() {
   // initial load (ใส่ dependency ให้ครบ)
   useEffect(() => {
     if (authChecked) {
-      fetchReports(1, '', 'all', pagination.limit)
+      fetchReports(1, '', 'all', pagination.limit, false, 'all')
     }
   }, [fetchReports, pagination.limit, authChecked])
 
@@ -280,7 +305,7 @@ export default function AdminRequestPage() {
     const startPolling = () => {
       pollingIntervalRef.current = setInterval(() => {
         // Silent update - check for new reports without changing current filters
-        fetchReports(pagination.page, searchInput.trim(), statusFilter, pagination.limit, true)
+        fetchReports(pagination.page, searchInput.trim(), statusFilter, pagination.limit, true, sourceFilter)
       }, 30000) // Poll every 30 seconds (reduced frequency)
     }
 
@@ -306,24 +331,24 @@ export default function AdminRequestPage() {
   const handleSearch = () => {
     const searchQuery = searchInput.trim()
     setSearch(searchQuery) // Update search state for consistency
-    fetchReports(1, searchQuery, statusFilter, pagination.limit)
+    fetchReports(1, searchQuery, statusFilter, pagination.limit, false, sourceFilter)
   }
 
   const handleRefresh = () => {
     setRefreshing(true)
-    fetchReports(pagination.page, searchInput.trim(), statusFilter, pagination.limit)
+    fetchReports(pagination.page, searchInput.trim(), statusFilter, pagination.limit, false, sourceFilter)
   }
 
   const handlePageChange = (p: number) => {
     if (p >= 1 && p <= pagination.pages) {
-      fetchReports(p, searchInput.trim(), statusFilter, pagination.limit)
+      fetchReports(p, searchInput.trim(), statusFilter, pagination.limit, false, sourceFilter)
     }
   }
 
   const handleLimitChange = (newLimit: number) => {
     setPagination(prev => ({ ...prev, limit: newLimit }))
     // รีเฟรชจากหน้า 1 ด้วย limit ใหม่
-    fetchReports(1, searchInput.trim(), statusFilter, newLimit)
+    fetchReports(1, searchInput.trim(), statusFilter, newLimit, false, sourceFilter)
   }
 
   const handleViewPDF = (reportId: number) =>
@@ -447,7 +472,7 @@ export default function AdminRequestPage() {
               <Search className="h-4 w-4" />
               <span className="ml-2">ค้นหา</span>
             </Button>
-            {(searchInput || statusFilter !== 'all') && (
+            {(searchInput || statusFilter !== 'all' || sourceFilter !== 'all') && (
               <Button
                 variant="outline"
                 size="sm"
@@ -455,7 +480,8 @@ export default function AdminRequestPage() {
                   setSearchInput('')
                   setSearch('')
                   setStatusFilter('all')
-                  fetchReports(1, '', 'all', pagination.limit)
+                  setSourceFilter('all')
+                  fetchReports(1, '', 'all', pagination.limit, false, 'all')
                 }}
                 className="h-10"
                 aria-label="ล้างการค้นหา"
@@ -468,7 +494,7 @@ export default function AdminRequestPage() {
               onValueChange={(value) => {
                 setStatusFilter(value)
                 // Auto search when status filter changes
-                fetchReports(1, searchInput.trim(), value, pagination.limit)
+                fetchReports(1, searchInput.trim(), value, pagination.limit, false, sourceFilter)
               }}
             >
               <SelectTrigger className="h-10 w-40 md:w-44" aria-label="ตัวกรองสถานะ">
@@ -481,6 +507,23 @@ export default function AdminRequestPage() {
                 <SelectItem value="รอเอกสารอนุมัติ">รอเอกสารอนุมัติ</SelectItem>
                 <SelectItem value="เอกสารอนุมัติเรียบร้อย">อนุมัติแล้ว</SelectItem>
                 <SelectItem value="ปฏิเสธคำร้อง">ปฏิเสธ</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={sourceFilter}
+              onValueChange={(value) => {
+                setSourceFilter(value)
+                fetchReports(1, searchInput.trim(), statusFilter, pagination.limit, false, value)
+              }}
+            >
+              <SelectTrigger className="h-10 w-36 md:w-40" aria-label="ตัวกรองช่องทางยื่น">
+                <SelectValue placeholder="ทุกช่องทาง" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">ทุกช่องทาง</SelectItem>
+                <SelectItem value="online">ยื่นออนไลน์</SelectItem>
+                <SelectItem value="onsite">ยื่นหน้างาน</SelectItem>
               </SelectContent>
             </Select>
 
@@ -579,9 +622,12 @@ export default function AdminRequestPage() {
                     key={r.report_id}
                       className={`${idx % 2 === 1 ? 'bg-[var(--muted)]/20' : 'bg-[var(--background)]'} hover:bg-[var(--accent)]/30 transition-colors`}
                   >
-                    {/* วันที่ยื่น */}
+                    {/* วันที่ยื่น + ช่องทาง */}
                     <TableCell className="border border-[var(--border)] px-4 py-3.5 align-top text-[var(--foreground)]">
-                      {formatThaiDateBE(r.submitted_at)}
+                      <div className="space-y-1.5">
+                        <div>{formatThaiDateBE(r.submitted_at)}</div>
+                        <SourceBadge createdBy={r.created_by} compact />
+                      </div>
                     </TableCell>
 
                     {/* ชื่อ-นามสกุล */}
@@ -743,9 +789,10 @@ export default function AdminRequestPage() {
                     <User className="h-4 w-4 mr-1.5 text-[var(--muted-foreground)]" />
                     {getLocalizedPrefix(r.prefix, r.language)} {r.full_name}
                   </div>
-                  <div className="flex items-center text-[var(--muted-foreground)] text-sm">
-                    <Calendar className="h-4 w-4 mr-1.5 text-[var(--muted-foreground)]" />
-                    {formatThaiDateBE(r.submitted_at)}
+                  <div className="flex items-center text-[var(--muted-foreground)] text-sm gap-1.5 flex-wrap">
+                    <Calendar className="h-4 w-4 text-[var(--muted-foreground)]" />
+                    <span>{formatThaiDateBE(r.submitted_at)}</span>
+                    <SourceBadge createdBy={r.created_by} compact />
                   </div>
                   <div className="flex items-center text-[var(--muted-foreground)] text-sm">
                     <Phone className="h-4 w-4 mr-1.5 text-[var(--muted-foreground)]" />

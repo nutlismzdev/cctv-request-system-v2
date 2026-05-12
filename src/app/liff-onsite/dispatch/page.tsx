@@ -393,7 +393,7 @@ function DispatchInner() {
       case 'checking':
         return (
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[var(--primary)]" />
             <h2 className="text-lg font-semibold mb-2">กำลังตรวจสอบ...</h2>
             <p className="text-sm text-gray-600">กรุณารอสักครู่</p>
           </div>
@@ -454,7 +454,7 @@ function DispatchInner() {
       case 'linking':
         return (
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[var(--primary)]" />
             <h2 className="text-lg font-semibold mb-2">กำลังผูกคำร้อง...</h2>
             <p className="text-sm text-gray-600">กรุณารอสักครู่</p>
             {profile && (
@@ -497,7 +497,7 @@ function DispatchInner() {
             {linkStatus?.success && (
               <p className="text-xs text-gray-600">{tSuccess('linkedNote')}</p>
             )}
-            <Button onClick={handleClose} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={handleClose} className="w-full bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white">
               {tSuccess('close')}
             </Button>
           </div>
@@ -556,7 +556,7 @@ export default function LiffDispatchPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--primary)]" />
         </div>
       }
     >

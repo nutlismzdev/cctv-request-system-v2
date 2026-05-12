@@ -31,7 +31,7 @@
       "live": {
         "loading": "Checking status"
       },
-      "pdpa": "Your data is used only to verify your request and is protected under PDPA.",
+      "pdpa": "Your data is used to verify the request, link LINE/LIFF, and is protected under Thailand's Personal Data Protection Act B.E. 2562.",
       "contact": {
         "aria": "Government contact information",
         "title": "Government Contact",
@@ -305,9 +305,9 @@
           "documents": "Supporting Documents"
         },
         "consent": {
-          "title": "Consent under Personal Data Protection Act (PDPA)",
-          "summary": "I consent to the agency collecting, using, and/or disclosing personal data as necessary to receive and consider the request and follow up in accordance with applicable laws.",
-          "details": "The agency will process data for the purposes of receiving requests, investigating and monitoring incidents, verifying and confirming identity, communicating, notifying results, recording as official evidence, and preparing internal statistics/reports, using appropriate data security measures, and retaining data for the period required by law or as necessary.",
+          "title": "Privacy Notice Acknowledgement and Consent",
+          "summary": "I acknowledge the privacy notice and consent to Hua Hin City Municipality processing personal data only where consent is required, such as facial photos used for identity verification.",
+          "details": "Hua Hin City Municipality will process data to receive, verify, and consider requests, search CCTV footage, verify identity, link requests with LINE/LIFF, notify results, keep official records, and prepare non-identifiable internal statistics. Processing relies on public-task, legal-obligation, and consent bases where required, with retention according to the published notice.",
           "showDetails": "View additional details"
         }
       },

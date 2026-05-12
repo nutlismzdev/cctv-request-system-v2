@@ -103,7 +103,8 @@ const DATA_TAGS: readonly DataTagItem[] = [
   { icon: Phone, label: 'เบอร์โทรศัพท์' },
   { icon: CreditCard, label: 'เลขบัตร ปชช. / Passport' },
   { icon: FileText, label: 'รายละเอียดเหตุการณ์' },
-  { icon: Paperclip, label: 'เอกสารแนบ (สำเนาบัตร / ใบแจ้งความ)' },
+  { icon: Paperclip, label: 'เอกสารแนบและภาพถ่ายใบหน้ายืนยันตัวตน' },
+  { icon: Database, label: 'LINE user ID และสถานะเป็นเพื่อน LINE OA' },
 ]
 
 const PURPOSE_ITEMS = [
@@ -111,6 +112,7 @@ const PURPOSE_ITEMS = [
   'ค้นหาภาพจากกล้อง CCTV ตามวัน เวลา และสถานที่ที่ระบุ',
   'ติดต่อกลับเพื่อแจ้งสถานะหรือขอข้อมูลเพิ่มเติม',
   'ส่งมอบไฟล์ภาพ/วิดีโอเมื่อได้รับการอนุมัติ',
+  'เชื่อมคำร้องกับ LINE / LIFF และตรวจสอบสถานะการเป็นเพื่อนกับ LINE OA',
 ] as const
 
 interface RetentionBox {
@@ -119,8 +121,9 @@ interface RetentionBox {
   desc: string
 }
 const RETENTION_BOXES: readonly RetentionBox[] = [
-  { num: '5', unit: 'ปี', desc: 'ข้อมูลคำร้องและเอกสารแนบ นับจากวันสิ้นสุดคำร้อง' },
+  { num: '7', unit: 'ปี', desc: 'ข้อมูลคำร้อง เอกสารแนบ และหลักฐานการยินยอม นับจากวันสิ้นสุดคำร้อง' },
   { num: '30', unit: 'วัน', desc: 'ภาพ CCTV ย้อนหลัง ตามมาตรฐานความจุของระบบ' },
+  { num: '24', unit: 'ชม.', desc: 'token หรือลิงก์ชั่วคราวสำหรับแจ้งผลผ่าน LINE' },
 ]
 
 interface RightItem {
@@ -132,7 +135,9 @@ const RIGHTS: readonly RightItem[] = [
   { icon: Search, label: 'สิทธิเข้าถึง', desc: 'ขอดูข้อมูลที่จัดเก็บได้' },
   { icon: Pencil, label: 'สิทธิแก้ไข', desc: 'ขอแก้ไขให้ถูกต้อง' },
   { icon: Trash2, label: 'สิทธิลบ', desc: 'ขอให้ลบข้อมูลได้' },
-  { icon: Ban, label: 'สิทธิคัดค้าน', desc: 'ถอนความยินยอมได้' },
+  { icon: Ban, label: 'สิทธิคัดค้านและระงับใช้', desc: 'ใช้ได้ตามเงื่อนไขที่กฎหมายกำหนด' },
+  { icon: ShieldCheck, label: 'สิทธิถอนความยินยอม', desc: 'ถอนความยินยอมในส่วนที่อาศัย consent ได้' },
+  { icon: FileText, label: 'สิทธิร้องเรียน', desc: 'ร้องเรียนต่อ สคส. ได้เมื่อเห็นว่าข้อมูลถูกใช้ไม่ชอบ' },
 ]
 
 const DIALOG_STYLE: CSSProperties = { touchAction: 'manipulation' }
@@ -149,7 +154,7 @@ const HERO_BG_STYLE: CSSProperties = {
 // Heading gradient text — primary → violet
 const ACCENT_TEXT_STYLE: CSSProperties = {
   backgroundImage:
-    'linear-gradient(120deg, var(--primary), oklch(0.55 0.18 250))',
+    'linear-gradient(120deg, var(--primary), #2d5798)',
   WebkitBackgroundClip: 'text',
   backgroundClip: 'text',
   color: 'transparent',
@@ -268,12 +273,12 @@ export default function PDPAConsentModal({
     onReject()
   }, [logConsent, onReject])
 
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) handleReject()
-    },
-    [handleReject],
-  )
+  // ปิด modal ผ่านปุ่ม "ไม่ยินยอม" หรือ "ยินยอมและดำเนินการต่อ" เท่านั้น
+  // ไม่ trigger reject จาก Radix's onOpenChange เพราะอาจถูกเรียกตอน unmount
+  // หรือ state transition ที่ไม่ใช่ user intent → ทำให้ pdpaAccepted ลูปกลับเป็น false
+  const handleOpenChange = useCallback(() => {
+    /* no-op */
+  }, [])
 
   const preventDismiss = useCallback((event: Event) => {
     event.preventDefault()
@@ -310,7 +315,7 @@ export default function PDPAConsentModal({
               </span>
 
               <DialogTitle className="mt-3 text-xl font-bold leading-tight tracking-tight text-foreground sm:text-[26px]">
-                แจ้งเพื่อทราบ{' '}
+                {' '}
                 <span style={ACCENT_TEXT_STYLE}>การคุ้มครองข้อมูลส่วนบุคคล</span>
               </DialogTitle>
 
@@ -318,8 +323,8 @@ export default function PDPAConsentModal({
                 id="pdpa-summary"
                 className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground sm:text-sm"
               >
-                เทศบาลนครหัวหินจะเก็บและใช้ข้อมูลของท่านเพื่อพิจารณาคำร้องขอภาพจากกล้อง
-                CCTV เท่านั้น
+                เทศบาลนครหัวหินจะเก็บและใช้ข้อมูลของท่าน รวมถึงข้อมูล LINE
+                เท่าที่จำเป็นต่อการรับ แจ้งผลคำร้องขอภาพจากกล้อง CCTV
               </DialogDescription>
 
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
@@ -387,14 +392,15 @@ export default function PDPAConsentModal({
             />
           </span>
           <span className="flex-1 text-[13.5px] leading-relaxed text-foreground sm:text-sm">
-            ข้าพเจ้า
+            ข้าพเจ้า{' '}
             <strong
               className="font-bold"
               style={{ color: 'var(--accent-foreground)' }}
             >
-              ยินยอม
+              รับทราบและยินยอม
             </strong>
-            ให้เก็บรวบรวม ใช้ และเปิดเผยข้อมูลส่วนบุคคลตามวัตถุประสงค์ที่ระบุไว้
+            {' '}ให้เทศบาลนครหัวหินเก็บรวบรวม ใช้ และเปิดเผยข้อมูลส่วนบุคคลตามฐานกฎหมาย
+            และวัตถุประสงค์ที่ระบุไว้ในประกาศฉบับนี้
            
           </span>
         </button>
@@ -575,7 +581,7 @@ function SectionBody({ id }: { id: SectionId }) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {RETENTION_BOXES.map((box) => (
           <div
-            key={box.unit}
+            key={`${box.num}-${box.unit}-${box.desc}`}
             className="rounded-xl border border-border bg-card p-4"
           >
             <div className="text-[28px] font-bold leading-none tracking-tight text-primary">
@@ -636,17 +642,17 @@ function HeroShieldIllustration() {
     <svg viewBox="0 0 160 160" className="h-full w-full" aria-hidden="true">
       <defs>
         <linearGradient id="pdpa-shield-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="oklch(0.48 0.18 234)" />
-          <stop offset="1" stopColor="oklch(0.36 0.18 250)" />
+          <stop offset="0" stopColor="#002366" />
+          <stop offset="1" stopColor="#123e86" />
         </linearGradient>
         <linearGradient id="pdpa-bg-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="oklch(0.96 0.04 234)" />
-          <stop offset="1" stopColor="oklch(0.92 0.05 234)" />
+          <stop offset="0" stopColor="#eef4fc" />
+          <stop offset="1" stopColor="#dce7f7" />
         </linearGradient>
       </defs>
       <circle cx="80" cy="80" r="68" fill="url(#pdpa-bg-grad)" />
-      <circle cx="128" cy="42" r="6" fill="oklch(0.42 0.18 234)" opacity="0.25" />
-      <circle cx="32" cy="118" r="4" fill="oklch(0.42 0.18 234)" opacity="0.3" />
+      <circle cx="128" cy="42" r="6" fill="#002366" opacity="0.25" />
+      <circle cx="32" cy="118" r="4" fill="#002366" opacity="0.3" />
       {/* Shield */}
       <path
         d="M80 32 L 116 44 L 116 86 C 116 110 96 124 80 130 C 64 124 44 110 44 86 L 44 44 Z"
@@ -654,7 +660,7 @@ function HeroShieldIllustration() {
       />
       <path
         d="M80 38 L 110 48 L 110 84 C 110 104 94 118 80 124 C 66 118 50 104 50 84 L 50 48 Z"
-        fill="oklch(0.46 0.18 240)"
+        fill="#2d5798"
         opacity="0.5"
       />
       {/* Lock */}
@@ -666,13 +672,13 @@ function HeroShieldIllustration() {
         fill="none"
         strokeLinecap="round"
       />
-      <circle cx="80" cy="87" r="2.5" fill="oklch(0.42 0.18 234)" />
+      <circle cx="80" cy="87" r="2.5" fill="#002366" />
       <line
         x1="80"
         y1="87"
         x2="80"
         y2="93"
-        stroke="oklch(0.42 0.18 234)"
+        stroke="#002366"
         strokeWidth="2.5"
         strokeLinecap="round"
       />

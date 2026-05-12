@@ -34,7 +34,7 @@ function getColorByWeight(weight: number, maxWeight: number): string {
   if (ratio >= 0.6) return '#ea580c' // orange-600
   if (ratio >= 0.4) return '#ca8a04' // yellow-600
   if (ratio >= 0.2) return '#16a34a' // green-600
-  return '#2563eb' // blue-600
+  return '#002366' // royal navy
 }
 
 export function HeatmapSimple({
@@ -191,7 +191,7 @@ export function HeatmapSimple({
           </div>
           <div className="mt-2 flex items-center gap-2 text-xs">
             <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-blue-600"></span> ต่ำ
+              <span className="w-3 h-3 rounded-full bg-[var(--primary)]"></span> ต่ำ
             </span>
             <span className="flex items-center gap-1">
               <span className="w-3 h-3 rounded-full bg-yellow-600"></span> ปานกลาง

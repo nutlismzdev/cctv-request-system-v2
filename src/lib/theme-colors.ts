@@ -24,11 +24,11 @@ export interface PriorityStyle {
  */
 export const STATUS_STYLES: Record<string, StatusStyle> = {
   'รอดำเนินการ': {
-    bg: 'bg-blue-50',                               /* น้ำเงินกรมท่าอ่อน - ชัดเจน */
-    border: 'border-blue-200',
-    text: 'text-blue-700',
-    dot: 'bg-blue-600',
-    badge: 'bg-blue-100 text-blue-700 border-blue-200',
+    bg: 'bg-[var(--primary)]/8',
+    border: 'border-[var(--primary)]/25',
+    text: 'text-[var(--primary)]',
+    dot: 'bg-[var(--primary)]',
+    badge: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/25',
   },
   'รอยื่นเอกสาร': {
     bg: 'bg-violet-50',                              /* Violet - แยกจากสถานะอื่น */
@@ -73,18 +73,18 @@ export const STATUS_STYLES: Record<string, StatusStyle> = {
     badge: 'bg-gray-100 text-gray-700 border-gray-200',
   },
   'กำลังดำเนินการ': {
-    bg: 'bg-blue-50',                               /* น้ำเงินกรมท่าอ่อน - ชัดเจน */
-    border: 'border-blue-200',
-    text: 'text-blue-700',
-    dot: 'bg-blue-600',
-    badge: 'bg-blue-100 text-blue-700 border-blue-200',
+    bg: 'bg-[var(--primary)]/8',
+    border: 'border-[var(--primary)]/25',
+    text: 'text-[var(--primary)]',
+    dot: 'bg-[var(--primary)]',
+    badge: 'bg-[var(--primary)]/10 text-[var(--primary)] border-[var(--primary)]/25',
   },
   'รอการพิจารณา': {
-    bg: 'bg-sky-50',                                /* น้ำเงินกรมท่าอ่อนพิเศษ - ชัดเจน */
-    border: 'border-sky-200',
-    text: 'text-sky-700',
-    dot: 'bg-sky-600',
-    badge: 'bg-sky-100 text-sky-700 border-sky-200',
+    bg: 'bg-[var(--primary)]/6',
+    border: 'border-[var(--primary)]/20',
+    text: 'text-[var(--primary)]',
+    dot: 'bg-[var(--primary)]',
+    badge: 'bg-[var(--primary)]/8 text-[var(--primary)] border-[var(--primary)]/20',
   },
   'เสร็จสิ้น': {
     bg: 'bg-green-50',                              /* Green - ชัดเจน */

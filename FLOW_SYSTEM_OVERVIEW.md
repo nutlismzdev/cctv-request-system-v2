@@ -100,25 +100,27 @@ Online flow ใหม่ถูกวางไว้บน `/request`
 ### 4.1 ลำดับการทำงาน
 
 1. ผู้ใช้เข้า `/request`
-2. หน้า `/request` ตรวจว่าเปิดผ่าน LIFF หรือไม่
-3. ถ้ายังไม่ login LINE ระบบจะเรียก `liff.login()`
-4. ถ้าไม่ได้เปิดใน LIFF client จะ redirect ไป `https://liff.line.me/{LIFF_ID}`
-5. ระบบเรียก:
+2. หน้า `/request` แสดง PDPA Privacy Notice / Consent ก่อนเริ่มตรวจสอบ LINE หรือ LIFF
+3. ถ้าผู้ใช้ไม่ยินยอม ระบบหยุด flow และไม่เรียก LINE profile / friendship
+4. หลังผู้ใช้รับทราบและยินยอม ระบบตรวจว่าเปิดผ่าน LIFF หรือไม่
+5. ถ้ายังไม่ login LINE ระบบจะเรียก `liff.login()`
+6. ถ้าไม่ได้เปิดใน LIFF client จะ redirect ไป `https://liff.line.me/{LIFF_ID}`
+7. ระบบเรียก:
    - `liff.init()`
    - `liff.getProfile()`
    - `liff.getFriendship()`
-6. ถ้ายังไม่ add friend:
+8. ถ้ายังไม่ add friend:
    - แสดงหน้า block
    - เหลือแค่ปุ่มเพิ่มเพื่อน LINE OA
    - ยังไม่สามารถกรอกฟอร์มได้
-7. ถ้า add friend แล้ว:
+9. ถ้า add friend แล้ว:
    - เปิดฟอร์มยื่นคำร้อง
    - เก็บ `line_user_id_str` จาก LINE profile ไว้ใน form
-8. ผู้ใช้กรอกฟอร์ม 4 ขั้นตอน
-9. submit ไปที่ `POST /api/reports`
-10. backend สร้างคำร้องพร้อมผูก `line_user_id` ตั้งแต่แรก
-11. frontend อัปโหลดเอกสารแนบเพิ่มผ่าน `/api/reports/{id}/attachments`
-12. แสดง success state บนหน้า `/request`
+10. ผู้ใช้กรอกฟอร์ม 4 ขั้นตอน
+11. submit ไปที่ `POST /api/reports`
+12. backend สร้างคำร้องพร้อมผูก `line_user_id` ตั้งแต่แรก และบันทึก `consent_logs` ผูกกับ `report_id`
+13. frontend อัปโหลดเอกสารแนบเพิ่มผ่าน `/api/reports/{id}/attachments`
+14. แสดง success state บนหน้า `/request`
 
 ## 5. Online Form Steps
 
@@ -187,7 +189,8 @@ backend จะทำงานดังนี้:
    - `tracking_token`
    - `link_code`
 5. ถ้าเป็น online flow จะตั้ง `created_by = 'online_liff'`
-6. ส่ง group notification ให้เจ้าหน้าที่ตาม flow เดิม
+6. บันทึกหลักฐานการยินยอม/รับทราบ Privacy Notice ลง `consent_logs` พร้อม `report_id`, hash เลขบัตร/พาสปอร์ต, IP, User-Agent และ policy version
+7. ส่ง group notification ให้เจ้าหน้าที่ตาม flow เดิม
 
 ### 6.2 หมายเหตุเรื่อง auto-link reset
 
@@ -330,6 +333,7 @@ flow ใหม่แบบ link-first, friend-required-after:
 - เพิ่มขั้นตอนเอกสาร 3 รายการใน step 2
 - ให้ backend รับ `line_user_id` ตั้งแต่ตอนสร้างคำร้อง
 - รองรับ selfie document type
+- บันทึก `consent_logs` ตอน submit เพื่อให้ online และ onsite flow มีหลักฐานการรับทราบ/ยินยอมผูกกับ `report_id`
 - **(2026-05)** ปรับ onsite link flow เป็นแบบ link-first, friend-required-after — แก้ปัญหาผู้ยื่นต้องสแกน QR ซ้ำหลังเพิ่มเพื่อน
 - **(2026-05)** API `/api/line/link` รับ `is_friend` จาก client + เลิก hardcoded `is_friend=true`
 - **(2026-05)** notification flow skip ถ้า user ไม่ใช่เพื่อน + log `NOTIFICATION_FAILED` ทุก env รวม production
@@ -362,4 +366,3 @@ flow ใหม่แบบ link-first, friend-required-after:
 - ผู้ใช้ไม่ส่งข้อความ
 - คำร้องไม่ถูก map
 - งานค้างรอ manual follow-up
-

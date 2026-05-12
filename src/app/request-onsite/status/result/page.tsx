@@ -1036,8 +1036,8 @@ function StatusResultContent() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w.full mx-4">
             <div className="p-6">
               <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-full flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
                   </svg>
                 </div>
@@ -1059,7 +1059,7 @@ function StatusResultContent() {
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={copyUrlToClipboard} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+                <Button onClick={copyUrlToClipboard} className="flex-1 bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white">
                   📋 {t('external.copy')}
                 </Button>
                 <Button onClick={() => setShowExternalBrowserModal(false)} variant="outline" className="flex-1">
@@ -1067,8 +1067,8 @@ function StatusResultContent() {
                 </Button>
               </div>
 
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-xs text-blue-700">{t('external.howto')}</p>
+              <div className="mt-4 p-3 bg-[var(--primary)]/5 rounded-lg border border-[var(--primary)]/20">
+                <p className="text-xs text-[var(--primary)]">{t('external.howto')}</p>
               </div>
             </div>
           </div>

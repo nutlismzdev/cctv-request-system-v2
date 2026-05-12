@@ -2,15 +2,28 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ArrowLeft, CheckCircle2, FileText, RefreshCw, Save } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, FileText, Globe, RefreshCw, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatThaiDateBE, getLocalizedPrefix, STATUS_TONE } from '../_utils'
 import type { Report } from '../_types'
+import { getReportSource } from '@/lib/report-source'
 
 interface EditPageHeaderProps {
   report: Report
   saving: boolean
   onSave: () => void
+}
+
+// แสดงเฉพาะกรณี "ยื่นออนไลน์" (online_liff จาก /request LIFF) — onsite/legacy ไม่แสดง
+function SubmissionSourceBadge({ report }: { report: Report }) {
+  const info = getReportSource(report.created_by)
+  if (info.kind !== 'online') return null
+  return (
+    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700">
+      <Globe className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+      <span>ช่องทาง: ยื่นออนไลน์</span>
+    </div>
+  )
 }
 
 // แสดงสถานะการเชื่อมต่อ LINE OA ของผู้ยื่น — สำคัญก่อนอนุมัติ
@@ -102,6 +115,7 @@ export function EditPageHeader({ report, saving, onSave }: EditPageHeaderProps) 
                 อัปเดตล่าสุด <span className="font-medium text-[var(--foreground)]">{formatThaiDateBE(report.updated_at)}</span>
               </div>
             )}
+            <SubmissionSourceBadge report={report} />
             <LineLinkBadge report={report} />
           </div>
         </div>

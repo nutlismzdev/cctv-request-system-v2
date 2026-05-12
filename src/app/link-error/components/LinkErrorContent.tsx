@@ -81,7 +81,7 @@ export function LinkErrorContent() {
             <div className="space-y-3">
               <Button
                 onClick={handleRetry}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 ลองใหม่อีกครั้ง

@@ -141,7 +141,7 @@ export function ServerFileBrowser({
       <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <HardDrive className="h-5 w-5 text-blue-600" />
+            <HardDrive className="h-5 w-5 text-[var(--primary)]" />
             Browse ไฟล์จาก Server
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
@@ -183,7 +183,7 @@ export function ServerFileBrowser({
             )}
           </div>
           {selectedFile && (
-            <Badge className="bg-blue-100 text-blue-800">
+            <Badge className="bg-[var(--primary)]/10 text-[var(--primary)]">
               เลือก: {selectedFile.name}
             </Badge>
           )}
@@ -246,14 +246,14 @@ export function ServerFileBrowser({
                   onClick={() => setSelectedFile(file)}
                   className={`w-full flex items-center gap-3 p-3 text-left hover:bg-slate-50 transition-colors ${
                     selectedFile?.path === file.path
-                      ? 'bg-blue-50 hover:bg-blue-50 border-l-4 border-blue-500'
+                      ? 'bg-[var(--primary)]/5 hover:bg-[var(--primary)]/5 border-l-4 border-[var(--primary)]'
                       : 'border-l-4 border-transparent'
                   }`}
                 >
                   {/* File Icon */}
                   <div className={`p-2 rounded-lg ${
                     selectedFile?.path === file.path
-                      ? 'bg-blue-100 text-blue-600'
+                      ? 'bg-[var(--primary)]/10 text-[var(--primary)]'
                       : 'bg-red-100 text-red-600'
                   }`}>
                     <FileText className="h-5 w-5" />
@@ -263,7 +263,7 @@ export function ServerFileBrowser({
                   <div className="flex-1 min-w-0">
                     <p className={`font-medium truncate ${
                       selectedFile?.path === file.path
-                        ? 'text-blue-900'
+                        ? 'text-[var(--primary)]'
                         : 'text-slate-900'
                     }`}>
                       {file.name}
@@ -275,7 +275,7 @@ export function ServerFileBrowser({
 
                   {/* Selected Indicator */}
                   {selectedFile?.path === file.path && (
-                    <div className="flex items-center gap-1 text-blue-600">
+                    <div className="flex items-center gap-1 text-[var(--primary)]">
                       <Check className="h-5 w-5" />
                     </div>
                   )}

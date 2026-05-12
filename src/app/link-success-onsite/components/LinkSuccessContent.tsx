@@ -103,12 +103,12 @@ export function LinkSuccessContent() {
               </ul>
             </div>
 
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="bg-[var(--primary)]/5 p-4 rounded-lg border border-[var(--primary)]/20">
               <div className="flex items-center justify-center space-x-2 mb-2">
-                <MessageCircle className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-800">{tSuccess('lineConfirmTitle')}</span>
+                <MessageCircle className="h-5 w-5 text-[var(--primary)]" />
+                <span className="font-medium text-[var(--primary)]">{tSuccess('lineConfirmTitle')}</span>
               </div>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-[var(--primary)]">
                 {tSuccess('lineConfirmHint')}
               </p>
             </div>
@@ -136,4 +136,3 @@ export function LinkSuccessContent() {
     </div>
   )
 }
-

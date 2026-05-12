@@ -164,7 +164,7 @@ export function LiffLinkContent() {
     return (
       <div className={`min-h-screen ${THEME_COLORS.background} flex items-center justify-center`}>
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[var(--primary)]" />
           <p className="text-gray-600">กำลังเชื่อมต่อกับ LINE...</p>
         </div>
       </div>
@@ -191,7 +191,7 @@ export function LiffLinkContent() {
         {currentStep === 'checking' && (
           <Card>
             <CardContent className="p-6 text-center">
-              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
+              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-[var(--primary)]" />
               <h2 className="text-lg font-semibold mb-2">กำลังตรวจสอบ...</h2>
               <p className="text-gray-600">กรุณารอสักครู่</p>
             </CardContent>
@@ -201,7 +201,7 @@ export function LiffLinkContent() {
         {currentStep === 'add-friend' && (
           <Card>
             <CardContent className="p-6 text-center space-y-4">
-              <MessageCircle className="h-12 w-12 mx-auto text-blue-600" />
+              <MessageCircle className="h-12 w-12 mx-auto text-[var(--primary)]" />
               <div>
                 <h2 className="text-lg font-semibold mb-2">เพิ่มเพื่อน LINE OA</h2>
                 <p className="text-gray-600 text-sm">
@@ -210,8 +210,8 @@ export function LiffLinkContent() {
                 </p>
               </div>
 
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-800">
+              <div className="bg-[var(--primary)]/5 p-4 rounded-lg border border-[var(--primary)]/20">
+                <p className="text-sm text-[var(--primary)]">
                   <strong>ขั้นตอน:</strong> คลิกปุ่มด้านล่างเพื่อเพิ่มเพื่อน LINE OA จากนั้นกลับมาที่หน้านี้เพื่อเชื่อมต่อคำร้อง
                 </p>
               </div>
@@ -227,7 +227,7 @@ export function LiffLinkContent() {
         {currentStep === 'linking' && (
           <Card>
             <CardContent className="p-6 text-center">
-              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
+              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-[var(--primary)]" />
               <h2 className="text-lg font-semibold mb-2">กำลังเชื่อมต่อ...</h2>
               <p className="text-gray-600">กรุณารอสักครู่</p>
             </CardContent>

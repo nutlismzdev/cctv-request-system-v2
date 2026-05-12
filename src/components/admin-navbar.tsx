@@ -226,9 +226,9 @@ export function AdminNavbar() {
                   className={`h-9 px-2 ${THEME_COLORS.mutedForeground} hover:${THEME_COLORS.foreground} hover:bg-[var(--accent)]/20`}
                   aria-label="เมนูผู้ใช้"
                 >
-                  <div className="relative h-8 w-8 rounded-full bg-gradient-to-br from-blue-600 via-cyan-500 to-emerald-500 p-[2px] shadow-sm">
+                  <div className="relative h-8 w-8 rounded-full bg-gradient-to-br from-[var(--primary)] via-[#2d5798] to-emerald-500 p-[2px] shadow-sm">
                     <div className="flex h-full w-full items-center justify-center rounded-full bg-white/95">
-                      <ShieldCheck className="h-4 w-4 text-blue-700" />
+                      <ShieldCheck className="h-4 w-4 text-[var(--primary)]" />
                     </div>
                     <span
                       className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500"
@@ -240,7 +240,7 @@ export function AdminNavbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem>
-                  <ShieldCheck className="h-4 w-4 mr-2 text-blue-700" />
+                  <ShieldCheck className="h-4 w-4 mr-2 text-[var(--primary)]" />
                   โปรไฟล์
                 </DropdownMenuItem>
                 <DropdownMenuItem>

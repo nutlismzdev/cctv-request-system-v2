@@ -284,7 +284,7 @@ export default function HeatmapPage() {
             <div className="flex flex-wrap items-center gap-6">
               <div className="text-sm font-medium">ระดับความถี่:</div>
               <div className="flex items-center gap-2">
-                <span className="w-4 h-4 rounded-full bg-blue-600"></span>
+                <span className="w-4 h-4 rounded-full bg-[var(--primary)]"></span>
                 <span className="text-sm">ต่ำ</span>
               </div>
               <div className="flex items-center gap-2">

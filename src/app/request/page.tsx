@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useMemo, useState, useRef, useCallback, type ReactNode } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -9,20 +8,17 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { useTranslations, useLocale } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  AlertCircle, ArrowLeft, ArrowRight, Camera, CheckCircle2, ChevronsUpDown, Check,
+  AlertCircle, AlertTriangle, ArrowLeft, ArrowRight, Camera, CheckCircle2, ChevronsUpDown, Check,
   Clock, FileBadge2, FileText, Home, Loader2, MapPin, MessageCircle, Phone, Send,
   ShieldCheck, UploadCloud, User, CreditCard, X, Pencil, Trash2,
-  ScanFace, BookOpen, CheckCheck, PenLine, Lightbulb,
+  ScanFace, BookOpen, PenLine, Info, Star,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
@@ -38,8 +34,37 @@ import {
   normalizeTime,
 } from '@/lib/thai-datetime'
 import PDPAConsentModal from '@/components/PDPAConsentModal'
+import { PDPA_PRIVACY_NOTICE_VERSION } from '@/lib/pdpa'
 
 /* -------------------- Constants -------------------- */
+const PDPA_CONSENT_STORAGE_KEY = `pdpa-accepted:${PDPA_PRIVACY_NOTICE_VERSION}:/request`
+
+// Safari/Firefox private mode + LINE in-app WKWebView อาจ throw จาก localStorage/sessionStorage
+// (SecurityError, QuotaExceededError, หรือ storage ถูกปิดใช้งาน) — ต้องห่อ try-catch เสมอ
+function readPdpaConsentFlag(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    if (window.localStorage.getItem(PDPA_CONSENT_STORAGE_KEY) === '1') return true
+  } catch {}
+  try {
+    if (window.sessionStorage.getItem(PDPA_CONSENT_STORAGE_KEY) === '1') return true
+  } catch {}
+  return false
+}
+
+function writePdpaConsentFlag(): void {
+  if (typeof window === 'undefined') return
+  // localStorage อยู่รอดข้าม LIFF redirect บน LINE in-app browser มือถือ
+  // ส่วน sessionStorage เก็บไว้เป็น fallback กรณี localStorage ถูกบล็อก
+  try { window.localStorage.setItem(PDPA_CONSENT_STORAGE_KEY, '1') } catch {}
+  try { window.sessionStorage.setItem(PDPA_CONSENT_STORAGE_KEY, '1') } catch {}
+}
+
+function clearPdpaConsentFlag(): void {
+  if (typeof window === 'undefined') return
+  try { window.localStorage.removeItem(PDPA_CONSENT_STORAGE_KEY) } catch {}
+  try { window.sessionStorage.removeItem(PDPA_CONSENT_STORAGE_KEY) } catch {}
+}
 const PREFIXES_KEYS = ['นาย', 'นาง', 'นางสาว'] as const
 const CATEGORIES_KEYS = ['ขอสำเนาข้อมูลภาพ', 'ขอดูข้อมูลรูปภาพ'] as const
 const INVOLVEMENT_ROLES_KEYS = ['ผู้เสียหาย', 'ญาติ', 'ผู้เกี่ยวข้อง', 'เจ้าหน้าที่รัฐ', 'ประกัน'] as const
@@ -49,10 +74,10 @@ const RE_ALLEY_PREFIX = /^(ซอย|ตรอก)\s*/i
 const RE_ROAD_PREFIX = /^ถนน\s*/i
 
 const STEPS = [
-  { key: 'applicant', labelKey: 'stepper.step1' },
-  { key: 'documents', labelKey: 'stepper.stepDocs' },
-  { key: 'incident',  labelKey: 'stepper.step2' },
-  { key: 'review',   labelKey: 'stepper.step3' },
+  { key: 'applicant', labelKey: 'stepper.step1', subLabel: 'Applicant' },
+  { key: 'documents', labelKey: 'stepper.stepDocs', subLabel: 'Documents' },
+  { key: 'incident',  labelKey: 'stepper.step2', subLabel: 'Incident' },
+  { key: 'review',   labelKey: 'stepper.step3', subLabel: 'Review' },
 ] as const
 
 /* -------------------- Schema -------------------- */
@@ -143,54 +168,168 @@ function useDebounced<T>(value: T, delay = 250) {
 /* -------------------- Shared small components -------------------- */
 function FieldError({ message }: { message?: string }) {
   if (!message) return null
-  return <p className="mt-1 text-sm text-red-600 font-medium">{message}</p>
+  return <p className="mt-1 text-xs text-[var(--destructive)] font-medium flex items-center gap-1" role="alert"><AlertCircle className="h-3 w-3" aria-hidden="true" /> {message}</p>
+}
+
+function OfficialHeader() {
+  return (
+    <div className="cctv-official">
+      <div className="seal" aria-hidden />
+      <div className="flex flex-col min-w-0">
+        <span className="org-line1">เทศบาลนครหัวหิน · Hua Hin Municipality</span>
+        <span className="org-line2">ระบบยื่นคำร้องขอภาพจากกล้อง CCTV</span>
+      </div>
+    </div>
+  )
+}
+
+/* -------------------- CCTV Hero (4-step) -------------------- */
+function CCTVHero({ compact = false }: { compact?: boolean }) {
+  // Client-only timestamp to avoid SSR/CSR hydration mismatch
+  const [stamp, setStamp] = useState<string>('')
+  useEffect(() => {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const update = () => {
+      const d = new Date()
+      const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+      setStamp(
+        `${formatThaiDateLong(iso, { short: true })} · ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`,
+      )
+    }
+    update()
+    const id = window.setInterval(update, 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  return (
+    <div
+      className="cctv-hero-scene relative overflow-hidden"
+      style={{ height: compact ? 130 : 170 }}
+    >
+      {/* Faux night cityscape */}
+      <svg viewBox="0 0 600 200" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full opacity-55" aria-hidden="true">
+        <defs>
+          <linearGradient id="cctvSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0a1628"/>
+            <stop offset="100%" stopColor="#1a3358"/>
+          </linearGradient>
+          <radialGradient id="cctvLamp" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(255,210,140,0.7)"/>
+            <stop offset="100%" stopColor="rgba(255,210,140,0)"/>
+          </radialGradient>
+        </defs>
+        <rect width="600" height="200" fill="url(#cctvSky)"/>
+        <rect x="0"   y="110" width="80"  height="90" fill="rgba(0,0,0,0.5)"/>
+        <rect x="80"  y="90"  width="120" height="110" fill="rgba(0,0,0,0.6)"/>
+        <rect x="200" y="100" width="60"  height="100" fill="rgba(0,0,0,0.5)"/>
+        <rect x="260" y="80"  width="100" height="120" fill="rgba(0,0,0,0.65)"/>
+        <rect x="360" y="120" width="80"  height="80"  fill="rgba(0,0,0,0.5)"/>
+        <rect x="440" y="95"  width="160" height="105" fill="rgba(0,0,0,0.6)"/>
+        <circle cx="120" cy="150" r="35" fill="url(#cctvLamp)"/>
+        <circle cx="380" cy="160" r="40" fill="url(#cctvLamp)"/>
+        <rect x="0" y="170" width="600" height="30" fill="rgba(20,30,50,0.7)"/>
+        <path d="M0 185 L600 185" stroke="#ffd28a" strokeWidth="1" strokeDasharray="10 10" opacity="0.6"/>
+      </svg>
+      <div className="dark-fade" />
+      <div className="scan-grid" />
+
+      <div className="absolute top-3 right-3 px-2 py-1 rounded bg-black/50 text-white text-[10px] font-semibold font-mono" suppressHydrationWarning>
+        {stamp || ' '}
+      </div>
+
+      {/* Text */}
+      <div className="absolute left-4 sm:left-6 right-4 sm:right-6 bottom-4 sm:bottom-5 text-white">
+        <h1 className={`m-0 font-bold tracking-tight leading-tight ${compact ? 'text-[1.25rem]' : 'text-[1.5rem] sm:text-[1.75rem]'}`}>
+          ยื่นคำร้องขอภาพจากกล้อง CCTV
+        </h1>
+        <p className="m-0 mt-1 text-xs text-white/75">
+          เทศบาลนครหัวหิน · หลังจากยื่นรอตรวจสอบข้อมูล และรอเอกสารอนุมัติ 1–2 วัน
+        </p>
+      </div>
+    </div>
+  )
 }
 
 /* -------------------- Stepper -------------------- */
-function Stepper({ current, onStepChange, t }: {
+function StepperDesktop({ current, onStepChange, t }: {
   current: number
   onStepChange?: (i: number) => void
   t: ReturnType<typeof useTranslations>
 }) {
-  const pct = Math.max(0, Math.min(100, (current / (STEPS.length - 1)) * 100))
   const isClickable = (i: number) => typeof onStepChange === 'function' && i <= current
-  const currentLabel = t(STEPS[current].labelKey)
-
   return (
-    <nav aria-label={t('stepper.current', { current: current + 1, total: STEPS.length, label: currentLabel })} className="w-full select-none">
-      <div className="relative">
-        <div className="h-[2px] sm:h-[3px] w-full bg-white/30 rounded-full">
-          <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
-        </div>
-        <div className="absolute inset-0 flex items-center justify-between">
-          {STEPS.map((s, i) => {
-            const status = i < current ? 'done' : i === current ? 'current' : 'upcoming'
-            const base = 'rounded-full transition-all duration-200 ring-1 focus:outline-none focus:ring-2'
-            const cls =
-              status === 'done'    ? 'h-2.5 w-2.5 sm:h-3 sm:w-3 bg-white ring-white/70'
-              : status === 'current' ? 'h-3 w-3 sm:h-3.5 sm:w-3.5 bg-white ring-blue-300 scale-110'
-              : 'h-2.5 w-2.5 sm:h-3 sm:w-3 bg-white/45 ring-white/40'
-            const clickable = isClickable(i)
-            const stepLabel = t(s.labelKey)
-            return (
+    <nav aria-label="step progress" className="cctv-card px-5 py-4">
+      <div className="flex items-center gap-0">
+        {STEPS.map((s, i) => {
+          const status: 'done' | 'cur' | 'upcoming' = i < current ? 'done' : i === current ? 'cur' : 'upcoming'
+          const clickable = isClickable(i)
+          return (
+            <React.Fragment key={s.key}>
               <button
-                key={s.key}
                 type="button"
-                title={stepLabel}
-                aria-label={t('stepper.current', { current: i + 1, total: STEPS.length, label: stepLabel })}
-                aria-current={status === 'current' ? 'step' : undefined}
                 disabled={!clickable}
                 onClick={() => clickable && onStepChange?.(i)}
-                className={`${base} ${cls} ${clickable ? 'cursor-pointer' : 'cursor-default'}`}
-              />
-            )
-          })}
-        </div>
-      </div>
-      <div className="mt-2 text-[11px] sm:text-xs text-white/85">
-        {t('stepper.current', { current: current + 1, total: STEPS.length, label: currentLabel })}
+                className={`flex items-center gap-2.5 ${clickable ? 'cursor-pointer' : 'cursor-default'}`}
+                aria-current={status === 'cur' ? 'step' : undefined}
+              >
+                <span
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold flex-shrink-0 transition-all
+                    ${status === 'done' ? 'bg-[var(--success)] text-white'
+                      : status === 'cur' ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
+                      : 'bg-[var(--card)] text-[var(--muted-foreground)] border-[2px] border-[var(--border)]'
+                    }`}
+                  style={
+                    status === 'cur'
+                      ? { boxShadow: '0 0 0 4px color-mix(in oklch, var(--primary) 18%, transparent)' }
+                      : undefined
+                  }
+                >
+                  {status === 'done' ? <Check className="h-4 w-4" aria-hidden="true" /> : i + 1}
+                </span>
+                <div className="text-left">
+                  <div className={`text-[13px] font-semibold ${status === 'upcoming' ? 'text-[var(--muted-foreground)]' : 'text-[var(--foreground)]'}`}>
+                    {t(s.labelKey)}
+                  </div>
+                  <div className="text-[10px] uppercase tracking-widest text-[var(--muted-foreground)]">
+                    {s.subLabel}
+                  </div>
+                </div>
+              </button>
+              {i < STEPS.length - 1 && (
+                <div className="flex-1 h-[2px] mx-3.5 bg-[var(--border)] relative rounded">
+                  <div
+                    className="absolute inset-0 bg-[var(--success)] rounded transition-all duration-300"
+                    style={{ width: i < current ? '100%' : '0%' }}
+                  />
+                </div>
+              )}
+            </React.Fragment>
+          )
+        })}
       </div>
     </nav>
+  )
+}
+
+function StepperMobile({ current, t }: {
+  current: number
+  t: ReturnType<typeof useTranslations>
+}) {
+  const total = STEPS.length
+  return (
+    <div className="cctv-card px-4 py-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs font-bold text-[var(--primary)]">
+          ขั้นตอนที่ {current + 1} / {total}
+        </div>
+        <div className="text-xs text-[var(--muted-foreground)]">{t(STEPS[current].labelKey)}</div>
+      </div>
+      <div className="cctv-steps">
+        {STEPS.map((_, i) => (
+          <div key={i} className={'seg ' + (i < current ? 'done' : i === current ? 'cur' : '')} />
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -233,24 +372,29 @@ function AsyncCombobox(props: {
   const showText = selected?.name ?? valueName ?? ''
 
   return (
-    <div className="space-y-2">
-      <Label className="text-base sm:text-lg font-medium">{label}</Label>
+    <div className="space-y-1.5">
+      <Label className="text-[13px] font-semibold text-[var(--foreground)]">{label}</Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button" variant="outline" role="combobox" aria-expanded={open}
-            disabled={disabled} className="w-full justify-between h-12 text-base px-4"
+            disabled={disabled}
+            className="w-full justify-between h-11 text-[15px] px-3.5 border-[1.5px] border-[var(--border)] hover:border-[var(--primary)] hover:bg-transparent rounded-lg"
             title={disabled ? (disabledHint ?? '') : showText || placeholder}
           >
-            <div className="truncate text-left">
-              {disabled ? (disabledHint ?? t('placeholders.disabled')) : (showText || <span className="text-muted-foreground">{placeholder}</span>)}
+            <div className="truncate text-left font-normal">
+              {disabled ? (
+                <span className="text-[var(--muted-foreground)]">{disabledHint ?? t('placeholders.disabled')}</span>
+              ) : (
+                showText || <span className="text-[var(--muted-foreground)]">{placeholder}</span>
+              )}
             </div>
             <div className="flex items-center gap-1">
               {allowClear && !!selected && !disabled && (
-                <X className="h-5 w-5 text-muted-foreground hover:text-foreground"
+                <X className="h-4 w-4 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                   onClick={(e) => { e.stopPropagation(); onSelect({ id: -1, name: '' }) }} />
               )}
-              <ChevronsUpDown className="h-5 w-5 opacity-50" />
+              <ChevronsUpDown className="h-4 w-4 opacity-50" />
             </div>
           </Button>
         </PopoverTrigger>
@@ -258,7 +402,7 @@ function AsyncCombobox(props: {
           <Command shouldFilter={false}>
             <div className="flex items-center gap-2 px-2 pt-2">
               <CommandInput placeholder={t('placeholders.search')} value={query} onValueChange={setQuery} />
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
             </div>
             <CommandList>
               {loading && (
@@ -299,7 +443,6 @@ type DocCardConfig = {
   accept: string
   icon: ReactNode
   previewType: 'image' | 'pdf' | 'any'
-  /** เอกสารต้องเซ็น "สำเนาถูกต้อง" ก่อนแนบ */
   requireCertify?: boolean
 }
 
@@ -322,21 +465,27 @@ function DocPreviewImage({
   }, [file])
   if (!src) return null
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      className="absolute inset-0 h-full w-full object-contain cursor-zoom-in"
+    <button
+      type="button"
       onClick={() => onOpen?.(src)}
-      onLoad={(e) => {
-        if (!onAspect) return
-        const img = e.currentTarget
-        const r = img.naturalWidth / img.naturalHeight
-        if (r > 1.15) onAspect('landscape')
-        else if (r < 0.85) onAspect('portrait')
-        else onAspect('square')
-      }}
-    />
+      aria-label={`ขยายดู ${alt}`}
+      className="absolute inset-0 h-full w-full p-0 m-0 border-0 bg-transparent cursor-zoom-in focus-visible:outline-2 focus-visible:outline-[var(--primary)] focus-visible:outline-offset-2"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className="h-full w-full object-contain"
+        onLoad={(e) => {
+          if (!onAspect) return
+          const img = e.currentTarget
+          const r = img.naturalWidth / img.naturalHeight
+          if (r > 1.15) onAspect('landscape')
+          else if (r < 0.85) onAspect('portrait')
+          else onAspect('square')
+        }}
+      />
+    </button>
   )
 }
 
@@ -349,17 +498,16 @@ function DocumentCard(props: {
 }) {
   const { config, file, onPick, error, index } = props
   const inputId = `doc-input-${config.id}`
-  const changeInputRef = useRef<HTMLInputElement | null>(null)
   const isImage = file && file.type.startsWith('image/')
   const isDone = Boolean(file)
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const [aspect, setAspect] = useState<'portrait' | 'landscape' | 'square'>('landscape')
+  const docNum = String(index + 1).padStart(2, '0')
 
-  // ปรับความสูง container ให้พอดีรูป — รูปแนวตั้งให้สูง รูปแนวนอนให้เตี้ย
   const previewBoxClass =
-    aspect === 'portrait' ? 'h-72 sm:h-80'
-    : aspect === 'square' ? 'h-56 sm:h-64'
-    : 'h-44 sm:h-52'
+    aspect === 'portrait' ? 'h-64 sm:h-72'
+    : aspect === 'square' ? 'h-52 sm:h-60'
+    : 'h-40 sm:h-48'
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null
@@ -373,205 +521,118 @@ function DocumentCard(props: {
   }
 
   return (
-    <div className="group relative">
-      {/* Primary file input — triggered via <label htmlFor> for reliable mobile support */}
-      <input
-        id={inputId}
-        type="file"
-        accept={config.accept}
-        className="sr-only"
-        onChange={handleChange}
-      />
+    <div className={`cctv-doc-card ${isDone ? 'uploaded' : ''} ${error && !isDone ? '!border-[var(--destructive)]' : ''}`}>
+      {/* Primary file input */}
+      <input id={inputId} type="file" accept={config.accept} className="sr-only" onChange={handleChange} />
 
-      {/* Secondary input for "change" action on filled state */}
-      <input
-        ref={changeInputRef}
-        type="file"
-        accept={config.accept}
-        className="sr-only"
-        onChange={handleChange}
-      />
-
-      {isDone ? (
-        /* ── FILLED STATE ── */
-        <div className={[
-          'relative overflow-hidden rounded-2xl border-2 transition-all duration-200',
-          error ? 'border-red-300 bg-red-50' : 'border-emerald-300 bg-emerald-50/40',
-        ].join(' ')}>
-
-          {/* Step badge */}
-          <div className="absolute top-3 left-3 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white">
-            <Check className="h-3.5 w-3.5" />
+      {/* Card head */}
+      <div className="flex items-start gap-3">
+        <div
+          className={`w-[42px] h-[42px] rounded-[10px] flex items-center justify-center flex-shrink-0 border ${
+            isDone
+              ? 'bg-[var(--success)] text-white border-[var(--success)]'
+              : 'bg-[color-mix(in_oklch,var(--primary)_8%,transparent)] text-[var(--primary)] border-[color-mix(in_oklch,var(--primary)_22%,transparent)]'
+          }`}
+        >
+          {isDone ? <Check className="h-5 w-5" aria-hidden="true" /> : <span aria-hidden="true">{config.icon}</span>}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="text-[14px] font-semibold text-[var(--foreground)] leading-snug">{config.title}</div>
+            {config.requireCertify && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded tracking-[0.12em] uppercase font-mono bg-[color-mix(in_oklch,var(--primary)_8%,transparent)] text-[var(--primary)] border border-[color-mix(in_oklch,var(--primary)_22%,transparent)]">
+                จำเป็น
+              </span>
+            )}
+            {isDone && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--cctv-success-soft)] text-[var(--success)]">
+                อัปโหลดแล้ว
+              </span>
+            )}
           </div>
+          <div className="text-[12px] text-[var(--muted-foreground)] mt-0.5 leading-snug">
+            {config.subtitle}
+          </div>
+        </div>
+        <span
+          className="text-[11px] font-mono text-[var(--muted-foreground)] tracking-[0.06em] shrink-0"
+          aria-hidden="true"
+        >
+          {docNum}
+        </span>
+      </div>
 
-          {/* Certify-required reminder badge (filled state) */}
-          {config.requireCertify && (
-            <div className="absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-full bg-amber-100/95 px-2 py-0.5 text-[10px] font-medium text-amber-800 ring-1 ring-amber-200 backdrop-blur-sm shadow-sm">
-              <PenLine className="h-3 w-3" />
-              ต้องมีลายเซ็น
-            </div>
-          )}
+      {/* Sign tag — compact pill, replaces verbose notice block */}
+      {!isDone && (
+        config.requireCertify ? (
+          <div className="inline-flex items-start gap-2 text-[12.5px] text-[var(--primary)] bg-[color-mix(in_oklch,var(--primary)_6%,transparent)] border border-[color-mix(in_oklch,var(--primary)_22%,transparent)] px-3 py-2 rounded-lg leading-snug">
+            <PenLine className="h-3.5 w-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+            <span>ต้องเซ็น <strong className="font-semibold">“สำเนาถูกต้อง”</strong> ก่อนแนบ</span>
+          </div>
+        ) : (
+          <div className="inline-flex items-start gap-2 text-[12.5px] text-[var(--muted-foreground)] bg-[var(--muted)] border border-dashed border-[var(--border)] px-3 py-2 rounded-lg leading-snug">
+            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+            <span>ไม่ต้องเซ็นรับรอง</span>
+          </div>
+        )
+      )}
 
-          {isImage ? (
-            /* Image preview */
-            <div className={`relative ${previewBoxClass} w-full bg-gradient-to-br from-slate-100 to-slate-50 overflow-hidden transition-all duration-300`}>
-              <DocPreviewImage
-                file={file}
-                alt={config.title}
-                onOpen={setPreviewSrc}
-                onAspect={setAspect}
-              />
-              {/* Overlay controls — always visible on mobile, hover on desktop */}
-              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 py-3 sm:opacity-0 sm:transition-opacity sm:duration-200 sm:group-hover:opacity-100">
-                <p className="text-xs font-medium text-white truncate max-w-[60%]">{file.name}</p>
-                <div className="flex gap-2 shrink-0">
-                  <label
-                    htmlFor={`${inputId}-change`}
-                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-slate-800 shadow transition-colors hover:bg-white"
-                    aria-label="เปลี่ยนรูป"
-                    title="เปลี่ยนรูป"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </label>
-                  <input
-                    id={`${inputId}-change`}
-                    type="file"
-                    accept={config.accept}
-                    className="sr-only"
-                    onChange={handleChange}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onPick(null)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow transition-colors hover:bg-red-600"
-                    aria-label="ลบรูป"
-                    title="ลบรูป"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : file ? (
-            /* Non-image (PDF) preview */
-            <div className="flex items-center gap-3 p-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
-                <FileText className="h-6 w-6" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {(file.size / 1024 / 1024).toFixed(1)} MB · {file.type.split('/')[1]?.toUpperCase() || 'ไฟล์'}
-                </p>
-              </div>
-              <div className="flex shrink-0 gap-1.5">
-                <label
-                  htmlFor={`${inputId}-change2`}
-                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg bg-slate-100 text-slate-600 transition-colors hover:bg-slate-200"
-                  aria-label="เปลี่ยนไฟล์"
-                  title="เปลี่ยนไฟล์"
-                >
-                  <Pencil className="h-4 w-4" />
+      {/* Uploaded preview */}
+      {isDone && file ? (
+        isImage ? (
+          <div className={`relative ${previewBoxClass} w-full bg-[var(--cctv-bg-muted,var(--muted))] rounded-md overflow-hidden`}>
+            <DocPreviewImage file={file} alt={config.title} onOpen={setPreviewSrc} onAspect={setAspect} />
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/65 to-transparent px-2.5 py-2">
+              <p className="text-[11px] font-medium text-white truncate max-w-[60%]">{file.name}</p>
+              <div className="flex gap-1.5 shrink-0">
+                <label htmlFor={`${inputId}-change`} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/90 text-[var(--foreground)] shadow" aria-label="เปลี่ยนรูป" title="เปลี่ยนรูป">
+                  <Pencil className="h-3 w-3" />
                 </label>
-                <input
-                  id={`${inputId}-change2`}
-                  type="file"
-                  accept={config.accept}
-                  className="sr-only"
-                  onChange={handleChange}
-                />
-                <button
-                  type="button"
-                  onClick={() => onPick(null)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-500 transition-colors hover:bg-red-100"
-                  aria-label="ลบไฟล์"
-                  title="ลบไฟล์"
-                >
-                  <Trash2 className="h-4 w-4" />
+                <input id={`${inputId}-change`} type="file" accept={config.accept} className="sr-only" onChange={handleChange} />
+                <button type="button" onClick={() => onPick(null)} className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--destructive)] text-white shadow" aria-label="ลบรูป" title="ลบรูป">
+                  <Trash2 className="h-3 w-3" />
                 </button>
               </div>
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 p-2.5 bg-[var(--card)] border border-[var(--border)] rounded-md text-xs">
+            <div className="w-7 h-8 bg-gradient-to-br from-[#e8eef5] to-[#d0dae8] dark:from-[oklch(0.30_0.04_235)] dark:to-[oklch(0.24_0.04_235)] rounded-sm flex items-center justify-center font-bold text-[9px] text-[var(--primary)]">
+              {file.type.split('/')[1]?.toUpperCase() || 'FILE'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold truncate">{file.name}</div>
+              <div className="text-[var(--muted-foreground)] text-[11px]">
+                {(file.size / 1024 / 1024).toFixed(1)} MB
+              </div>
+            </div>
+            <label htmlFor={`${inputId}-change2`} className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-[var(--cctv-bg-muted,var(--muted))] text-[var(--muted-foreground)]" aria-label="เปลี่ยนไฟล์" title="เปลี่ยนไฟล์">
+              <Pencil className="h-3 w-3" />
+            </label>
+            <input id={`${inputId}-change2`} type="file" accept={config.accept} className="sr-only" onChange={handleChange} />
+            <button type="button" onClick={() => onPick(null)} className="flex h-7 w-7 items-center justify-center rounded-md bg-[color-mix(in_oklch,var(--destructive)_10%,transparent)] text-[var(--destructive)]" aria-label="ลบไฟล์" title="ลบไฟล์">
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        )
       ) : (
-        /* ── EMPTY STATE — label wraps entire card for native file picker ── */
+        // Empty CTA
         <label
           htmlFor={inputId}
-          className={[
-            'relative flex flex-col items-center justify-center gap-3 overflow-hidden',
-            'rounded-2xl border-2 border-dashed px-4 py-8 text-center',
-            'cursor-pointer transition-all duration-200 active:scale-[0.98]',
-            'select-none',
-            error
-              ? 'border-red-300 bg-red-50 hover:border-red-400 hover:bg-red-100/50'
-              : 'border-slate-300 bg-white hover:border-sky-400 hover:bg-sky-50/40',
-          ].join(' ')}
+          className="w-full px-3 py-2.5 border-[1.5px] border-dashed border-[var(--cctv-border-strong,var(--border))] bg-[var(--cctv-bg-muted,var(--muted))] rounded-md flex items-center justify-center gap-2 text-xs font-semibold text-[var(--primary)] cursor-pointer hover:border-[var(--primary)] transition"
           style={{ touchAction: 'manipulation' }}
         >
-          {/* Step number badge */}
-          <div className="absolute top-3 left-3 flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">
-            {index + 1}
-          </div>
-
-          {/* Certify-required badge */}
-          {config.requireCertify && (
-            <div className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800 ring-1 ring-amber-200">
-              <PenLine className="h-3 w-3" />
-              ต้องเซ็นสำเนา
-            </div>
-          )}
-
-          <div className={[
-            'flex h-14 w-14 items-center justify-center rounded-2xl transition-colors duration-200',
-            error ? 'bg-red-100 text-red-500' : 'bg-slate-100 text-slate-400',
-          ].join(' ')}>
-            {config.icon}
-          </div>
-
-          <div>
-            <p className={['text-sm font-semibold', error ? 'text-red-700' : 'text-slate-700'].join(' ')}>
-              {config.title}
-            </p>
-            <p className="text-xs text-slate-500 mt-0.5">{config.subtitle}</p>
-          </div>
-
-          <div className={[
-            'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium',
-            error ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600',
-          ].join(' ')}>
-            <UploadCloud className="h-3.5 w-3.5" />
-            แตะเพื่อเลือกไฟล์
-          </div>
+          <UploadCloud className="h-3.5 w-3.5" aria-hidden="true" /> เลือกไฟล์ · PDF, JPG, PNG (ไม่เกิน 10&nbsp;MB)
         </label>
       )}
 
-      {/* Status row under card */}
-      {isDone ? (
-        <div className="mt-1.5 flex items-center gap-1.5 px-1">
-          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-          <span className="text-xs font-medium text-emerald-700">{config.title} · แนบเรียบร้อย</span>
-        </div>
-      ) : error ? (
-        <div className="mt-1.5 flex items-center gap-1.5 px-1">
-          <AlertCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
-          <span className="text-xs font-medium text-red-600">{error}</span>
-        </div>
-      ) : null}
-
       {/* Image preview modal */}
       <Dialog open={!!previewSrc} onOpenChange={(open) => { if (!open) setPreviewSrc(null) }}>
-        <DialogContent
-          className="max-w-2xl p-2 sm:p-3"
-          showCloseButton
-        >
+        <DialogContent className="max-w-2xl p-2 sm:p-3" showCloseButton>
           <DialogTitle className="sr-only">{config.title}</DialogTitle>
           {previewSrc && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={previewSrc}
-              alt={config.title}
-              className="w-full h-auto max-h-[80vh] object-contain rounded"
-            />
+            <img src={previewSrc} alt={config.title} className="w-full h-auto max-h-[80vh] object-contain rounded" />
           )}
         </DialogContent>
       </Dialog>
@@ -582,33 +643,6 @@ function DocumentCard(props: {
 /* -------------------- GateScreen -------------------- */
 const LINE_OA_ADD_FRIEND_URL = 'https://line.me/R/ti/p/@513dlddc'
 const LINE_GREEN = '#06C755'
-
-function GateCard({ children }: { children: React.ReactNode }) {
-  return (
-    <Card className="rounded-3xl border-0 shadow-2xl shadow-slate-200/70">
-      <CardContent className="p-8">{children}</CardContent>
-    </Card>
-  )
-}
-
-function GateBrand() {
-  return (
-    <div className="mb-6 flex flex-col items-center text-center">
-      <div className="relative mb-3 h-16 w-16 overflow-hidden rounded-2xl bg-white shadow-lg shadow-sky-100 ring-1 ring-slate-100">
-        <Image
-          src="/logo/icon-192.png"
-          alt="เทศบาลนครหัวหิน"
-          fill
-          sizes="64px"
-          className="object-contain p-2"
-          priority
-        />
-      </div>
-      <p className="text-base font-bold text-slate-900">เทศบาลนครหัวหิน</p>
-      <p className="text-sm text-slate-500">ระบบยื่นคำร้องขอภาพ CCTV</p>
-    </div>
-  )
-}
 
 function GateScreen(props: {
   gateState: GateState
@@ -710,154 +744,218 @@ function GateScreen(props: {
     window.location.href = LINE_OA_ADD_FRIEND_URL
   }, [liff])
 
-  const wrap = (content: React.ReactNode) => (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 via-white to-sky-50/60 px-4 py-12">
-      <div className="w-full max-w-sm">{content}</div>
-    </div>
-  )
-
+  /* booting */
   if (gateState === 'booting') {
-    return wrap(
-      <div className="flex flex-col items-center gap-4">
-        <div className="relative flex h-14 w-14 items-center justify-center">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-200 opacity-50" />
-          <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-sky-100">
-            <Loader2 className="h-5 w-5 animate-spin text-sky-600" />
-          </span>
+    return (
+      <main className="cctv-line-hero min-h-dvh flex flex-col">
+        <OfficialHeader />
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative flex h-14 w-14 items-center justify-center">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color-mix(in_oklch,var(--primary)_25%,transparent)] opacity-50" />
+              <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[color-mix(in_oklch,var(--primary)_12%,transparent)]">
+                <Loader2 className="h-5 w-5 animate-spin text-[var(--primary)]" aria-hidden="true" />
+              </span>
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-base font-bold text-[var(--foreground)]">กำลังเตรียมระบบ…</p>
+              <p className="text-xs text-[var(--muted-foreground)]">ตรวจสอบบัญชี LINE และสิทธิ์การใช้งาน</p>
+            </div>
+          </div>
         </div>
-        <div className="flex gap-1.5" aria-hidden>
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-300 [animation-delay:-0.3s]" />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-300 [animation-delay:-0.15s]" />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-300" />
-        </div>
-      </div>
+      </main>
     )
   }
 
+  /* outside LINE app */
   if (gateState === 'outside-line') {
-    return wrap(
-      <GateCard>
-        <div className="flex flex-col items-center gap-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl shadow-md shadow-[#06C755]/25"
-            style={{ background: LINE_GREEN }}>
-            <MessageCircle className="h-8 w-8 text-white" />
+    return (
+      <main className="cctv-line-hero min-h-dvh flex flex-col">
+        <OfficialHeader />
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-sm cctv-card-elev p-7 text-center space-y-5">
+            <div
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl shadow-md"
+              style={{ background: LINE_GREEN, boxShadow: '0 8px 18px -6px rgba(6,199,85,0.45)' }}
+            >
+              <MessageCircle className="h-8 w-8 text-white" aria-hidden="true" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-[var(--foreground)]">กรุณาเปิดผ่าน LINE</h1>
+              <p className="text-sm leading-relaxed text-[var(--muted-foreground)] mt-2">
+                ระบบยื่นคำร้องออนไลน์ต้องทำงานใน LINE เพื่อผูกคำร้องกับบัญชี LINE ของคุณ
+                และรับการแจ้งเตือนผลการพิจารณาโดยอัตโนมัติ
+              </p>
+            </div>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--cctv-bg-muted,var(--muted))] p-3.5 text-left">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted-foreground)]">วิธีเปิดใช้งาน</p>
+              <ol className="space-y-1.5 text-sm text-[var(--foreground)]">
+                <li className="flex gap-2"><span className="font-bold text-[var(--primary)]">1.</span>กดปุ่มด้านล่างเพื่อเปิดใน LINE</li>
+                <li className="flex gap-2"><span className="font-bold text-[var(--primary)]">2.</span>ระบบจะนำคุณเข้าสู่แบบฟอร์มโดยอัตโนมัติ</li>
+              </ol>
+            </div>
+            <button
+              type="button"
+              onClick={() => window.location.assign(liffUrl)}
+              className="cctv-btn-line w-full h-13 rounded-xl py-3.5 px-4 text-base font-semibold inline-flex items-center justify-center gap-2"
+            >
+              <MessageCircle className="h-5 w-5" aria-hidden="true" />
+              เปิดผ่าน LINE
+            </button>
           </div>
-          <div className="space-y-2">
-            <h1 className="text-xl font-bold text-slate-900">กรุณาเปิดผ่าน LINE</h1>
-            <p className="text-sm leading-relaxed text-slate-500">
-              ระบบยื่นคำร้องออนไลน์ต้องทำงานใน LINE เพื่อผูกคำร้องกับบัญชี LINE ของคุณ
-              และรับการแจ้งเตือนผลการพิจารณาโดยอัตโนมัติ
-            </p>
-          </div>
-          <div className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">วิธีเปิดใช้งาน</p>
-            <ol className="space-y-1.5 text-sm text-slate-600">
-              <li className="flex gap-2"><span className="font-bold text-sky-600">1.</span>กดปุ่มด้านล่างเพื่อเปิดใน LINE</li>
-              <li className="flex gap-2"><span className="font-bold text-sky-600">2.</span>ระบบจะนำคุณเข้าสู่แบบฟอร์มโดยอัตโนมัติ</li>
-            </ol>
-          </div>
-          <button
-            type="button"
-            onClick={() => window.location.assign(liffUrl)}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl py-3.5 text-base font-semibold text-white shadow-md shadow-[#06C755]/30 transition-all active:scale-[0.98]"
-            style={{ background: LINE_GREEN }}
-          >
-            <MessageCircle className="h-5 w-5" />
-            เปิดผ่าน LINE
-          </button>
         </div>
-      </GateCard>
+      </main>
     )
   }
 
+  /* error */
   if (gateState === 'error') {
-    return wrap(
-      <GateCard>
-        <div className="flex flex-col items-center gap-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
-            <AlertCircle className="h-8 w-8 text-red-500" />
+    return (
+      <main className="cctv-bg-dot min-h-dvh flex flex-col">
+        <OfficialHeader />
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="w-full max-w-sm cctv-card-elev p-7 text-center space-y-5">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[color-mix(in_oklch,var(--destructive)_10%,transparent)]">
+              <AlertCircle className="h-8 w-8 text-[var(--destructive)]" aria-hidden="true" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-[var(--foreground)]">เปิดระบบไม่ได้</h1>
+              <p className="text-sm leading-relaxed text-[var(--muted-foreground)] mt-2">
+                {errorMessage || 'เกิดข้อผิดพลาดในการตรวจสอบ LINE'}
+              </p>
+            </div>
+            <div className="rounded-xl border border-[color-mix(in_oklch,var(--warning)_25%,transparent)] bg-[var(--cctv-warning-soft)] p-3.5 text-left text-sm text-[var(--foreground)]">
+              ลองปิดและเปิดแอป LINE ใหม่ หรือตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วลองอีกครั้ง
+            </div>
+            <Button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="w-full h-11 rounded-lg bg-[var(--primary)] hover:bg-[color-mix(in_oklch,var(--primary)_85%,black)] text-[var(--primary-foreground)] font-semibold"
+            >
+              ลองใหม่อีกครั้ง
+            </Button>
           </div>
-          <div className="space-y-2">
-            <h1 className="text-xl font-bold text-slate-900">เปิดระบบไม่ได้</h1>
-            <p className="text-sm leading-relaxed text-slate-500">{errorMessage || 'เกิดข้อผิดพลาดในการตรวจสอบ LINE'}</p>
-          </div>
-          <div className="w-full rounded-2xl border border-amber-100 bg-amber-50 p-4 text-left text-sm text-amber-800">
-            ลองปิดและเปิดแอป LINE ใหม่ หรือตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วลองอีกครั้ง
-          </div>
-          <Button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="w-full rounded-2xl py-3 text-base font-semibold"
-          >
-            ลองใหม่อีกครั้ง
-          </Button>
         </div>
-      </GateCard>
+      </main>
     )
   }
 
-  /* need-friend state */
-  return wrap(
-    <GateCard>
-      <div className="flex flex-col items-center gap-6 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl shadow-md shadow-[#06C755]/25"
-          style={{ background: LINE_GREEN }}>
-          <MessageCircle className="h-8 w-8 text-white" />
+  /* need-friend */
+  return (
+    <main className="cctv-line-hero min-h-dvh flex flex-col">
+      <OfficialHeader />
+      <div className="flex-1 flex flex-col px-4 sm:px-6 pt-6 pb-8 sm:pt-10 max-w-md mx-auto w-full gap-5">
+        {/* LINE OA preview card */}
+        <div className="relative bg-[var(--card)] rounded-2xl p-4 sm:p-5 border-[1.5px] border-[var(--border)] shadow-[var(--cctv-shadow-card)] overflow-hidden">
+          <div
+            className="absolute top-0 left-4 right-4 h-[3px] rounded-b"
+            style={{ background: LINE_GREEN }}
+          />
+          <div className="flex items-center gap-3">
+            <div
+              className="w-14 h-14 rounded-xl flex items-center justify-center text-white"
+              style={{
+                background: `linear-gradient(135deg, ${LINE_GREEN}, #04A847)`,
+                boxShadow: '0 8px 18px -6px rgba(6,199,85,0.45)',
+              }}
+            >
+              <MessageCircle className="h-7 w-7" aria-hidden="true" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[15px] font-bold" translate="no">เทศบาลนครหัวหิน CCTV</span>
+                <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded bg-[var(--cctv-gold-soft)] text-[#7a5a14]">
+                  <Star className="h-2 w-2 fill-current" aria-hidden="true" /> ทางการ
+                </span>
+              </div>
+              <div className="text-[11px] text-[var(--muted-foreground)] mt-0.5">@huahin-cctv · LINE Official</div>
+            </div>
+          </div>
+          <div className="text-[12px] text-[var(--muted-foreground)] leading-relaxed mt-3 pt-3 border-t border-dashed border-[var(--border)]">
+            ช่องทางทางการสำหรับรับแจ้งสถานะคำร้อง ส่งไฟล์ภาพและวิดีโอจากกล้อง CCTV
+            หลังเอกสารผ่านการอนุมัติ
+          </div>
         </div>
-        <div className="space-y-2">
-          <h1 className="text-xl font-bold text-slate-900">เพิ่มเพื่อน LINE OA ก่อน</h1>
-          <p className="text-sm leading-relaxed text-slate-500">
-            ระบบจะส่งผลการพิจารณาคำร้องและลิงก์ดาวน์โหลดไฟล์ CCTV
-            มาให้คุณผ่าน LINE OA โดยตรง
+
+        {/* Hero copy */}
+        <div className="text-center px-1">
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3"
+            style={{
+              background: 'color-mix(in oklch, var(--primary) 10%, transparent)',
+              color: 'var(--primary)',
+            }}
+          >
+            <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+            <span className="text-[11px] font-bold uppercase tracking-widest">
+              ขั้นตอนที่ 1 จาก 4
+            </span>
+          </div>
+          <h1 className="text-[1.35rem] sm:text-[1.5rem] font-bold leading-tight text-[var(--foreground)]">
+            เพิ่มเพื่อน LINE OA<br />
+            <span className="text-[var(--muted-foreground)] font-semibold">เพื่อเริ่มยื่นคำร้อง</span>
+          </h1>
+          <p className="text-sm text-[var(--muted-foreground)] leading-relaxed max-w-sm mx-auto mt-2">
+            ระบบจะส่งวิดีโอภาพ CCTV ให้ท่านอัตโนมัติทาง LINE
+            หลังเอกสารได้รับการอนุมัติ — โดยไม่ต้องพิมพ์ข้อความใด ๆ ในแชท
           </p>
           {profile && (
-            <p className="text-xs text-slate-400">
-              เข้าสู่ระบบในชื่อ <span className="font-semibold text-slate-600">{profile.displayName}</span>
+            <p className="text-xs text-[var(--muted-foreground)] mt-2">
+              เข้าสู่ระบบในชื่อ <span className="font-semibold text-[var(--foreground)]">{profile.displayName}</span>
             </p>
           )}
         </div>
-        <div className="w-full space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-left text-sm text-slate-600">
-          <p className="font-semibold text-slate-700">เหตุผลที่ต้องเพิ่มเพื่อน</p>
-          <ul className="space-y-1.5">
-            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#06C755]" />รับแจ้งเตือนเมื่อเอกสารอนุมัติ</li>
-            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#06C755]" />รับลิงก์ดาวน์โหลดไฟล์ CCTV</li>
-            <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#06C755]" />สอบถามเจ้าหน้าที่ผ่านแชท</li>
-          </ul>
-        </div>
-        <div className="w-full space-y-2.5">
+
+        {/* CTA */}
+        <div className="mt-auto space-y-3">
           <button
             type="button"
             onClick={handleAddFriend}
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl py-3.5 text-base font-semibold text-white shadow-md shadow-[#06C755]/30 transition-all active:scale-[0.98]"
-            style={{ background: LINE_GREEN }}
+            className="cctv-btn-line w-full h-13 rounded-xl py-3.5 text-base font-semibold inline-flex items-center justify-center gap-2"
           >
-            <MessageCircle className="h-5 w-5" />
-            เพิ่มเพื่อน LINE OA
+            <MessageCircle className="h-5 w-5" aria-hidden="true" />
+            {isChecking ? 'กำลังเปิด LINE…' : 'เพิ่มเพื่อน LINE OA'}
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
           {isChecking ? (
-            <p className="flex items-center justify-center gap-2 text-xs text-slate-500 -mt-1">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              กำลังรอการเพิ่มเพื่อน… กลับมาที่หน้านี้หลังกด &ldquo;เพิ่มเพื่อน&rdquo; ในแอป LINE
+            <p className="flex items-center justify-center gap-2 text-xs text-[var(--muted-foreground)]" role="status" aria-live="polite">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              กำลังรอการเพิ่มเพื่อน… กลับมาที่หน้านี้หลังกด “เพิ่มเพื่อน” ในแอป LINE
             </p>
           ) : (
-            <p className="text-xs text-slate-500 text-center -mt-1">
-              เมื่อเพิ่มเพื่อนเสร็จและกลับมาที่หน้านี้ ระบบจะพาเข้าสู่คำร้องอัตโนมัติ
-            </p>
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-[var(--cctv-bg-muted,var(--muted))] text-xs text-[var(--muted-foreground)] leading-relaxed">
+              <Info className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
+              <span>หลังเพิ่มเพื่อนแล้ว ระบบจะนำท่านกลับมาที่หน้ายื่นคำร้องโดยอัตโนมัติ</span>
+            </div>
           )}
           <Button
             type="button"
             variant="outline"
             onClick={onRetryFriendship}
-            className="w-full rounded-2xl py-3 text-base font-medium"
+            className="w-full h-11 rounded-lg border-[1.5px] text-[var(--foreground)] font-medium"
           >
             ตรวจสอบอีกครั้ง
           </Button>
         </div>
+
+        {/* Why we need this */}
+        <details className="bg-[var(--card)] border border-[var(--border)] rounded-xl px-3.5 py-3 group">
+          <summary className="text-[13px] font-semibold cursor-pointer list-none flex items-center justify-between">
+            ทำไมต้องเพิ่มเพื่อน LINE OA?
+            <ArrowRight className="h-3.5 w-3.5 group-open:rotate-90 transition-transform" aria-hidden="true" />
+          </summary>
+          <ul className="cctv-list mt-2">
+            <li>เพื่อยืนยันตัวตนผู้ยื่น และผูกคำร้องกับบัญชี LINE โดยอัตโนมัติ</li>
+            <li>เพื่อให้เจ้าหน้าที่ส่งไฟล์ภาพ/วิดีโอกลับให้ท่านได้ทันที</li>
+            <li>เพื่อแจ้งสถานะคำร้องผ่านการแจ้งเตือน LINE</li>
+          </ul>
+        </details>
       </div>
-    </GateCard>
+    </main>
   )
 }
 
+/* -------------------- UploadProgressPanel -------------------- */
 function UploadProgressPanel({
   progress,
   status,
@@ -873,10 +971,10 @@ function UploadProgressPanel({
   if (!status && items.length === 0) return null
 
   return (
-    <div className="rounded-2xl border border-sky-100 bg-white/85 p-4 text-left shadow-sm">
+    <div className="cctv-card p-4" role="status" aria-live="polite">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-slate-900">{status || 'กำลังอัปโหลดเอกสาร'}</p>
-        {items.length > 0 && <span className="text-sm font-semibold text-sky-700">{totalPercent}%</span>}
+        <p className="text-sm font-bold text-[var(--foreground)]">{status || 'กำลังอัปโหลดเอกสาร'}</p>
+        {items.length > 0 && <span className="text-sm font-bold text-[var(--primary)] cctv-tabular">{totalPercent}%</span>}
       </div>
       {items.length > 0 && (
         <div className="mt-3 space-y-3">
@@ -885,8 +983,10 @@ function UploadProgressPanel({
             {items.map(([key, item]) => (
               <div key={key} className="space-y-1">
                 <div className="flex items-center justify-between gap-3 text-xs">
-                  <span className="truncate font-medium text-slate-700">{item.label}</span>
-                  <span className={item.status === 'error' ? 'text-red-600' : 'text-slate-500'}>{item.percent}%</span>
+                  <span className="truncate font-medium text-[var(--foreground)]">{item.label}</span>
+                  <span className={item.status === 'error' ? 'text-[var(--destructive)]' : 'text-[var(--muted-foreground)]'}>
+                    {item.percent}%
+                  </span>
                 </div>
                 <Progress value={item.percent} />
               </div>
@@ -907,39 +1007,46 @@ function SuccessState(props: {
   const { attachmentIssue, uploadActive, onClose } = props
   const t = useTranslations('RequestPage.success')
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_35%),linear-gradient(180deg,#f8fafc_0%,#eef6ff_100%)] px-4 py-10">
-      <div className="mx-auto max-w-xl">
-        <Card className="border-0 shadow-2xl shadow-sky-100/80">
-          <CardContent className="space-y-6 p-8 text-center">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-              <CheckCircle2 className="h-10 w-10" />
+    <main className="cctv-bg-dot min-h-screen">
+      <OfficialHeader />
+      <div className="mx-auto max-w-md px-4 pt-10 pb-10">
+        <div className="cctv-card-elev p-7 text-center space-y-5">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--cctv-success-soft)] text-[var(--success)]">
+            <CheckCircle2 className="h-10 w-10" aria-hidden="true" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--foreground)]">{t('title')}</h1>
+            <p className="text-sm text-[var(--muted-foreground)] mt-2 leading-relaxed">{t('message')}</p>
+          </div>
+          <div className="rounded-xl border border-[color-mix(in_oklch,var(--primary)_20%,transparent)] bg-[color-mix(in_oklch,var(--primary)_4%,transparent)] p-4 text-left text-sm">
+            <ul className="cctv-list">
+              <li>{t('bullet1')}</li>
+              <li>{t('bullet2')}</li>
+              <li>{t('bullet3')}</li>
+            </ul>
+          </div>
+          {attachmentIssue && (
+            <div className="cctv-notice-warn">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--warning)]" aria-hidden="true" />
+              <span>{t('attachmentWarning')}</span>
             </div>
-            <div className="space-y-2">
-              <h1 className="text-2xl font-semibold text-slate-900">{t('title')}</h1>
-              <p className="text-sm text-slate-600">{t('message')}</p>
-            </div>
-            <div className="rounded-2xl border border-sky-100 bg-sky-50 p-4 text-left text-sm text-sky-900">
-              <ul className="mt-2 space-y-1 text-sky-800">
-                <li>{t('bullet1')}</li>
-                <li>{t('bullet2')}</li>
-                <li>{t('bullet3')}</li>
-              </ul>
-            </div>
-            {attachmentIssue && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left text-sm text-amber-900">
-                {t('attachmentWarning')}
-              </div>
-            )}
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/request/status" className="flex-1">
-                <Button type="button" variant="outline" className="w-full">{t('checkStatus')}</Button>
-              </Link>
-              <Button type="button" className="flex-1" onClick={onClose} disabled={uploadActive}>{t('close')}</Button>
-            </div>
-          </CardContent>
-        </Card>
+          )}
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link href="/request/status" className="flex-1">
+              <Button type="button" variant="outline" className="w-full border-[1.5px] h-11">{t('checkStatus')}</Button>
+            </Link>
+            <Button
+              type="button"
+              className="flex-1 h-11 bg-[var(--primary)] hover:bg-[color-mix(in_oklch,var(--primary)_85%,black)] text-[var(--primary-foreground)] font-semibold"
+              onClick={onClose}
+              disabled={uploadActive}
+            >
+              {t('close')}
+            </Button>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   )
 }
 
@@ -1003,21 +1110,15 @@ async function loadImageForCanvas(file: File): Promise<HTMLImageElement | ImageB
     try {
       return await createImageBitmap(file)
     } catch {
-      // Fall back to HTMLImageElement for mobile browsers that reject some camera files.
+      /* fall back */
     }
   }
 
   return await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new window.Image()
     const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      resolve(img)
-    }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error('ไม่สามารถอ่านรูปภาพเพื่อบีบอัดได้'))
-    }
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img) }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('ไม่สามารถอ่านรูปภาพเพื่อบีบอัดได้')) }
     img.src = url
   })
 }
@@ -1134,11 +1235,7 @@ async function uploadAttachments(
 
     xhr.onload = () => {
       let json: { success?: boolean; message?: string } | null = null
-      try {
-        json = JSON.parse(xhr.responseText)
-      } catch {
-        json = null
-      }
+      try { json = JSON.parse(xhr.responseText) } catch { json = null }
 
       if (xhr.status >= 200 && xhr.status < 300 && json?.success) {
         onProgress?.(Object.fromEntries(
@@ -1228,125 +1325,399 @@ function StepApplicant(props: {
   }, [locale, districtSel?.id])
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-xl md:text-2xl font-semibold">
-            <User className="h-5 w-5 text-[var(--primary)]" />{t('applicant.title')}
-          </CardTitle>
-          <CardDescription className="text-base">{t('applicant.description')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label className="text-base sm:text-lg font-medium">{t('applicant.prefix.label')} <span className="text-red-500">*</span></Label>
-              <Select value={watch('prefix')} onValueChange={(v) => setValue('prefix', v as FormData['prefix'], { shouldValidate: true })}>
-                <SelectTrigger aria-invalid={!!errors.prefix} className="h-12 text-base">
-                  <SelectValue placeholder={t('applicant.prefix.placeholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {PREFIXES_KEYS.map(p => <SelectItem key={p} value={p}>{t(`applicant.prefix.options.${p}`)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FieldError message={errors.prefix?.message} />
-            </div>
-            <div className="space-y-2 sm:col-span-1 lg:col-span-1">
-              <Label htmlFor="full_name" className="text-base sm:text-lg font-medium">{t('applicant.fullName.label')} <span className="text-red-500">*</span></Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input id="full_name" aria-invalid={!!errors.full_name} {...register('full_name')} className="pl-10 h-12 text-base" placeholder={t('placeholders.fullName')} />
-              </div>
-              <FieldError message={errors.full_name?.message} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="age" className="text-base sm:text-lg font-medium">{t('applicant.age.label')} <span className="text-red-500">*</span></Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input id="age" type="number" min="1" max="120" aria-invalid={!!errors.age} {...register('age')} className="pl-10 h-12 text-base" placeholder={t('placeholders.age')} />
-              </div>
-              <FieldError message={errors.age?.message} />
-            </div>
+    <div className="space-y-5">
+      {/* Personal info card */}
+      <div className="cctv-card">
+        <div className="cctv-card-head">
+          <span className="cctv-num">1</span>
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-[var(--foreground)]">{t('applicant.title')}</div>
+            <div className="text-xs text-[var(--muted-foreground)]">{t('applicant.description')}</div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone_number" className="text-base sm:text-lg font-medium">{t('applicant.phone.label')} <span className="text-red-500">*</span></Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input id="phone_number" aria-invalid={!!errors.phone_number} {...register('phone_number')} className="pl-10 h-12 text-base" placeholder={t('placeholders.phone')} />
-              </div>
-              <FieldError message={errors.phone_number?.message} />
-            </div>
-            <div className="space-y-2 sm:col-span-1 lg:col-span-2">
-              <Label htmlFor="id_or_passport_number" className="text-base sm:text-lg font-medium">{t('applicant.id.label')} <span className="text-red-500">*</span></Label>
-              <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input id="id_or_passport_number" aria-invalid={!!errors.id_or_passport_number} {...register('id_or_passport_number')} className="pl-10 h-12 text-base" placeholder={t('placeholders.id')} />
-              </div>
-              <FieldError message={errors.id_or_passport_number?.message} />
-            </div>
+        </div>
+        <div className="cctv-card-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-[13px] font-semibold">
+              {t('applicant.prefix.label')} <span className="text-[var(--destructive)]">*</span>
+            </Label>
+            <Select value={watch('prefix')} onValueChange={(v) => setValue('prefix', v as FormData['prefix'], { shouldValidate: true })}>
+              <SelectTrigger aria-invalid={!!errors.prefix} className="h-11 text-[15px] border-[1.5px]">
+                <SelectValue placeholder={t('applicant.prefix.placeholder')} />
+              </SelectTrigger>
+              <SelectContent>
+                {PREFIXES_KEYS.map(p => <SelectItem key={p} value={p}>{t(`applicant.prefix.options.${p}`)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <FieldError message={errors.prefix?.message} />
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-xl md:text-2xl font-semibold">
-            <Home className="h-5 w-5 text-[var(--primary)]" />{t('address.title')}
-          </CardTitle>
-          <CardDescription className="text-base">{t('address.description')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          <div className="space-y-1.5 sm:col-span-1">
+            <Label htmlFor="full_name" className="text-[13px] font-semibold">
+              {t('applicant.fullName.label')} <span className="text-[var(--destructive)]">*</span>
+            </Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" aria-hidden="true" />
+              <Input
+                id="full_name"
+                autoComplete="name"
+                aria-invalid={!!errors.full_name}
+                {...register('full_name')}
+                className="pl-9 h-11 text-[15px] border-[1.5px] focus-visible:border-[var(--primary)] focus-visible:ring-4 focus-visible:ring-[color-mix(in_oklch,var(--primary)_25%,transparent)]"
+                placeholder={t('placeholders.fullName')}
+              />
+            </div>
+            <FieldError message={errors.full_name?.message} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="age" className="text-[13px] font-semibold">
+              {t('applicant.age.label')} <span className="text-[var(--destructive)]">*</span>
+            </Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" aria-hidden="true" />
+              <Input
+                id="age"
+                type="number"
+                min="1"
+                max="120"
+                inputMode="numeric"
+                autoComplete="off"
+                aria-invalid={!!errors.age}
+                {...register('age')}
+                className="pl-9 h-11 text-[15px] border-[1.5px]"
+                placeholder={t('placeholders.age')}
+              />
+            </div>
+            <FieldError message={errors.age?.message} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="phone_number" className="text-[13px] font-semibold">
+              {t('applicant.phone.label')} <span className="text-[var(--destructive)]">*</span>
+            </Label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" aria-hidden="true" />
+              <Input
+                id="phone_number"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel-national"
+                aria-invalid={!!errors.phone_number}
+                {...register('phone_number')}
+                className="pl-9 h-11 text-[15px] border-[1.5px]"
+                placeholder={t('placeholders.phone')}
+              />
+            </div>
+            <FieldError message={errors.phone_number?.message} />
+          </div>
+
+          <div className="space-y-1.5 sm:col-span-1 lg:col-span-2">
+            <Label htmlFor="id_or_passport_number" className="text-[13px] font-semibold">
+              {t('applicant.id.label')} <span className="text-[var(--destructive)]">*</span>
+            </Label>
+            <div className="relative">
+              <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" aria-hidden="true" />
+              <Input
+                id="id_or_passport_number"
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={!!errors.id_or_passport_number}
+                {...register('id_or_passport_number')}
+                className="pl-9 h-11 text-[15px] border-[1.5px]"
+                placeholder={t('placeholders.id')}
+              />
+            </div>
+            <p className="text-xs text-[var(--muted-foreground)]">ใช้สำหรับยืนยันตัวตนเท่านั้น</p>
+            <FieldError message={errors.id_or_passport_number?.message} />
+          </div>
+        </div>
+      </div>
+
+      {/* Address card */}
+      <div className="cctv-card">
+        <div className="cctv-card-head">
+          <span className="cctv-num" aria-hidden="true"><Home className="h-3.5 w-3.5" /></span>
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-[var(--foreground)]">{t('address.title')}</div>
+            <div className="text-xs text-[var(--muted-foreground)]">{t('address.description')}</div>
+          </div>
+        </div>
+        <div className="cctv-card-body space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="house_number" className="text-base sm:text-lg font-medium">{t('address.houseNumber.label')}</Label>
-              <Input id="house_number" {...register('house_number')} className="h-12 text-base" placeholder={t('placeholders.houseNumber')} />
+            <div className="space-y-1.5">
+              <Label htmlFor="house_number" className="text-[13px] font-semibold">{t('address.houseNumber.label')}</Label>
+              <Input id="house_number" autoComplete="address-line1" {...register('house_number')} className="h-11 text-[15px] border-[1.5px]" placeholder={t('placeholders.houseNumber')} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="village_number" className="text-base sm:text-lg font-medium">{t('address.villageNumber.label')}</Label>
-              <Input id="village_number" {...register('village_number')} className="h-12 text-base" placeholder={t('placeholders.villageNumber')} />
+            <div className="space-y-1.5">
+              <Label htmlFor="village_number" className="text-[13px] font-semibold">{t('address.villageNumber.label')}</Label>
+              <Input id="village_number" autoComplete="off" {...register('village_number')} className="h-11 text-[15px] border-[1.5px]" placeholder={t('placeholders.villageNumber')} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="alley" className="text-base sm:text-lg font-medium">{t('address.alley.label')}</Label>
-              <Input id="alley" {...register('alley')} className="h-12 text-base" placeholder={t('placeholders.alley')} />
+            <div className="space-y-1.5">
+              <Label htmlFor="alley" className="text-[13px] font-semibold">{t('address.alley.label')}</Label>
+              <Input id="alley" autoComplete="address-line2" {...register('alley')} className="h-11 text-[15px] border-[1.5px]" placeholder={t('placeholders.alley')} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="road" className="text-base sm:text-lg font-medium">{t('address.road.label')}</Label>
-              <Input id="road" {...register('road')} className="h-12 text-base" placeholder={t('placeholders.road')} />
+            <div className="space-y-1.5">
+              <Label htmlFor="road" className="text-[13px] font-semibold">{t('address.road.label')}</Label>
+              <Input id="road" autoComplete="address-line3" {...register('road')} className="h-11 text-[15px] border-[1.5px]" placeholder={t('placeholders.road')} />
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <AsyncCombobox label={`${t('address.province.label')} *`} selected={provinceSel} fetcher={fetchProvinces}
+            <AsyncCombobox
+              label={`${t('address.province.label')} *`}
+              selected={provinceSel}
+              fetcher={fetchProvinces}
               disabledHint={t('address.provincePlaceholder')}
               onSelect={(item) => {
-                if (item.id === -1) { setProvinceSel(null); setValue('province', '', { shouldValidate: true }); setDistrictSel(null); setSubdistrictSel(null); setValue('district', '', { shouldValidate: true }); setValue('sub_district', '', { shouldValidate: true }); setValue('postal_code', '', { shouldValidate: true }); return }
-                setProvinceSel(item); setValue('province', item.name, { shouldValidate: true }); setDistrictSel(null); setSubdistrictSel(null); setValue('district', '', { shouldValidate: true }); setValue('sub_district', '', { shouldValidate: true }); setValue('postal_code', '', { shouldValidate: true })
+                if (item.id === -1) {
+                  setProvinceSel(null); setValue('province', '', { shouldValidate: true })
+                  setDistrictSel(null); setSubdistrictSel(null)
+                  setValue('district', '', { shouldValidate: true })
+                  setValue('sub_district', '', { shouldValidate: true })
+                  setValue('postal_code', '', { shouldValidate: true })
+                  return
+                }
+                setProvinceSel(item); setValue('province', item.name, { shouldValidate: true })
+                setDistrictSel(null); setSubdistrictSel(null)
+                setValue('district', '', { shouldValidate: true })
+                setValue('sub_district', '', { shouldValidate: true })
+                setValue('postal_code', '', { shouldValidate: true })
               }}
-              error={errors.province?.message as string | undefined} t={t} />
-            <AsyncCombobox label={`${t('address.district.label')} *`} selected={districtSel} fetcher={fetchDistricts}
-              disabled={!provinceSel} disabledHint={!provinceSel ? t('address.districtPlaceholder') : undefined}
+              error={errors.province?.message as string | undefined}
+              t={t}
+            />
+            <AsyncCombobox
+              label={`${t('address.district.label')} *`}
+              selected={districtSel}
+              fetcher={fetchDistricts}
+              disabled={!provinceSel}
+              disabledHint={!provinceSel ? t('address.districtPlaceholder') : undefined}
               onSelect={(item) => {
-                if (item.id === -1) { setDistrictSel(null); setValue('district', '', { shouldValidate: true }); setSubdistrictSel(null); setValue('sub_district', '', { shouldValidate: true }); setValue('postal_code', '', { shouldValidate: true }); return }
-                setDistrictSel(item); setValue('district', item.name, { shouldValidate: true }); setSubdistrictSel(null); setValue('sub_district', '', { shouldValidate: true }); setValue('postal_code', '', { shouldValidate: true })
+                if (item.id === -1) {
+                  setDistrictSel(null); setValue('district', '', { shouldValidate: true })
+                  setSubdistrictSel(null)
+                  setValue('sub_district', '', { shouldValidate: true })
+                  setValue('postal_code', '', { shouldValidate: true })
+                  return
+                }
+                setDistrictSel(item); setValue('district', item.name, { shouldValidate: true })
+                setSubdistrictSel(null)
+                setValue('sub_district', '', { shouldValidate: true })
+                setValue('postal_code', '', { shouldValidate: true })
               }}
-              error={errors.district?.message as string | undefined} t={t} />
-            <AsyncCombobox label={`${t('address.subdistrict.label')} *`} selected={subdistrictSel} fetcher={fetchSubdistricts}
-              disabled={!districtSel} disabledHint={!districtSel ? t('address.districtPlaceholder') : undefined}
+              error={errors.district?.message as string | undefined}
+              t={t}
+            />
+            <AsyncCombobox
+              label={`${t('address.subdistrict.label')} *`}
+              selected={subdistrictSel}
+              fetcher={fetchSubdistricts}
+              disabled={!districtSel}
+              disabledHint={!districtSel ? t('address.districtPlaceholder') : undefined}
               onSelect={(item) => {
-                if (item.id === -1) { setSubdistrictSel(null); setValue('sub_district', '', { shouldValidate: true }); setValue('postal_code', '', { shouldValidate: true }); return }
-                setSubdistrictSel(item); setValue('sub_district', item.name, { shouldValidate: true })
+                if (item.id === -1) {
+                  setSubdistrictSel(null)
+                  setValue('sub_district', '', { shouldValidate: true })
+                  setValue('postal_code', '', { shouldValidate: true })
+                  return
+                }
+                setSubdistrictSel(item)
+                setValue('sub_district', item.name, { shouldValidate: true })
                 const zip = item.extra?.zip ? String(item.extra.zip) : ''
                 if (zip) setValue('postal_code', zip, { shouldValidate: true })
               }}
-              error={errors.sub_district?.message as string | undefined} t={t} />
-            <div className="space-y-2">
-              <Label htmlFor="postal_code" className="text-base sm:text-lg font-medium">{t('address.postalCode.label')} <span className="text-red-500">*</span></Label>
-              <Input id="postal_code" inputMode="numeric" pattern="[0-9]*" aria-invalid={!!errors.postal_code} {...register('postal_code')} className="h-12 text-base" placeholder={t('placeholders.postalCode')} />
+              error={errors.sub_district?.message as string | undefined}
+              t={t}
+            />
+            <div className="space-y-1.5">
+              <Label htmlFor="postal_code" className="text-[13px] font-semibold">
+                {t('address.postalCode.label')} <span className="text-[var(--destructive)]">*</span>
+              </Label>
+              <Input
+                id="postal_code"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="postal-code"
+                spellCheck={false}
+                aria-invalid={!!errors.postal_code}
+                {...register('postal_code')}
+                className="h-11 text-[15px] border-[1.5px]"
+                placeholder={t('placeholders.postalCode')}
+              />
               <FieldError message={errors.postal_code?.message} />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
+  )
+}
+
+/* -------------------- Sign-sample preview modal --------------------
+ * Modal สอนวิธีเซ็น "สำเนาถูกต้อง" — เปิดจากปุ่ม "ดูตัวอย่าง" บน notice banner ของ Step 2
+ * Layout: ซ้าย = 4 ขั้นตอน + คำเตือน, ขวา = เอกสาร mockup พร้อมตราประทับ
+ */
+const SIGN_STEPS = [
+  { n: '01', title: 'เขียนข้อความ “สำเนาถูกต้อง”', desc: 'บนสำเนาทุกแผ่น' },
+  { n: '02', title: 'เซ็นชื่อกำกับ', desc: 'ใช้ลายเซ็นเดียวกับในบัตรประชาชน' },
+  { n: '03', title: 'ถ่าย / สแกนให้ชัดทั้งใบ', desc: 'ลายเซ็นและข้อความต้องอ่านออก' },
+  { n: '04', title: 'ระบุวัตถุประสงค์', desc: 'เช่น “ใช้เพื่อขอภาพกล้องวงจรปิด — เท่านั้น”' },
+] as const
+
+// Hoist static literals — ตาม `rendering-hoist-jsx` / pattern เดียวกับ PDPAConsentModal ในไฟล์นี้
+const DOC_MOCKUP_LINE_WIDTHS = [78, 92, 64, 85, 48, 72] as const
+const DOC_MOCKUP_LINE_BG = 'linear-gradient(90deg, #dde6f1, #e8eef7)'
+
+const NOTICE_BANNER_STYLE: React.CSSProperties = {
+  background: 'linear-gradient(180deg, var(--primary) 0%, color-mix(in oklch, var(--primary) 70%, #000) 100%)',
+  boxShadow: '0 12px 30px -18px color-mix(in oklch, var(--primary) 45%, transparent)',
+}
+const NOTICE_BANNER_GLOW_STYLE: React.CSSProperties = {
+  right: '-40px', top: '-40px', width: '200px', height: '200px',
+  background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
+}
+const NOTICE_BANNER_ICON_STYLE: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)',
+}
+
+const MOCKUP_PANEL_BG_STYLE: React.CSSProperties = {
+  background: 'linear-gradient(180deg, #f4f8fd 0%, #e9f1fc 100%)',
+}
+const MOCKUP_PAPER_STYLE: React.CSSProperties = {
+  aspectRatio: '1 / 1.3',
+  transform: 'rotate(-1.2deg)',
+  boxShadow: '0 1px 0 #fff inset, 0 18px 30px -22px rgba(0,35,102,.25), 0 4px 8px -6px rgba(0,35,102,.12)',
+}
+const MOCKUP_PAPER_INNER_BORDER_STYLE: React.CSSProperties = {
+  inset: '8px', border: '1px dashed var(--border)',
+}
+const MOCKUP_STAMP_WRAP_STYLE: React.CSSProperties = { transform: 'rotate(-5deg)' }
+const MOCKUP_STAMP_LABEL_STYLE: React.CSSProperties = { background: 'rgba(255,255,255,0.5)' }
+
+function SignSampleModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
+      <DialogContent
+        className="p-0 gap-0 overflow-hidden border-0 max-w-[920px] w-[calc(100%-1.5rem)] sm:w-full max-h-[90dvh] flex flex-col"
+        showCloseButton={false}
+      >
+        {/* Head */}
+        <div className="flex items-start gap-4 border-b border-[var(--border)] px-6 py-5 sm:px-7">
+          <div className="flex-1 min-w-0">
+            <span className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--primary)] font-mono">
+              <span className="block h-px w-5 bg-[var(--primary)]" aria-hidden="true" />
+              ก่อนแนบเอกสาร
+            </span>
+            <DialogTitle className="mt-2 text-[20px] sm:text-[24px] font-semibold leading-[1.25] tracking-[-0.01em] text-[var(--foreground)]">
+              เซ็น <em className="not-italic text-[var(--primary)]">“สำเนาถูกต้อง”</em> ทุกแผ่นก่อนอัปโหลด
+            </DialogTitle>
+            <p className="mt-1 text-[14px] text-[var(--muted-foreground)] leading-relaxed">
+              ไฟล์ที่ไม่ลงนามรับรอง จะถูกตีกลับโดยอัตโนมัติ
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="ปิด"
+            className="ml-auto flex-none h-9 w-9 rounded-[10px] grid place-items-center bg-[var(--muted)] border border-[var(--border)] text-[var(--foreground)] hover:bg-[color-mix(in_oklch,var(--primary)_8%,var(--muted))] hover:border-[color-mix(in_oklch,var(--primary)_22%,transparent)] transition"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 overflow-auto">
+          {/* Left: Steps */}
+          <div className="px-6 py-6 sm:px-7 border-b sm:border-b-0 sm:border-r border-[var(--border)]">
+            <div className="flex items-start gap-2.5 rounded-[10px] border border-[#fde0a4] bg-[#fff7e6] px-3.5 py-3 text-[13px] leading-relaxed text-[#7a4c00] mb-5">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-[var(--warning)]" aria-hidden="true" />
+              <span>
+                ปฏิบัติตามทั้ง <strong className="font-semibold">4 ขั้นตอน</strong> ก่อนแนบไฟล์ — มิเช่นนั้นเจ้าหน้าที่จะไม่รับพิจารณา
+              </span>
+            </div>
+            <ol className="m-0 p-0 list-none flex flex-col gap-[18px]">
+              {SIGN_STEPS.map((s) => (
+                <li key={s.n} className="grid grid-cols-[34px_1fr] gap-3.5 items-start">
+                  <span
+                    className="w-[34px] h-[34px] rounded-full grid place-items-center font-mono text-[12px] font-medium text-[var(--primary)] bg-[color-mix(in_oklch,var(--primary)_8%,transparent)] border border-[color-mix(in_oklch,var(--primary)_22%,transparent)]"
+                    aria-hidden="true"
+                  >
+                    {s.n}
+                  </span>
+                  <span className="block">
+                    <strong className="block font-semibold text-[15px] leading-[1.35] text-[var(--foreground)]">{s.title}</strong>
+                    <span className="block mt-0.5 text-[13.5px] text-[var(--muted-foreground)] leading-[1.5]">{s.desc}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* Right: Visual mockup */}
+          <div
+            className="px-6 py-6 sm:px-7 flex flex-col items-center justify-center gap-3.5 min-h-[300px] sm:min-h-[380px] relative"
+            style={MOCKUP_PANEL_BG_STYLE}
+            aria-hidden="true"
+          >
+            <span className="inline-flex items-center gap-2.5 font-mono text-[10.5px] uppercase tracking-[0.16em] text-[var(--muted-foreground)] before:content-[''] before:block before:h-px before:w-5 before:bg-[var(--border)] after:content-[''] after:block after:h-px after:w-5 after:bg-[var(--border)]">
+              ตัวอย่างการลงนาม
+            </span>
+
+            <div
+              className="w-full max-w-[260px] bg-[#fffefa] border border-[var(--border)] rounded-md p-5 relative"
+              style={MOCKUP_PAPER_STYLE}
+            >
+              <span
+                className="absolute pointer-events-none rounded-[3px]"
+                style={MOCKUP_PAPER_INNER_BORDER_STYLE}
+              />
+              <div className="font-mono text-[9.5px] tracking-[0.18em] text-[var(--muted-foreground)] uppercase">
+                เอกสารตัวอย่าง
+              </div>
+              <div className="mt-3.5 flex flex-col gap-1.5">
+                {DOC_MOCKUP_LINE_WIDTHS.map((w, i) => (
+                  <i
+                    key={i}
+                    className="block h-[5px] rounded-[2px]"
+                    style={{ width: `${w}%`, background: DOC_MOCKUP_LINE_BG }}
+                  />
+                ))}
+              </div>
+              <div className="absolute right-[18px] bottom-[22px]" style={MOCKUP_STAMP_WRAP_STYLE}>
+                <span
+                  className="block text-[13px] font-semibold text-[var(--primary)] tracking-[0.02em] px-2 py-0.5 rounded-[3px] border-[1.5px] border-[var(--primary)]"
+                  style={MOCKUP_STAMP_LABEL_STYLE}
+                >
+                  สำเนาถูกต้อง
+                </span>
+                <svg width="110" height="30" viewBox="0 0 120 34" fill="none" className="block mt-1 text-[var(--primary)]">
+                  <path d="M3 22 C 12 6, 22 30, 32 14 S 56 4, 70 22 S 100 28, 117 10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+                  <path d="M40 28 L 92 28" stroke="currentColor" strokeWidth="0.6" strokeLinecap="round" opacity="0.4" />
+                </svg>
+                <div className="text-center mt-0.5 text-[10px] text-[var(--muted-foreground)]">(ลายเซ็น)</div>
+              </div>
+            </div>
+
+            <p className="text-center text-[13px] text-[var(--muted-foreground)] leading-[1.5] max-w-[260px]">
+              ใช้ปากกาสีน้ำเงินหรือดำ — เขียน
+              <strong className="text-[var(--primary)] font-semibold">“สำเนาถูกต้อง”</strong>
+              กำกับด้วยลายเซ็นในที่ว่างของเอกสาร
+            </p>
+          </div>
+        </div>
+
+        {/* Foot */}
+        <div className="flex items-center gap-3 border-t border-[var(--border)] bg-[var(--card)] px-6 py-3.5 sm:px-7">
+          <span className="flex-1" />
+          <Button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-5 rounded-[10px] text-[14px] font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90"
+          >
+            เริ่มอัปโหลด
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -1357,7 +1728,7 @@ const DOC_CARDS: DocCardConfig[] = [
     title: 'สำเนาบันทึกประจำวัน',
     subtitle: 'ต้องเซ็น “สำเนาถูกต้อง” · PDF/รูปภาพ · ไม่เกิน 10MB',
     accept: '.pdf,image/*',
-    icon: <BookOpen className="h-6 w-6" />,
+    icon: <BookOpen className="h-5 w-5" />,
     previewType: 'any',
     requireCertify: true,
   },
@@ -1366,7 +1737,7 @@ const DOC_CARDS: DocCardConfig[] = [
     title: 'สำเนาบัตรประชาชน',
     subtitle: 'ต้องเซ็น “สำเนาถูกต้อง” · PDF/รูปภาพ · ไม่เกิน 10MB',
     accept: '.pdf,image/*',
-    icon: <FileBadge2 className="h-6 w-6" />,
+    icon: <FileBadge2 className="h-5 w-5" />,
     previewType: 'any',
     requireCertify: true,
   },
@@ -1375,7 +1746,7 @@ const DOC_CARDS: DocCardConfig[] = [
     title: 'รูปถ่ายใบหน้ายืนยันตัวตน',
     subtitle: 'ถ่ายหน้าตรง เห็นชัดเจน · รูปภาพเท่านั้น',
     accept: 'image/*',
-    icon: <ScanFace className="h-6 w-6" />,
+    icon: <ScanFace className="h-5 w-5" />,
     previewType: 'image',
   },
 ]
@@ -1397,108 +1768,102 @@ function StepDocuments(props: {
   const doneCount = files.filter(Boolean).length
   const allDone = doneCount === 3
 
+  const [previewOpen, setPreviewOpen] = useState(false)
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div ref={scrollAnchorRef} />
 
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-xl md:text-2xl font-semibold">
-            <FileText className="h-5 w-5 text-[var(--primary)]" />
-            ยื่นเอกสารประกอบ
-          </CardTitle>
-          <CardDescription className="text-base">
-            แนบเอกสารให้ครบทั้ง 3 รายการ — รองรับรูปภาพและ PDF
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-
-          {/* Certified-true-copy notice */}
-          <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-4 sm:p-5">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                <PenLine className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm sm:text-base font-semibold text-amber-900">
-                  กรุณา “รับรองสำเนาถูกต้อง” ก่อนแนบเอกสาร
-                </h3>
-                <p className="mt-1 text-xs sm:text-sm leading-relaxed text-amber-800">
-                  สำเนา<span className="font-medium">บันทึกประจำวัน</span>และสำเนา<span className="font-medium">บัตรประชาชน</span>
-                  ทุกฉบับต้องมีลายเซ็นกำกับ พร้อมข้อความ “สำเนาถูกต้อง” มิฉะนั้นเจ้าหน้าที่จะไม่รับพิจารณา
-                </p>
-
-                {/* Sample chip */}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <div className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-white px-3 py-1.5 shadow-sm">
-                    <span className="text-[11px] font-mono tracking-tight text-slate-700">สำเนาถูกต้อง</span>
-                    <span className="h-3 w-px bg-slate-300" />
-                    <span className="text-[11px] italic text-slate-500">(ลายเซ็น)</span>
-                  </div>
-                  <span className="text-[11px] text-amber-700">← ตัวอย่างที่ต้องเขียน/เซ็นบนสำเนา</span>
-                </div>
-
-                {/* Step list */}
-                <ul className="mt-3 space-y-1.5 text-xs sm:text-sm text-amber-900">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-                    <span>เขียนข้อความ <span className="font-semibold">“สำเนาถูกต้อง”</span> บนสำเนาทุกแผ่น</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-                    <span>เซ็นชื่อกำกับให้ตรงกับชื่อในบัตรประชาชน</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-                    <span>ถ่ายรูปหรือสแกนให้เห็นชัดทั้งใบ — ลายเซ็นและข้อความต้องอ่านออก</span>
-                  </li>
-                </ul>
-
-                <div className="mt-3 flex items-start gap-2 rounded-lg bg-white/70 px-3 py-2 text-[11px] sm:text-xs text-amber-900">
-                  <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-600" />
-                  <span>
-                    หากใช้สำเนาเพื่อการอื่น ให้ระบุข้อความเพิ่ม เช่น
-                    <span className="font-medium"> “ใช้เพื่อขอดูภาพกล้องวงจรปิดเทศบาลนครหัวหินเท่านั้น”</span>
-                    เพื่อป้องกันการนำสำเนาไปใช้ผิดวัตถุประสงค์
-                  </span>
-                </div>
-              </div>
+      <div className="cctv-card">
+        {/* Step header — number + title + pip progress */}
+        <div className="flex items-end justify-between gap-4 px-5 sm:px-6 pt-5 sm:pt-6 pb-4 border-b border-[var(--border)]">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <span className="w-11 h-11 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] grid place-items-center font-mono text-[18px] font-semibold shrink-0">
+              2
+            </span>
+            <div className="min-w-0">
+              <h2 className="m-0 text-[18px] sm:text-[22px] font-semibold leading-tight tracking-[-0.005em] text-[var(--foreground)]">
+                เอกสารประกอบคำร้อง
+              </h2>
+              <span className="block mt-1 text-[13px] text-[var(--muted-foreground)]">
+                อัปโหลดรูปภาพหรือไฟล์ PDF ของเอกสารทั้ง 3 รายการด้านล่าง
+              </span>
             </div>
           </div>
-
-          {/* Progress tracker */}
-          <div className="flex items-center gap-3 rounded-2xl border bg-slate-50 px-4 py-3">
+          <div className="hidden sm:flex items-center gap-2.5 font-mono text-[13px] text-[var(--muted-foreground)] shrink-0">
             <div className="flex gap-1.5">
-              {[0, 1, 2].map((i) => (
-                <div
+              {files.map((f, i) => (
+                <span
                   key={i}
                   className={[
-                    'h-2 rounded-full transition-all duration-300',
-                    files[i] ? 'w-8 bg-emerald-500' : 'w-2 bg-slate-300',
+                    'block w-2.5 h-2.5 rounded-full border-[1.5px] border-[var(--primary)]',
+                    f ? 'bg-[var(--primary)]' : 'bg-transparent',
                   ].join(' ')}
                 />
               ))}
             </div>
-            <span className={['text-sm font-semibold transition-colors duration-200', allDone ? 'text-emerald-700' : 'text-slate-700'].join(' ')}>
-              {doneCount}/3 เอกสาร
-            </span>
-            {allDone && (
-              <span className="ml-auto flex items-center gap-1 text-xs font-medium text-emerald-600">
-                <CheckCheck className="h-4 w-4" />
-                ครบแล้ว
-              </span>
-            )}
+            <span>{doneCount} / 3</span>
+          </div>
+        </div>
+
+        <div className="cctv-card-body space-y-5">
+          {/* Notice banner — navy gradient + ดูตัวอย่าง CTA */}
+          <div
+            className="relative overflow-hidden rounded-2xl text-white flex flex-col sm:flex-row sm:items-center gap-4 px-6 py-5 sm:px-7"
+            style={NOTICE_BANNER_STYLE}
+          >
+            <span
+              className="absolute pointer-events-none rounded-full"
+              style={NOTICE_BANNER_GLOW_STYLE}
+              aria-hidden="true"
+            />
+            <div
+              className="w-12 h-12 shrink-0 rounded-xl grid place-items-center"
+              style={NOTICE_BANNER_ICON_STYLE}
+              aria-hidden="true"
+            >
+              <PenLine className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[16px] sm:text-[17px] font-semibold leading-[1.35]">
+                เซ็น “สำเนาถูกต้อง” ทุกแผ่นก่อนอัปโหลด
+              </div>
+              <div className="mt-1 text-[13px] sm:text-[13.5px] leading-[1.45] opacity-80">
+                ไฟล์ที่ไม่ลงนามรับรอง จะถูกลบและคำร้องจะไม่ถูกพิจารณา
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="shrink-0 inline-flex items-center gap-2 rounded-[10px] px-4 py-2.5 text-[14px] font-semibold bg-white text-[var(--primary)] hover:-translate-y-px transition will-change-transform"
+            >
+              ดูตัวอย่าง
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
           </div>
 
-          {/* All-done banner */}
+          {/* Divider — รายการเอกสาร + count */}
+          <div className="flex items-center gap-4">
+            <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--muted-foreground)] shrink-0">
+              รายการเอกสาร
+            </span>
+            <span className="flex-1 h-px bg-[var(--border)]" aria-hidden="true" />
+            <span className="font-mono text-[12px] text-[var(--muted-foreground)] shrink-0">
+              <strong className={['font-semibold', allDone ? 'text-[var(--success)]' : 'text-[var(--primary)]'].join(' ')}>
+                {doneCount}
+              </strong>
+              {' '}/ 3 อัปโหลดแล้ว
+            </span>
+          </div>
+
           {allDone && (
-            <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
-              <p className="text-sm font-medium text-emerald-800">เอกสารครบแล้ว — กด <span className="font-semibold">ถัดไป</span> เพื่อดำเนินการต่อ</p>
+            <div className="cctv-status cctv-status-success px-3 py-2 text-sm w-full justify-start">
+              <span className="dot" />
+              เอกสารครบแล้ว — กด <strong className="mx-1">ถัดไป</strong> เพื่อดำเนินการต่อ
             </div>
           )}
 
-          {/* Cards */}
+          {/* Doc cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {DOC_CARDS.map((cfg, i) => (
               <DocumentCard
@@ -1517,20 +1882,28 @@ function StepDocuments(props: {
             ))}
           </div>
 
-          {/* Global error */}
           {docsError && !allDone && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
-              <p className="text-sm text-red-700">{docsError}</p>
+            <div
+              className="flex items-center gap-2 rounded-lg px-3.5 py-3 border"
+              style={{
+                background: 'color-mix(in oklch, var(--destructive) 8%, transparent)',
+                borderColor: 'color-mix(in oklch, var(--destructive) 35%, transparent)',
+                color: 'var(--destructive)',
+              }}
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <p className="text-sm">{docsError}</p>
             </div>
           )}
 
-          {/* Helper note */}
-          <p className="text-xs text-slate-500 text-center">
+          <p className="text-xs text-[var(--muted-foreground)] text-center flex items-center justify-center gap-1.5">
+            <span className="block w-1.5 h-1.5 rounded-full bg-[var(--success)] ring-4 ring-[color-mix(in_oklch,var(--success)_18%,transparent)]" aria-hidden="true" />
             ข้อมูลและเอกสารทั้งหมดได้รับการเข้ารหัสและเก็บรักษาอย่างปลอดภัย
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      <SignSampleModal open={previewOpen} onClose={() => setPreviewOpen(false)} />
     </div>
   )
 }
@@ -1551,45 +1924,35 @@ function DateTimeIncidentFields(props: {
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="incident_date" className="text-base sm:text-lg font-medium">
-            {t('incident.date.label')} <span className="text-red-500">*</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="incident_date" className="text-[13px] font-semibold flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" aria-hidden="true" /> {t('incident.date.label')} <span className="text-[var(--destructive)]">*</span>
           </Label>
-          <Input
-            id="incident_date"
-            type="date"
-            aria-invalid={!!errors.incident_date}
-            className="h-12 text-base"
-            {...register('incident_date', { setValueAs: setIncidentDateAs })}
-          />
-          <p className="text-sm text-slate-600 min-h-[1.25rem]" aria-live="polite">
+          <Input id="incident_date" type="date" aria-invalid={!!errors.incident_date} className="h-11 text-[15px] border-[1.5px]" {...register('incident_date', { setValueAs: setIncidentDateAs })} />
+          <p className="text-xs text-[var(--muted-foreground)] min-h-[1.1rem]" aria-live="polite">
             {datePreview
               ? t('incident.date.selected', { value: datePreview })
-              : <span className="text-slate-400">{t('incident.date.placeholder')}</span>}
+              : <span>{t('incident.date.placeholder')}</span>}
           </p>
           <FieldError message={errors.incident_date?.message} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="incident_time" className="text-base sm:text-lg font-medium">
-            {t('incident.time.label')} <span className="text-red-500">*</span>
+        <div className="space-y-1.5">
+          <Label htmlFor="incident_time" className="text-[13px] font-semibold flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" aria-hidden="true" /> {t('incident.time.label')} <span className="text-[var(--destructive)]">*</span>
           </Label>
-          <Input
-            id="incident_time"
-            type="time"
-            aria-invalid={!!errors.incident_time}
-            className="h-12 text-base"
-            {...register('incident_time', { setValueAs: setIncidentTimeAs })}
-          />
-          <p className="text-sm text-slate-600 min-h-[1.25rem]" aria-live="polite">
+          <Input id="incident_time" type="time" aria-invalid={!!errors.incident_time} className="h-11 text-[15px] border-[1.5px]" {...register('incident_time', { setValueAs: setIncidentTimeAs })} />
+          <p className="text-xs text-[var(--muted-foreground)] min-h-[1.1rem]" aria-live="polite">
             {timePreview
               ? t('incident.time.selected', { value: timePreview })
-              : <span className="text-slate-400">{t('incident.time.placeholder')}</span>}
+              : <span>{t('incident.time.placeholder')}</span>}
           </p>
           <FieldError message={errors.incident_time?.message} />
         </div>
       </div>
-      <p className="text-xs text-slate-500">{t('incident.dateTimeHint')}</p>
+      <p className="text-[11px] text-[var(--muted-foreground)] flex items-center gap-1">
+        <Info className="h-3 w-3" aria-hidden="true" /> {t('incident.dateTimeHint')}
+      </p>
     </div>
   )
 }
@@ -1616,65 +1979,94 @@ function StepIncident(props: {
   }, [locale])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div ref={scrollAnchorRef} />
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-xl md:text-2xl font-semibold">
-            <Camera className="h-5 w-5 text-[var(--primary)]" />{t('incident.title')}
-          </CardTitle>
-          <CardDescription className="text-base">{t('incident.description')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* ประเภทคำร้อง */}
-          <div className="space-y-4">
-            <Label className="text-base sm:text-lg font-medium">{t('incident.requestType.label')} <span className="text-destructive">*</span></Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="cctv-card">
+        <div className="cctv-card-head">
+          <span className="cctv-num">3</span>
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-[var(--foreground)]">{t('incident.title')}</div>
+            <div className="text-xs text-[var(--muted-foreground)]">{t('incident.description')}</div>
+          </div>
+        </div>
+        <div className="cctv-card-body space-y-5">
+          {/* Request type cards */}
+          <div className="space-y-2">
+            <Label className="text-[13px] font-semibold">
+              {t('incident.requestType.label')} <span className="text-[var(--destructive)]">*</span>
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {CATEGORIES_KEYS.map((category) => {
                 const isSelected = watch('request_type') === category
                 const isViewData = category === 'ขอดูข้อมูลรูปภาพ'
                 const requestTypeKey = isViewData ? 'view' : 'copy'
                 const handleSelect = () => setValue('request_type', category, { shouldValidate: true })
                 return (
-                  <div key={category} role="radio" aria-checked={isSelected} tabIndex={0}
-                    onClick={handleSelect} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSelect()}
-                    className={['group relative cursor-pointer rounded-xl p-3 sm:p-4 transition-all duration-300 border-2 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]',
-                      isSelected ? 'border-primary bg-gradient-to-br from-primary/10 to-primary/5 shadow-md ring-2 ring-primary/20' : 'border-border bg-card hover:border-primary/30 hover:bg-accent/60'].join(' ')}>
-                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                      <div className={['relative w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 transition-all duration-200', isSelected ? 'border-primary bg-primary scale-110' : 'border-muted-foreground/40 group-hover:border-primary/50'].join(' ')}>
-                        {isSelected && <div className="absolute inset-0 flex items-center justify-center"><div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-primary-foreground animate-in fade-in zoom-in duration-200" /></div>}
+                  <div
+                    key={category}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onClick={handleSelect}
+                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSelect()}
+                    className={[
+                      'group relative cursor-pointer rounded-xl p-3.5 transition-all duration-200 border-[1.5px]',
+                      isSelected
+                        ? 'border-[var(--primary)] bg-[color-mix(in_oklch,var(--primary)_6%,var(--card))]'
+                        : 'border-[var(--border)] bg-[var(--card)] hover:border-[color-mix(in_oklch,var(--primary)_40%,var(--border))]',
+                    ].join(' ')}
+                    style={
+                      isSelected
+                        ? { boxShadow: '0 4px 12px -4px color-mix(in oklch, var(--primary) 30%, transparent)' }
+                        : undefined
+                    }
+                  >
+                    <div className="absolute top-2.5 right-2.5">
+                      <div
+                        className={[
+                          'w-4 h-4 rounded-full border-[1.5px] transition-all flex items-center justify-center',
+                          isSelected ? 'border-[var(--primary)] bg-[var(--primary)]' : 'border-[var(--cctv-border-strong,var(--border))]',
+                        ].join(' ')}
+                      >
+                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary-foreground)]" />}
                       </div>
                     </div>
-                    <div className="flex flex-col space-y-2 sm:space-y-3">
-                      <div className={['w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300', isSelected ? 'bg-primary text-primary-foreground shadow-lg' : 'bg-primary/10 text-primary group-hover:bg-primary/20'].join(' ')}>
-                        {isViewData ? <Camera className="h-4 w-4 sm:h-5 sm:w-5" /> : <FileText className="h-4 w-4 sm:h-5 sm:w-5" />}
+                    <div className="flex flex-col gap-2">
+                      <div
+                        className={[
+                          'w-10 h-10 rounded-lg flex items-center justify-center transition-all',
+                          isSelected
+                            ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
+                            : 'bg-[color-mix(in_oklch,var(--primary)_10%,transparent)] text-[var(--primary)]',
+                        ].join(' ')}
+                      >
+                        {isViewData ? <Camera className="h-5 w-5" aria-hidden="true" /> : <FileText className="h-5 w-5" aria-hidden="true" />}
                       </div>
-                      <div className="space-y-1 sm:space-y-1.5">
-                        <h3 className={['font-semibold text-sm sm:text-base transition-colors duration-200', isSelected ? 'text-primary' : 'text-foreground group-hover:text-primary'].join(' ')}>
+                      <div>
+                        <h3 className={['text-sm font-bold', isSelected ? 'text-[var(--primary)]' : 'text-[var(--foreground)]'].join(' ')}>
                           {t(`incident.category.options.${category}`)}
                         </h3>
-                        <p className="text-xs sm:text-sm text-muted-foreground leading-tight line-clamp-3 sm:line-clamp-2">
+                        <p className="text-xs text-[var(--muted-foreground)] mt-1 leading-snug">
                           {t(`incident.requestType.${requestTypeKey}.description`)}
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-1 sm:gap-1.5">
+                      <div className="flex flex-wrap gap-1">
                         {isViewData ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-primary/10 text-primary ring-1 ring-primary/15">
-                            <Camera className="w-3 h-3" />{t('incident.requestType.view.badge')}
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded bg-[color-mix(in_oklch,var(--primary)_10%,transparent)] text-[var(--primary)]">
+                            <Camera className="w-2.5 h-2.5" aria-hidden="true" /> {t('incident.requestType.view.badge')}
                           </span>
                         ) : (
                           <>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-primary/10 text-primary ring-1 ring-primary/15">
-                              <FileText className="w-3 h-3" />{t('incident.requestType.copy.badge')}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded bg-[color-mix(in_oklch,var(--primary)_10%,transparent)] text-[var(--primary)]">
+                              <FileText className="w-2.5 h-2.5" aria-hidden="true" /> {t('incident.requestType.copy.badge')}
                             </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md bg-accent text-accent-foreground ring-1 ring-primary/10">
-                              <ShieldCheck className="w-3 h-3" />{t('incident.requestType.copy.badgeEvidence')}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold rounded bg-[var(--cctv-bg-muted,var(--muted))] text-[var(--foreground)]">
+                              <ShieldCheck className="w-2.5 h-2.5" aria-hidden="true" /> {t('incident.requestType.copy.badgeEvidence')}
                             </span>
                           </>
                         )}
                       </div>
                     </div>
-                    <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-r from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   </div>
                 )
               })}
@@ -1682,57 +2074,93 @@ function StepIncident(props: {
             <FieldError message={errors.request_type?.message} />
           </div>
 
-          {/* สถานะการเกี่ยวข้อง */}
-          <div className="space-y-4">
-            <Label className="text-base sm:text-lg font-medium">{t('incident.involvement.label')} <span className="text-red-500">*</span></Label>
-            <div className="space-y-4">
-              <Select value={watch('involvement_role')} onValueChange={(v) => setValue('involvement_role', v as FormData['involvement_role'], { shouldValidate: true })}>
-                <SelectTrigger aria-invalid={!!errors.involvement_role} className="h-12 text-base">
-                  <SelectValue placeholder={t('incident.involvement.placeholder')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {INVOLVEMENT_ROLES_KEYS.map(r => <SelectItem key={r} value={r}>{t(`incident.involvement.options.${r}`)}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <FieldError message={errors.involvement_role?.message as string | undefined} />
-              {(watch('involvement_role') === 'ญาติ' || watch('involvement_role') === 'ผู้เกี่ยวข้อง') && (
-                <div className="space-y-2">
-                  <Label htmlFor="involvement_explain" className="text-base font-medium">{t('incident.involvement.explainLabel')}</Label>
-                  <Input id="involvement_explain" placeholder={t('incident.involvement.explainPlaceholder')} aria-invalid={!!errors.involvement_explain} {...register('involvement_explain')} className="h-12 text-base" />
-                  <FieldError message={errors.involvement_explain?.message as string | undefined} />
-                </div>
-              )}
+          {/* Involvement role — chip style */}
+          <div className="space-y-2">
+            <Label className="text-[13px] font-semibold">
+              {t('incident.involvement.label')} <span className="text-[var(--destructive)]">*</span>
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {INVOLVEMENT_ROLES_KEYS.map((r) => {
+                const isActive = watch('involvement_role') === r
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    className={`cctv-chip ${isActive ? 'active' : ''}`}
+                    onClick={() => setValue('involvement_role', r as FormData['involvement_role'], { shouldValidate: true })}
+                  >
+                    {t(`incident.involvement.options.${r}`)}
+                  </button>
+                )
+              })}
             </div>
+            <FieldError message={errors.involvement_role?.message as string | undefined} />
+            {(watch('involvement_role') === 'ญาติ' || watch('involvement_role') === 'ผู้เกี่ยวข้อง') && (
+              <div className="space-y-1.5 mt-3">
+                <Label htmlFor="involvement_explain" className="text-[13px] font-semibold">
+                  {t('incident.involvement.explainLabel')}
+                </Label>
+                <Input id="involvement_explain" placeholder={t('incident.involvement.explainPlaceholder')} aria-invalid={!!errors.involvement_explain} {...register('involvement_explain')} className="h-11 text-[15px] border-[1.5px]" />
+                <FieldError message={errors.involvement_explain?.message as string | undefined} />
+              </div>
+            )}
           </div>
 
-          <AsyncCombobox label={`${t('incident.category.label')} *`} selected={categorySel} fetcher={fetchCategories}
+          <AsyncCombobox
+            label={`${t('incident.category.label')} *`}
+            selected={categorySel}
+            fetcher={fetchCategories}
             placeholder={t('incident.category.placeholder')}
             onSelect={(item) => {
-              if (item.id === -1) { setCategorySel(null); setValue('category_id', 0, { shouldValidate: true }); setSelectedCategoryName(''); return }
-              setCategorySel(item); setValue('category_id', item.id, { shouldValidate: true }); setSelectedCategoryName(item.name)
+              if (item.id === -1) {
+                setCategorySel(null); setValue('category_id', 0, { shouldValidate: true })
+                setSelectedCategoryName('')
+                return
+              }
+              setCategorySel(item); setValue('category_id', item.id, { shouldValidate: true })
+              setSelectedCategoryName(item.name)
             }}
-            error={errors.category_id?.message as string | undefined} t={t} />
+            error={errors.category_id?.message as string | undefined}
+            t={t}
+          />
 
           <DateTimeIncidentFields register={register} errors={errors} watch={watch} t={t} />
 
-          <div className="space-y-2">
-            <Label htmlFor="incident_location" className="text-base sm:text-lg font-medium">{t('incident.location.label')} <span className="text-red-500">*</span></Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="incident_location" className="text-[13px] font-semibold">
+              {t('incident.location.label')} <span className="text-[var(--destructive)]">*</span>
+            </Label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input id="incident_location" placeholder={t('incident.location.placeholder')} aria-invalid={!!errors.incident_location} {...register('incident_location')} className="pl-10 h-12 text-base" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" aria-hidden="true" />
+              <Input
+                id="incident_location"
+                autoComplete="off"
+                placeholder={t('incident.location.placeholder')}
+                aria-invalid={!!errors.incident_location}
+                {...register('incident_location')}
+                className="pl-9 h-11 text-[15px] border-[1.5px]"
+              />
             </div>
             <FieldError message={errors.incident_location?.message} />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-              <Label htmlFor="request_details" className="text-base sm:text-lg font-medium">{t('incident.details.label')}</Label>
-              <span className="text-sm text-muted-foreground">{t('incident.details.hint')}</span>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-1">
+              <Label htmlFor="request_details" className="text-[13px] font-semibold">
+                {t('incident.details.label')}
+              </Label>
+              <span className="text-xs text-[var(--muted-foreground)]">{t('incident.details.hint')}</span>
             </div>
-            <Textarea id="request_details" rows={4} className="resize-none text-base min-h-[120px]" placeholder={t('placeholders.incidentDetails')} {...register('request_details')} />
+            <Textarea
+              id="request_details"
+              rows={4}
+              className="resize-none text-[15px] min-h-[110px] border-[1.5px]"
+              placeholder={t('placeholders.incidentDetails')}
+              {...register('request_details')}
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
@@ -1740,15 +2168,13 @@ function StepIncident(props: {
 /* -------------------- Step 4: Review & Consent -------------------- */
 function StepReviewConsent(props: {
   watch: ReturnType<typeof useForm<FormData>>['watch']
-  setValue: ReturnType<typeof useForm<FormData>>['setValue']
-  errors: ReturnType<typeof useForm<FormData>>['formState']['errors']
   selectedCategoryName?: string
   policeReportFile: File | null
   idCardFile: File | null
   selfieFile: File | null
   t: ReturnType<typeof useTranslations>
 }) {
-  const { watch, setValue, errors, selectedCategoryName, policeReportFile, idCardFile, selfieFile, t } = props
+  const { watch, selectedCategoryName, policeReportFile, idCardFile, selfieFile, t } = props
 
   const isBangkok = (prov?: string) => RE_BANGKOK.test(prov ?? '')
   const normAlley = (s?: string) => { const v = (s ?? '').trim(); if (!v) return ''; return RE_ALLEY_PREFIX.test(v) ? v : `ซอย ${v}` }
@@ -1776,11 +2202,11 @@ function StepReviewConsent(props: {
 
   const role = watch('involvement_role')
   const roleExplain = (watch('involvement_explain') ?? '').trim()
-  const docsList = [
-    policeReportFile && 'สำเนาบันทึกประจำวัน',
-    idCardFile && 'สำเนาบัตรประชาชน',
-    selfieFile && 'รูปถ่ายใบหน้ายืนยันตัวตน',
-  ].filter(Boolean).join(', ')
+  const attachedDocs = [
+    policeReportFile && { name: 'สำเนาบันทึกประจำวัน', file: policeReportFile },
+    idCardFile && { name: 'สำเนาบัตรประชาชน', file: idCardFile },
+    selfieFile && { name: 'รูปถ่ายใบหน้ายืนยันตัวตน', file: selfieFile },
+  ].filter(Boolean) as Array<{ name: string; file: File }>
 
   const preview = {
     name: watch('full_name') || '—',
@@ -1791,68 +2217,148 @@ function StepReviewConsent(props: {
     where: watch('incident_location') || '—',
     address: buildAddress() || '—',
     involvement: role ? ((role === 'ญาติ' || role === 'ผู้เกี่ยวข้อง') && roleExplain ? `${role} (${roleExplain})` : role) : '—',
-    docs: docsList || 'ไม่มี',
   }
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-xl md:text-2xl font-semibold">{t('review.title')}</CardTitle>
-          <CardDescription className="text-base">{t('review.description')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm sm:text-base">
-          <div className="flex items-start gap-3">
-            <User className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div><div className="text-muted-foreground">{t('review.labels.applicant')}</div><div className="font-medium">{preview.name}</div><div className="text-muted-foreground mt-1">{preview.address}</div></div>
-          </div>
-          <div className="flex items-start gap-3">
-            <ShieldCheck className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div><div className="text-muted-foreground">{t('review.labels.involvement')}</div><div className="font-medium">{preview.involvement}</div></div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Phone className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div><div className="text-muted-foreground">{t('review.labels.contact')}</div><div className="font-medium">{preview.phone}</div></div>
-          </div>
-          <div className="flex items-start gap-3">
-            <FileText className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div><div className="text-muted-foreground">{t('review.labels.category')}</div><div className="font-medium">{preview.category}</div></div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Camera className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div><div className="text-muted-foreground">{t('review.labels.type')}</div><div className="font-medium">{preview.type}</div></div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Clock className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div><div className="text-muted-foreground">{t('review.labels.datetime')}</div><div className="font-medium">{preview.when}</div></div>
-          </div>
-          <div className="flex items-start gap-3">
-            <MapPin className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div><div className="text-muted-foreground">{t('review.labels.location')}</div><div className="font-medium">{preview.where}</div></div>
-          </div>
-          <div className="flex items-start gap-3">
-            <FileText className="h-5 w-5 mt-0.5 text-muted-foreground" />
-            <div><div className="text-muted-foreground">{t('review.labels.documents')}</div><div className="font-medium">{preview.docs}</div></div>
-          </div>
-        </CardContent>
-      </Card>
+  const rows: Array<{
+    icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
+    label: string
+    value: React.ReactNode
+    secondary?: React.ReactNode
+  }> = [
+    { icon: User, label: t('review.labels.applicant'), value: preview.name, secondary: preview.address },
+    { icon: ShieldCheck, label: t('review.labels.involvement'), value: preview.involvement },
+    { icon: Phone, label: t('review.labels.contact'), value: preview.phone },
+    { icon: FileText, label: t('review.labels.category'), value: preview.category },
+    { icon: Camera, label: t('review.labels.type'), value: preview.type },
+    { icon: Clock, label: t('review.labels.datetime'), value: preview.when },
+    { icon: MapPin, label: t('review.labels.location'), value: preview.where },
+  ]
 
-      <Card>
-        <CardContent className="py-6">
-          <div className="flex items-start gap-3">
-            <Checkbox id="consent" checked={watch('consent')} onCheckedChange={(checked) => setValue('consent', Boolean(checked), { shouldValidate: true })} />
-            <div className="space-y-2">
-              <Label htmlFor="consent" className="text-base sm:text-lg font-medium cursor-pointer">{t('review.consent.title')}</Label>
-              <p className="text-base text-muted-foreground">{t('review.consent.summary')}</p>
-              <details className="rounded-md border bg-muted/30 p-3">
-                <summary className="cursor-pointer select-none text-sm font-medium text-foreground/80 hover:underline">{t('review.consent.showDetails')}</summary>
-                <div className="mt-2 space-y-2 text-sm text-muted-foreground"><p>{t('review.consent.details')}</p></div>
-              </details>
-              <FieldError message={errors.consent?.message} />
-            </div>
+  return (
+    <div className="space-y-5">
+      <div className="cctv-card">
+        <div className="cctv-card-head">
+          <span className="cctv-num">4</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold text-[var(--foreground)]">{t('review.title')}</div>
+            <div className="text-xs text-[var(--muted-foreground)]">{t('review.description')}</div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="cctv-card-body !p-0">
+          <dl className="m-0 divide-y divide-[var(--border)]">
+            {rows.map(({ icon: Icon, label, value, secondary }, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-1 gap-y-1 px-4 py-3 sm:grid-cols-[minmax(160px,200px)_1fr] sm:gap-x-6 sm:px-5 sm:py-3.5 even:bg-[var(--cctv-bg-muted,var(--muted))] hover:bg-[color-mix(in_oklch,var(--primary)_5%,transparent)] transition-colors"
+              >
+                <dt className="flex items-center gap-2 text-[13px] font-medium text-[var(--muted-foreground)]">
+                  <Icon className="h-4 w-4 flex-shrink-0 text-[var(--primary)]" aria-hidden />
+                  <span>{label}</span>
+                </dt>
+                <dd className="m-0 min-w-0 text-sm font-semibold text-[var(--foreground)] [text-wrap:pretty] [overflow-wrap:anywhere]">
+                  {value}
+                  {secondary ? (
+                    <div className="mt-1 text-xs font-normal text-[var(--muted-foreground)] [text-wrap:pretty] [overflow-wrap:anywhere]">
+                      {secondary}
+                    </div>
+                  ) : null}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          {attachedDocs.length > 0 && (
+            <div className="px-4 py-4 sm:px-5 sm:py-5 border-t border-[var(--border)]">
+              <div className="rounded-lg bg-[var(--cctv-bg-muted,var(--muted))] p-3.5">
+                <div className="text-xs font-bold mb-2 flex items-center gap-1.5">
+                  <UploadCloud className="h-3.5 w-3.5 text-[var(--primary)]" aria-hidden="true" /> {t('review.labels.documents')} ({attachedDocs.length} ไฟล์)
+                </div>
+                <div className="space-y-1.5">
+                  {attachedDocs.map((doc) => (
+                    <div key={doc.name} className="flex items-center gap-2 text-xs [overflow-wrap:anywhere]">
+                      <span className="text-[var(--success)] flex-shrink-0" aria-hidden="true"><Check className="h-3 w-3" /></span>
+                      <span className="font-medium">{doc.name}</span>
+                      <span className="text-[var(--muted-foreground)] flex-shrink-0">· {(doc.file.size / 1024 / 1024).toFixed(2)} MB</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* -------------------- Step nav (sticky) -------------------- */
+function StepNav({
+  step,
+  isSubmitting,
+  onPrev,
+  onNext,
+  onSubmit,
+  t,
+  canSubmit,
+}: {
+  step: number
+  isSubmitting: boolean
+  onPrev: () => void
+  onNext: () => void
+  onSubmit: () => void
+  t: ReturnType<typeof useTranslations>
+  canSubmit: boolean
+}) {
+  return (
+    <div className="cctv-sticky-nav flex-wrap sm:flex-nowrap">
+      <div className="flex-1 min-w-0">
+        <div className="font-bold text-[13px] text-[var(--foreground)]">
+          {step < STEPS.length - 1
+            ? `ขั้นตอนที่ ${step + 1} จาก ${STEPS.length} — ${t(STEPS[step].labelKey)}`
+            : 'พร้อมส่งคำร้อง'}
+        </div>
+        <div className="text-xs text-[var(--muted-foreground)]">
+          {step < STEPS.length - 1
+            ? 'กรอกข้อมูลให้ครบถ้วนก่อนไปขั้นต่อไป'
+            : canSubmit
+              ? 'ตรวจสอบเรียบร้อยแล้ว'
+              : 'ติ๊กยอมรับเงื่อนไขเพื่อส่งคำร้อง'}
+        </div>
+      </div>
+      {step > 0 && (
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-10 text-sm"
+          onClick={onPrev}
+          disabled={isSubmitting}
+        >
+          <ArrowLeft className="h-3.5 w-3.5 mr-1" aria-hidden="true" /> {t('actions.back')}
+        </Button>
+      )}
+      {step < STEPS.length - 1 ? (
+        <Button
+          type="button"
+          className="h-10 text-sm bg-[var(--primary)] hover:bg-[color-mix(in_oklch,var(--primary)_85%,black)] text-[var(--primary-foreground)] font-semibold"
+          onClick={onNext}
+          disabled={isSubmitting}
+        >
+          {t('actions.next')} <ArrowRight className="h-3.5 w-3.5 ml-1" aria-hidden="true" />
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          className="h-10 text-sm bg-[var(--primary)] hover:bg-[color-mix(in_oklch,var(--primary)_85%,black)] text-[var(--primary-foreground)] font-semibold"
+          disabled={isSubmitting || !canSubmit}
+          onClick={onSubmit}
+        >
+          {isSubmitting ? t('actions.submitting') : (
+            <span className="inline-flex items-center gap-1.5">
+              <Send className="h-3.5 w-3.5" aria-hidden="true" /> {t('actions.submit')}
+            </span>
+          )}
+        </Button>
+      )}
     </div>
   )
 }
@@ -1908,62 +2414,30 @@ function DesktopView(props: ViewProps) {
   const prevStep = () => setStep(s => Math.max(s - 1, 0))
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <section className="relative" aria-labelledby="hero-title">
-        <div className="absolute inset-0">
-          <Image src="/hero/hero.png" alt="ภาพกล้อง CCTV" fill priority className="object-cover" sizes="100vw" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-6 sm:px-8 py-16 lg:py-20">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-              <Badge className="bg-white/10 backdrop-blur text-white/80 border-white/10">{t('hero.badge')}</Badge>
-              <h1 id="hero-title" className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight">{t('hero.title')}</h1>
-              <p className="mt-3 text-base sm:text-lg text-blue-50 max-w-3xl">{t('hero.subtitle')}</p>
-              <ul className="mt-6 flex flex-wrap items-center gap-4 text-blue-50">
-                <li className="flex items-center gap-2"><ShieldCheck className="h-5 w-5" />{t('hero.features.security')}</li>
-                <li className="flex items-center gap-2"><Clock className="h-5 w-5" />{t('hero.features.tracking')}</li>
-                <li className="flex items-center gap-2"><FileText className="h-5 w-5" />{t('hero.features.complete')}</li>
-              </ul>
-              <div className="mt-6 max-w-3xl">
-                <Stepper current={step} onStepChange={(i) => i <= step && setStep(i)} t={t} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <main className="cctv-bg-dot min-h-screen">
+      <OfficialHeader />
+      <div className="max-w-5xl mx-auto px-6 pt-8 pb-8 space-y-5">
+        <CCTVHero />
+        <StepperDesktop current={step} onStepChange={(i) => i <= step && setStep(i)} t={t} />
 
-      <main className="max-w-7xl mx-auto px-6 lg:px-8 pt-24 pb-8">
-        <div className="w-full">
-          {step === 0 && <StepApplicant register={register} setValue={setValue} watch={watch} errors={errors} t={t} locale={locale} />}
-          {step === 1 && <StepDocuments policeReportFile={policeReportFile} setPoliceReportFile={setPoliceReportFile} idCardFile={idCardFile} setIdCardFile={setIdCardFile} selfieFile={selfieFile} setSelfieFile={setSelfieFile} docsError={docsError} />}
-          {step === 2 && <StepIncident register={register} setValue={setValue} watch={watch} errors={errors} setSelectedCategoryName={setSelectedCategoryName} t={t} locale={locale} />}
-          {step === 3 && <StepReviewConsent setValue={setValue} watch={watch} errors={errors} selectedCategoryName={selectedCategoryName} policeReportFile={policeReportFile} idCardFile={idCardFile} selfieFile={selfieFile} t={t} />}
-        </div>
-        <div className="mt-8 pt-6 border-t">
-          <div className="flex items-center justify-between gap-4">
-            <Button variant="outline" className="h-12 text-base px-6" onClick={prevStep} disabled={step === 0 || isSubmitting}>
-              <ArrowLeft className="h-5 w-5 mr-2" />{t('actions.back')}
-            </Button>
-            <div className="flex justify-center">
-              <button className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">{t('actions.saveDraft')}</button>
-            </div>
-            {step < STEPS.length - 1 ? (
-              <Button className="h-12 text-base px-6 bg-primary hover:bg-primary/90" onClick={nextStep} disabled={isSubmitting}>
-                {t('actions.next')}<ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            ) : (
-              <Button className="h-12 text-base px-6 bg-primary hover:bg-primary/90" disabled={isSubmitting} onClick={() => void onSubmit()}>
-                {isSubmitting ? t('actions.submitting') : <span className="inline-flex items-center gap-2"><Send className="h-5 w-5" />{t('actions.submit')}</span>}
-              </Button>
-            )}
-          </div>
-        </div>
-        <div className="mt-4">
-          <UploadProgressPanel progress={uploadProgress} status={uploadStatus} />
-        </div>
-      </main>
-    </div>
+        {step === 0 && <StepApplicant register={register} setValue={setValue} watch={watch} errors={errors} t={t} locale={locale} />}
+        {step === 1 && <StepDocuments policeReportFile={policeReportFile} setPoliceReportFile={setPoliceReportFile} idCardFile={idCardFile} setIdCardFile={setIdCardFile} selfieFile={selfieFile} setSelfieFile={setSelfieFile} docsError={docsError} />}
+        {step === 2 && <StepIncident register={register} setValue={setValue} watch={watch} errors={errors} setSelectedCategoryName={setSelectedCategoryName} t={t} locale={locale} />}
+        {step === 3 && <StepReviewConsent watch={watch} selectedCategoryName={selectedCategoryName} policeReportFile={policeReportFile} idCardFile={idCardFile} selfieFile={selfieFile} t={t} />}
+
+        <UploadProgressPanel progress={uploadProgress} status={uploadStatus} />
+
+        <StepNav
+          step={step}
+          isSubmitting={isSubmitting}
+          onPrev={prevStep}
+          onNext={nextStep}
+          onSubmit={() => void onSubmit()}
+          t={t}
+          canSubmit={Boolean(watch('consent'))}
+        />
+      </div>
+    </main>
   )
 }
 
@@ -1989,7 +2463,11 @@ function MobileView(props: ViewProps) {
     const filled = allFields.filter(f => {
       const v = watch(f)
       if (v === null || v === undefined || v === '') return false
-      if (f === 'involvement_explain') { const r = watch('involvement_role'); if (r !== 'ญาติ' && r !== 'ผู้เกี่ยวข้อง') return true; return Boolean(String(v ?? '').trim()) }
+      if (f === 'involvement_explain') {
+        const r = watch('involvement_role')
+        if (r !== 'ญาติ' && r !== 'ผู้เกี่ยวข้อง') return true
+        return Boolean(String(v ?? '').trim())
+      }
       if (typeof v === 'boolean') return v
       return String(v ?? '').trim().length > 0
     }).length
@@ -2018,61 +2496,51 @@ function MobileView(props: ViewProps) {
     if (previousStep === 0 && step === 1) {
       requestAnimationFrame(() => {
         const el = step2HeaderRef.current
-        if (el) { const rect = el.getBoundingClientRect(); const scrollTop = window.pageYOffset || document.documentElement.scrollTop; window.scrollTo({ top: scrollTop + rect.top - 12, behavior: 'smooth' }) }
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+          window.scrollTo({ top: scrollTop + rect.top - 12, behavior: 'smooth' })
+        }
       })
     }
   }, [step, previousStep])
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <section className="relative" aria-labelledby="m-hero-title">
-        <div className="absolute inset-0">
-          <Image src="/hero/hero.png" alt="ภาพกล้อง CCTV" fill priority className="object-cover" sizes="100vw" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-        </div>
-        <div className="relative px-4 sm:px-5 pt-16 py-6 sm:py-8">
-          <h1 id="m-hero-title" className="mt-3 text-xl sm:text-2xl font-bold text-white">{t('hero.mobileTitle')}</h1>
-          <p className="mt-2 text-base text-blue-100">{t('hero.mobileSubtitle')}</p>
-          <div className="mt-4"><Stepper current={step} onStepChange={(i) => i <= step && setStep(i)} t={t} /></div>
-        </div>
-      </section>
+    <main className="cctv-bg-dot min-h-screen">
+      <OfficialHeader />
+      <div className="px-4 pt-4 pb-24 space-y-4">
+        <CCTVHero compact />
+        <StepperMobile current={step} t={t} />
 
-      <main className="px-4 py-6 space-y-6 pb-20">
         {step === 0 && <StepApplicant register={register} setValue={setValue} watch={watch} errors={errors} t={t} locale={locale} />}
         {step === 1 && <StepDocuments policeReportFile={policeReportFile} setPoliceReportFile={setPoliceReportFile} idCardFile={idCardFile} setIdCardFile={setIdCardFile} selfieFile={selfieFile} setSelfieFile={setSelfieFile} docsError={docsError} scrollAnchorRef={step2HeaderRef} />}
         {step === 2 && <StepIncident register={register} setValue={setValue} watch={watch} errors={errors} setSelectedCategoryName={setSelectedCategoryName} scrollAnchorRef={step2HeaderRef} t={t} locale={locale} />}
-        {step === 3 && <StepReviewConsent setValue={setValue} watch={watch} errors={errors} selectedCategoryName={selectedCategoryName} policeReportFile={policeReportFile} idCardFile={idCardFile} selfieFile={selfieFile} t={t} />}
+        {step === 3 && <StepReviewConsent watch={watch} selectedCategoryName={selectedCategoryName} policeReportFile={policeReportFile} idCardFile={idCardFile} selfieFile={selfieFile} t={t} />}
 
-        <div className="space-y-2">
+        <div className="cctv-card p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-base text-muted-foreground">{t('progress.label')}</span>
-            <span className="text-base font-medium">{t('progress.percentage', { percent: score })}</span>
+            <span className="text-xs text-[var(--muted-foreground)]">{t('progress.label')}</span>
+            <span className="text-xs font-bold text-[var(--primary)]">{t('progress.percentage', { percent: score })}</span>
           </div>
           <Progress value={score} />
         </div>
-      </main>
 
-      <div className="sticky bottom-0 bg-white border-t px-4 py-3 space-y-3">
         <UploadProgressPanel progress={uploadProgress} status={uploadStatus} />
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="flex-1 h-14 text-lg" onClick={prevStep} disabled={step === 0 || isSubmitting}>
-            <ArrowLeft className="h-5 w-5 mr-2" />{t('actions.back')}
-          </Button>
-          {step < STEPS.length - 1 ? (
-            <Button className="flex-1 h-14 text-lg bg-primary hover:bg-primary/90" onClick={nextStep} disabled={isSubmitting}>
-              {t('actions.next')}<ArrowRight className="h-5 w-5 ml-2" />
-            </Button>
-          ) : (
-            <Button className="flex-1 h-14 text-lg bg-primary hover:bg-primary/90" disabled={isSubmitting} onClick={() => void onSubmit()}>
-              {isSubmitting ? t('actions.submitting') : <span className="inline-flex items-center gap-2"><Send className="h-5 w-5" />{t('actions.submit')}</span>}
-            </Button>
-          )}
-        </div>
-        <div className="flex justify-center">
-          <button className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline">{t('actions.saveDraft')}</button>
-        </div>
       </div>
-    </div>
+
+      {/* Sticky bottom nav */}
+      <div className="sticky bottom-0 bg-[var(--card)] border-t border-[var(--border)] px-4 py-3 z-20">
+        <StepNav
+          step={step}
+          isSubmitting={isSubmitting}
+          onPrev={prevStep}
+          onNext={nextStep}
+          onSubmit={() => void onSubmit()}
+          t={t}
+          canSubmit={Boolean(watch('consent'))}
+        />
+      </div>
+    </main>
   )
 }
 
@@ -2083,17 +2551,22 @@ export default function RequestPage() {
   const isDesktop = useIsDesktop()
 
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID || process.env.NEXT_PUBLIC_LINE_LIFF_ID || ''
-  const liffRedirectUri = useMemo(() => {
-    return getRequestRedirectUri()
-  }, [])
+  const liffRedirectUri = useMemo(() => getRequestRedirectUri(), [])
 
   const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  const [pdpaAccepted, setPdpaAccepted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+    // hydrate PDPA consent flag — กัน modal เด้งซ้ำหลัง LIFF redirect กลับมา
+    // ใช้ localStorage เป็นหลัก เพราะ sessionStorage บน LINE in-app browser (มือถือ)
+    // มักถูกล้างหลัง redirect ผ่าน access.line.me → กลับมาแล้วอ่านไม่เจอ → modal เด้งซ้ำ
+    // (consent ตัวจริงถูก log ลง DB ผ่าน /api/consent แล้ว; flag นี้แค่กัน UX ซ้ำ)
+    if (readPdpaConsentFlag()) setPdpaAccepted(true)
+  }, [])
 
   const [gateState, setGateState] = useState<GateState>('booting')
   const [gateError, setGateError] = useState('')
   const [profile, setProfile] = useState<LiffUserProfile | null>(null)
-  const [pdpaAccepted, setPdpaAccepted] = useState(false)
   const [pdpaRejected, setPdpaRejected] = useState(false)
   const [doneReportId, setDoneReportId] = useState<number | null>(null)
   const [attachmentIssue, setAttachmentIssue] = useState(false)
@@ -2134,13 +2607,12 @@ export default function RequestPage() {
       incident_location: '',
       request_details: '',
       supporting_documents: { id_card_copy: false, police_report_copy: false, other: false, other_details: '' },
-      consent: false,
+      consent: true,
     },
   })
 
   const { setValue, getValues, trigger } = form
 
-  // Sync file state into form (for completeness — backend reads files via FormData, not this field)
   useEffect(() => {
     setValue('supporting_documents', {
       id_card_copy: Boolean(idCardFile),
@@ -2163,7 +2635,11 @@ export default function RequestPage() {
       if (!liff.isInClient()) {
         const redirectKey = `line-liff-redirect:${liffId}`
         const hasReturned = new URLSearchParams(window.location.search).has('liff.referrer')
-        if (!hasReturned) { window.sessionStorage.setItem(redirectKey, '1'); window.location.replace(`https://liff.line.me/${liffId}`); return }
+        if (!hasReturned) {
+          window.sessionStorage.setItem(redirectKey, '1')
+          window.location.replace(`https://liff.line.me/${liffId}`)
+          return
+        }
         window.sessionStorage.removeItem(redirectKey)
       }
       window.sessionStorage.removeItem(`line-liff-redirect:${liffId}`)
@@ -2178,7 +2654,9 @@ export default function RequestPage() {
     }
   }, [liffId, liffRedirectUri, setValue])
 
-  useEffect(() => { void initGate() }, [initGate])
+  useEffect(() => {
+    if (pdpaAccepted) void initGate()
+  }, [initGate, pdpaAccepted])
 
   const closeWindow = useCallback(() => {
     const liff = liffRef.current
@@ -2186,15 +2664,16 @@ export default function RequestPage() {
     window.close()
   }, [])
 
-  // PDPA consent ไม่ถูก persist — แสดง modal ทุกครั้งที่เข้าหน้า /request
   const handlePdpaAccept = useCallback(() => {
     setPdpaAccepted(true)
     setPdpaRejected(false)
+    writePdpaConsentFlag()
   }, [])
 
   const handlePdpaReject = useCallback(() => {
     setPdpaAccepted(false)
     setPdpaRejected(true)
+    clearPdpaConsentFlag()
   }, [])
 
   const handlePdpaReconsider = useCallback(() => {
@@ -2211,7 +2690,7 @@ export default function RequestPage() {
     setIsSubmitting(true)
     setAttachmentIssue(false)
     setUploadProgress({})
-    setUploadStatus('กำลังบันทึกคำร้อง...')
+    setUploadStatus('กำลังบันทึกคำร้อง…')
     try {
       const payload = { ...getValues(), category_id: Number(getValues('category_id')), language: 'th' as const }
       const res = await fetch('/api/reports', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
@@ -2221,7 +2700,7 @@ export default function RequestPage() {
       const trackingToken = String(json.data.tracking_token || '')
       if (!trackingToken) throw new Error('ไม่พบ token สำหรับอัปโหลดเอกสาร')
       setDoneReportId(reportId)
-      setUploadStatus('บันทึกคำร้องแล้ว กำลังบีบอัดและอัปโหลดเอกสาร...')
+      setUploadStatus('บันทึกคำร้องแล้ว กำลังบีบอัดและอัปโหลดเอกสาร…')
       try {
         await uploadAttachmentsWithRetry(
           reportId,
@@ -2250,27 +2729,15 @@ export default function RequestPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 via-white to-sky-50/60 px-4 py-12">
-        <div className="w-full max-w-sm">
-          <GateBrand />
-          <Card className="rounded-3xl border-0 shadow-2xl shadow-slate-200/70">
-            <CardContent className="p-8">
-              <div className="flex flex-col items-center gap-6 text-center">
-                <div className="relative flex h-16 w-16 items-center justify-center">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-200 opacity-60" />
-                  <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-sky-100">
-                    <Loader2 className="h-6 w-6 animate-spin text-sky-600" />
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-lg font-bold text-slate-900">กำลังเตรียมระบบ…</p>
-                  <p className="text-sm text-slate-500">ตรวจสอบบัญชี LINE และสิทธิ์การใช้งาน</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <main className="cctv-line-hero min-h-dvh flex flex-col">
+        <OfficialHeader />
+        <div className="flex-1 flex items-center justify-center px-4 py-12">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-7 w-7 animate-spin text-[var(--primary)]" aria-hidden="true" />
+            <p className="text-sm text-[var(--muted-foreground)]" role="status" aria-live="polite">กำลังเตรียมระบบ…</p>
+          </div>
         </div>
-      </div>
+      </main>
     )
   }
 
@@ -2281,6 +2748,38 @@ export default function RequestPage() {
         uploadActive={isSubmitting}
         onClose={closeWindow}
       />
+    )
+  }
+
+  if (pdpaRejected) {
+    return <PdpaRejectedScreen onReconsider={handlePdpaReconsider} onClose={closeWindow} />
+  }
+
+  if (!pdpaAccepted) {
+    return (
+      <>
+        <main className="cctv-line-hero min-h-dvh flex flex-col">
+          <OfficialHeader />
+          <div className="flex-1 flex items-center justify-center px-4 py-12">
+            <div className="max-w-md rounded-2xl border border-[var(--border)] bg-white/85 p-5 text-center shadow-sm backdrop-blur">
+              <ShieldCheck className="mx-auto h-8 w-8 text-[var(--primary)]" aria-hidden="true" />
+              <p className="mt-3 text-sm font-semibold text-[var(--foreground)]">
+                กรุณารับทราบประกาศการคุ้มครองข้อมูลส่วนบุคคลก่อนเริ่มใช้งาน
+              </p>
+              <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted-foreground)]">
+                ระบบจะแจ้งวัตถุประสงค์การใช้ข้อมูลก่อนเริ่มตรวจสอบ LINE / LIFF
+              </p>
+            </div>
+          </div>
+        </main>
+        <PDPAConsentModal
+          isOpen
+          onAccept={handlePdpaAccept}
+          onReject={handlePdpaReject}
+          lineUserIdStr={null}
+          pagePath="/request"
+        />
+      </>
     )
   }
 
@@ -2296,10 +2795,6 @@ export default function RequestPage() {
         onRetryFriendship={() => void initGate()}
       />
     )
-  }
-
-  if (pdpaRejected) {
-    return <PdpaRejectedScreen onReconsider={handlePdpaReconsider} onClose={closeWindow} />
   }
 
   const viewProps: ViewProps = {
@@ -2322,51 +2817,43 @@ export default function RequestPage() {
     locale,
   }
 
-  return (
-    <>
-      <PDPAConsentModal
-        isOpen={!pdpaAccepted}
-        onAccept={handlePdpaAccept}
-        onReject={handlePdpaReject}
-        lineUserIdStr={profile?.userId ?? null}
-        pagePath="/request"
-      />
-      {isDesktop ? <DesktopView {...viewProps} /> : <MobileView {...viewProps} />}
-    </>
-  )
+  return isDesktop ? <DesktopView {...viewProps} /> : <MobileView {...viewProps} />
 }
 
 function PdpaRejectedScreen({ onReconsider, onClose }: { onReconsider: () => void; onClose: () => void }) {
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center bg-gradient-to-b from-slate-50 via-white to-sky-50/60 px-4 py-12">
-      <div className="w-full max-w-sm">
-        <GateBrand />
-        <Card className="rounded-3xl border-0 shadow-2xl shadow-slate-200/70">
-          <CardContent className="p-8">
-            <div className="flex flex-col items-center gap-5 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600 ring-1 ring-amber-200">
-                <ShieldCheck className="h-7 w-7" aria-hidden="true" />
-              </span>
-              <div className="space-y-1.5">
-                <p className="text-lg font-bold text-slate-900">ไม่สามารถดำเนินการต่อได้</p>
-                <p className="text-sm leading-relaxed text-slate-600">
-                  การยินยอมตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
-                  เป็นเงื่อนไขจำเป็นในการยื่นคำร้องขอภาพ CCTV
-                  หากท่านเปลี่ยนใจสามารถกลับมาให้ความยินยอมเพื่อดำเนินการต่อได้
-                </p>
-              </div>
-              <div className="flex w-full flex-col gap-2">
-                <Button className="h-11 rounded-lg" onClick={onReconsider}>
-                  กลับไปอ่านอีกครั้ง
-                </Button>
-                <Button variant="outline" className="h-11 rounded-lg" onClick={onClose}>
-                  ปิดหน้าต่าง
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <main className="cctv-bg-dot min-h-dvh flex flex-col">
+      <OfficialHeader />
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm cctv-card-elev p-7 text-center space-y-5">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--cctv-warning-soft)] text-[var(--warning)] ring-1 ring-[color-mix(in_oklch,var(--warning)_30%,transparent)]">
+            <ShieldCheck className="h-7 w-7" aria-hidden="true" />
+          </div>
+          <div>
+            <p className="text-lg font-bold text-[var(--foreground)]">ไม่สามารถดำเนินการต่อได้</p>
+            <p className="text-sm leading-relaxed text-[var(--muted-foreground)] mt-2">
+              การยินยอมตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล (PDPA)
+              เป็นเงื่อนไขจำเป็นในการยื่นคำร้องขอภาพ CCTV
+              หากท่านเปลี่ยนใจสามารถกลับมาให้ความยินยอมเพื่อดำเนินการต่อได้
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Button
+              className="h-11 rounded-lg bg-[var(--primary)] hover:bg-[color-mix(in_oklch,var(--primary)_85%,black)] text-[var(--primary-foreground)] font-semibold"
+              onClick={onReconsider}
+            >
+              กลับไปอ่านอีกครั้ง
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 rounded-lg border-[1.5px]"
+              onClick={onClose}
+            >
+              ปิดหน้าต่าง
+            </Button>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   )
 }

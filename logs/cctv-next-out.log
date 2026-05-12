@@ -6094,3 +6094,565 @@
 2026-05-11T08:28:54:   hasStatusChange: true
 2026-05-11T08:28:54: }
 2026-05-11T08:28:54: Sending LINE notification for report 295 - status changed to approved
+2026-05-11T14:04:22: PATCH /api/reports/[id] - Received data: {
+2026-05-11T14:04:22:   reportId: 297,
+2026-05-11T14:04:22:   currentStatus: 'รอดำเนินการ',
+2026-05-11T14:04:22:   newStatus: 'รอดำเนินการ',
+2026-05-11T14:04:22:   hasStatusChange: false
+2026-05-11T14:04:22: }
+2026-05-11T14:05:49: 📋 Found 2 attachments for report 297:
+2026-05-11T14:05:49:    1. image.jpg (image/jpeg) - Path: 1778483100129-6ynh0urlkj3.jpg - Category: operation
+2026-05-11T14:05:49:    2. 20260511142833745.pdf (application/pdf) - Path: 1778483127196-wpikdyovk5.pdf - Category: idcopy
+2026-05-11T14:05:49: 📄 Attempting to embed PDF: 20260511142833745.pdf
+2026-05-11T14:05:49: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T14:05:49: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T14:05:49: 📊 PDF has 2 pages
+2026-05-11T14:05:49: ✅ Successfully embedded PDF: 20260511142833745.pdf (2 pages)
+2026-05-11T14:05:49: 🖼️  Attempting to embed image: image.jpg
+2026-05-11T14:05:49: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T14:05:49: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T14:05:50: ✅ Successfully embedded image: image.jpg
+2026-05-11T14:05:50: 📋 Found 2 attachments for report 297:
+2026-05-11T14:05:50:    1. image.jpg (image/jpeg) - Path: 1778483100129-6ynh0urlkj3.jpg - Category: operation
+2026-05-11T14:05:50:    2. 20260511142833745.pdf (application/pdf) - Path: 1778483127196-wpikdyovk5.pdf - Category: idcopy
+2026-05-11T14:05:50: 📄 Attempting to embed PDF: 20260511142833745.pdf
+2026-05-11T14:05:50: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T14:05:50: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T14:05:50: 📊 PDF has 2 pages
+2026-05-11T14:05:50: ✅ Successfully embedded PDF: 20260511142833745.pdf (2 pages)
+2026-05-11T14:05:50: 🖼️  Attempting to embed image: image.jpg
+2026-05-11T14:05:50: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T14:05:50: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T14:05:50: ✅ Successfully embedded image: image.jpg
+2026-05-11T14:16:06: PATCH /api/reports/[id] - Received data: {
+2026-05-11T14:16:06:   reportId: 297,
+2026-05-11T14:16:06:   currentStatus: 'รอดำเนินการ',
+2026-05-11T14:16:06:   newStatus: 'รอเอกสารอนุมัติ',
+2026-05-11T14:16:06:   hasStatusChange: true
+2026-05-11T14:16:06: }
+2026-05-11T14:16:07: 📋 Found 2 attachments for report 297:
+2026-05-11T14:16:07:    1. image.jpg (image/jpeg) - Path: 1778483100129-6ynh0urlkj3.jpg - Category: operation
+2026-05-11T14:16:07:    2. 20260511142833745.pdf (application/pdf) - Path: 1778483127196-wpikdyovk5.pdf - Category: idcopy
+2026-05-11T14:16:07: 📄 Attempting to embed PDF: 20260511142833745.pdf
+2026-05-11T14:16:07: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T14:16:07: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T14:16:07: 📊 PDF has 2 pages
+2026-05-11T14:16:07: ✅ Successfully embedded PDF: 20260511142833745.pdf (2 pages)
+2026-05-11T14:16:07: 🖼️  Attempting to embed image: image.jpg
+2026-05-11T14:16:07: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T14:16:07: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T14:16:07: ✅ Successfully embedded image: image.jpg
+2026-05-11T14:16:24: 📋 Found 2 attachments for report 297:
+2026-05-11T14:16:24:    1. image.jpg (image/jpeg) - Path: 1778483100129-6ynh0urlkj3.jpg - Category: operation
+2026-05-11T14:16:24:    2. 20260511142833745.pdf (application/pdf) - Path: 1778483127196-wpikdyovk5.pdf - Category: idcopy
+2026-05-11T14:16:24: 📄 Attempting to embed PDF: 20260511142833745.pdf
+2026-05-11T14:16:24: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T14:16:24: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T14:16:24: 📊 PDF has 2 pages
+2026-05-11T14:16:24: ✅ Successfully embedded PDF: 20260511142833745.pdf (2 pages)
+2026-05-11T14:16:24: 🖼️  Attempting to embed image: image.jpg
+2026-05-11T14:16:24: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T14:16:24: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T14:16:24: ✅ Successfully embedded image: image.jpg
+2026-05-11T15:54:56:    ▲ Next.js 15.5.4
+2026-05-11T15:54:56:    - Local:        http://localhost:4000
+2026-05-11T15:54:56:    - Network:      http://122.154.75.194:4000
+2026-05-11T15:54:56: 
+2026-05-11T15:54:56:  ✓ Starting...
+2026-05-11T15:54:57:  ✓ Ready in 1407ms
+2026-05-11T16:22:16:    ▲ Next.js 15.5.4
+2026-05-11T16:22:16:    - Local:        http://localhost:4000
+2026-05-11T16:22:16:    - Network:      http://122.154.75.194:4000
+2026-05-11T16:22:16: 
+2026-05-11T16:22:16:  ✓ Starting...
+2026-05-11T16:22:17:  ✓ Ready in 1390ms
+2026-05-11T16:41:15:    ▲ Next.js 15.5.4
+2026-05-11T16:41:15:    - Local:        http://localhost:4000
+2026-05-11T16:41:15:    - Network:      http://122.154.75.194:4000
+2026-05-11T16:41:15: 
+2026-05-11T16:41:15:  ✓ Starting...
+2026-05-11T16:41:16:  ✓ Ready in 1475ms
+2026-05-11T16:58:49: 📋 Found 2 attachments for report 297:
+2026-05-11T16:58:49:    1. image.jpg (image/jpeg) - Path: 1778483100129-6ynh0urlkj3.jpg - Category: operation
+2026-05-11T16:58:49:    2. 20260511142833745.pdf (application/pdf) - Path: 1778483127196-wpikdyovk5.pdf - Category: idcopy
+2026-05-11T16:58:49: 📄 Attempting to embed PDF: 20260511142833745.pdf
+2026-05-11T16:58:49: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T16:58:49: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-11T16:58:49: 📊 PDF has 2 pages
+2026-05-11T16:58:49: ✅ Successfully embedded PDF: 20260511142833745.pdf (2 pages)
+2026-05-11T16:58:49: 🖼️  Attempting to embed image: image.jpg
+2026-05-11T16:58:49: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T16:58:49: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-11T16:58:49: ✅ Successfully embedded image: image.jpg
+2026-05-12T08:58:25:    ▲ Next.js 15.5.4
+2026-05-12T08:58:25:    - Local:        http://localhost:4000
+2026-05-12T08:58:25:    - Network:      http://122.154.75.194:4000
+2026-05-12T08:58:25: 
+2026-05-12T08:58:25:  ✓ Starting...
+2026-05-12T08:58:26:  ✓ Ready in 1390ms
+2026-05-12T09:19:33: 📋 Found 2 attachments for report 295:
+2026-05-12T09:19:33:    1. image.jpg (image/jpeg) - Path: 1778219194611-mfdqj14f72.jpg - Category: operation
+2026-05-12T09:19:33:    2. 20260508131008459.pdf (application/pdf) - Path: 1778219232495-nhpns2hmhwm.pdf - Category: idcopy
+2026-05-12T09:19:33: 📄 Attempting to embed PDF: 20260508131008459.pdf
+2026-05-12T09:19:33: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778219232495-nhpns2hmhwm.pdf
+2026-05-12T09:19:33: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778219232495-nhpns2hmhwm.pdf
+2026-05-12T09:19:33: 📊 PDF has 2 pages
+2026-05-12T09:19:33: ✅ Successfully embedded PDF: 20260508131008459.pdf (2 pages)
+2026-05-12T09:19:33: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:19:33: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778219194611-mfdqj14f72.jpg
+2026-05-12T09:19:33: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778219194611-mfdqj14f72.jpg
+2026-05-12T09:19:33: ✅ Successfully embedded image: image.jpg
+2026-05-12T09:19:52: 📋 Found 0 attachments for report 238:
+2026-05-12T09:20:58: 📋 Found 2 attachments for report 237:
+2026-05-12T09:20:58:    1. image.jpg (image/jpeg) - Path: 1776840936226-r3c73b1r7s.jpg - Category: operation
+2026-05-12T09:20:58:    2. 20260422141922433.pdf (application/pdf) - Path: 1776841007794-e2999tl7k4v.pdf - Category: idcopy
+2026-05-12T09:20:58: 📄 Attempting to embed PDF: 20260422141922433.pdf
+2026-05-12T09:20:58: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1776841007794-e2999tl7k4v.pdf
+2026-05-12T09:20:58: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:20:58: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1776840936226-r3c73b1r7s.jpg
+2026-05-12T09:21:02: 📋 Found 2 attachments for report 236:
+2026-05-12T09:21:02:    1. 20260422110316251.pdf (application/pdf) - Path: 1776829287228-wsj7cor2u6i.pdf - Category: idcopy
+2026-05-12T09:21:02:    2. image.jpg (image/jpeg) - Path: 1776829300336-v83x7q3f9zs.jpg - Category: operation
+2026-05-12T09:21:02: 📄 Attempting to embed PDF: 20260422110316251.pdf
+2026-05-12T09:21:02: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1776829287228-wsj7cor2u6i.pdf
+2026-05-12T09:21:02: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:21:02: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1776829300336-v83x7q3f9zs.jpg
+2026-05-12T09:21:10: 📋 Found 2 attachments for report 235:
+2026-05-12T09:21:10:    1. image.jpg (image/jpeg) - Path: 1776745165189-2kuwnlr8gn8.jpg - Category: operation
+2026-05-12T09:21:10:    2. 20260421114449587.pdf (application/pdf) - Path: 1776745312274-5pedket5nvc.pdf - Category: idcopy
+2026-05-12T09:21:10: 📄 Attempting to embed PDF: 20260421114449587.pdf
+2026-05-12T09:21:10: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1776745312274-5pedket5nvc.pdf
+2026-05-12T09:21:10: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:21:10: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1776745165189-2kuwnlr8gn8.jpg
+2026-05-12T09:21:15: 📋 Found 3 attachments for report 241:
+2026-05-12T09:21:15:    1. daily_record.jpg (image/jpeg) - Path: 1777255906800-1ocbbbki65nj.jpg - Category: idcopy
+2026-05-12T09:21:15:    2. id_card.jpg (image/jpeg) - Path: 1777255909635-st95g81dcol.jpg - Category: idcopy
+2026-05-12T09:21:15:    3. selfie.jpg (image/jpeg) - Path: 1777255912354-4dot9n00ugj.jpg - Category: operation
+2026-05-12T09:21:15: 🖼️  Attempting to embed image: daily_record.jpg
+2026-05-12T09:21:15: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777255906800-1ocbbbki65nj.jpg
+2026-05-12T09:21:15: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777255906800-1ocbbbki65nj.jpg
+2026-05-12T09:21:15: ✅ Successfully embedded image: daily_record.jpg
+2026-05-12T09:21:15: 🖼️  Attempting to embed image: id_card.jpg
+2026-05-12T09:21:15: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777255909635-st95g81dcol.jpg
+2026-05-12T09:21:15: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777255909635-st95g81dcol.jpg
+2026-05-12T09:21:15: ✅ Successfully embedded image: id_card.jpg
+2026-05-12T09:21:15: 🖼️  Attempting to embed image: selfie.jpg
+2026-05-12T09:21:15: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777255912354-4dot9n00ugj.jpg
+2026-05-12T09:21:15: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777255912354-4dot9n00ugj.jpg
+2026-05-12T09:21:16: ✅ Successfully embedded image: selfie.jpg
+2026-05-12T09:21:21: 📋 Found 2 attachments for report 245:
+2026-05-12T09:21:21:    1. 20260426145934664.pdf (application/pdf) - Path: 1777189015271-tma5mhapbh.pdf - Category: idcopy
+2026-05-12T09:21:21:    2. Screenshot 2026-04-26 145509.png (image/png) - Path: 1777190136066-r070awyota8.png - Category: operation
+2026-05-12T09:21:21: 📄 Attempting to embed PDF: 20260426145934664.pdf
+2026-05-12T09:21:21: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777189015271-tma5mhapbh.pdf
+2026-05-12T09:21:21: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777189015271-tma5mhapbh.pdf
+2026-05-12T09:21:21: 📊 PDF has 2 pages
+2026-05-12T09:21:22: ✅ Successfully embedded PDF: 20260426145934664.pdf (2 pages)
+2026-05-12T09:21:22: 🖼️  Attempting to embed image: Screenshot 2026-04-26 145509.png
+2026-05-12T09:21:22: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777190136066-r070awyota8.png
+2026-05-12T09:21:22: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777190136066-r070awyota8.png
+2026-05-12T09:21:22: ✅ Successfully embedded image: Screenshot 2026-04-26 145509.png
+2026-05-12T09:21:27: 📋 Found 2 attachments for report 261:
+2026-05-12T09:21:27:    1. image.jpg (image/jpeg) - Path: 1777263446739-xbea1o2t7gd.jpg - Category: operation
+2026-05-12T09:21:27:    2. 20260427113850626.pdf (application/pdf) - Path: 1777263450249-c8zrlp1tn6u.pdf - Category: idcopy
+2026-05-12T09:21:27: 📄 Attempting to embed PDF: 20260427113850626.pdf
+2026-05-12T09:21:27: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777263450249-c8zrlp1tn6u.pdf
+2026-05-12T09:21:27: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777263450249-c8zrlp1tn6u.pdf
+2026-05-12T09:21:27: 📊 PDF has 2 pages
+2026-05-12T09:21:27: ✅ Successfully embedded PDF: 20260427113850626.pdf (2 pages)
+2026-05-12T09:21:27: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:21:27: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777263446739-xbea1o2t7gd.jpg
+2026-05-12T09:21:27: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777263446739-xbea1o2t7gd.jpg
+2026-05-12T09:21:27: ✅ Successfully embedded image: image.jpg
+2026-05-12T09:21:33: 📋 Found 2 attachments for report 262:
+2026-05-12T09:21:33:    1. image.jpg (image/jpeg) - Path: 1777273596469-q1r12ikksvf.jpg - Category: operation
+2026-05-12T09:21:33:    2. 20260427143023706.pdf (application/pdf) - Path: 1777273667490-5dhdllswz2j.pdf - Category: idcopy
+2026-05-12T09:21:33: 📄 Attempting to embed PDF: 20260427143023706.pdf
+2026-05-12T09:21:33: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777273667490-5dhdllswz2j.pdf
+2026-05-12T09:21:33: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777273667490-5dhdllswz2j.pdf
+2026-05-12T09:21:33: 📊 PDF has 2 pages
+2026-05-12T09:21:33: ✅ Successfully embedded PDF: 20260427143023706.pdf (2 pages)
+2026-05-12T09:21:33: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:21:33: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777273596469-q1r12ikksvf.jpg
+2026-05-12T09:21:33: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777273596469-q1r12ikksvf.jpg
+2026-05-12T09:21:33: ✅ Successfully embedded image: image.jpg
+2026-05-12T09:21:37: 📋 Found 2 attachments for report 272:
+2026-05-12T09:21:37:    1. 20260427185328926.pdf (application/pdf) - Path: 1777289435257-frezc29j9g.pdf - Category: idcopy
+2026-05-12T09:21:37:    2. image.jpg (image/jpeg) - Path: 1777289474725-62yga352n8b.jpg - Category: operation
+2026-05-12T09:21:37: 📄 Attempting to embed PDF: 20260427185328926.pdf
+2026-05-12T09:21:37: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777289435257-frezc29j9g.pdf
+2026-05-12T09:21:37: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777289435257-frezc29j9g.pdf
+2026-05-12T09:21:37: 📊 PDF has 2 pages
+2026-05-12T09:21:37: ✅ Successfully embedded PDF: 20260427185328926.pdf (2 pages)
+2026-05-12T09:21:37: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:21:37: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777289474725-62yga352n8b.jpg
+2026-05-12T09:21:37: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777289474725-62yga352n8b.jpg
+2026-05-12T09:21:37: ✅ Successfully embedded image: image.jpg
+2026-05-12T09:21:41: 📋 Found 2 attachments for report 276:
+2026-05-12T09:21:41:    1. image.jpg (image/jpeg) - Path: 1777431963280-tgz0dypg6r.jpg - Category: operation
+2026-05-12T09:21:41:    2. 20260429102920142.pdf (application/pdf) - Path: 1777432000692-02mxy5swbuqi.pdf - Category: idcopy
+2026-05-12T09:21:41: 📄 Attempting to embed PDF: 20260429102920142.pdf
+2026-05-12T09:21:41: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777432000692-02mxy5swbuqi.pdf
+2026-05-12T09:21:41: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777432000692-02mxy5swbuqi.pdf
+2026-05-12T09:21:41: 📊 PDF has 2 pages
+2026-05-12T09:21:41: ✅ Successfully embedded PDF: 20260429102920142.pdf (2 pages)
+2026-05-12T09:21:41: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:21:41: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777431963280-tgz0dypg6r.jpg
+2026-05-12T09:21:41: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777431963280-tgz0dypg6r.jpg
+2026-05-12T09:21:41: ✅ Successfully embedded image: image.jpg
+2026-05-12T09:21:45: 📋 Found 2 attachments for report 277:
+2026-05-12T09:21:45:    1. IMG_6903.jpeg (image/jpeg) - Path: 1777435914172-qzgufo7el7.jpeg - Category: operation
+2026-05-12T09:21:45:    2. 20260429113533406.pdf (application/pdf) - Path: 1777435996898-dmbprivl27l.pdf - Category: idcopy
+2026-05-12T09:21:45: 📄 Attempting to embed PDF: 20260429113533406.pdf
+2026-05-12T09:21:45: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777435996898-dmbprivl27l.pdf
+2026-05-12T09:21:45: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777435996898-dmbprivl27l.pdf
+2026-05-12T09:21:45: 📊 PDF has 2 pages
+2026-05-12T09:21:45: ✅ Successfully embedded PDF: 20260429113533406.pdf (2 pages)
+2026-05-12T09:21:45: 🖼️  Attempting to embed image: IMG_6903.jpeg
+2026-05-12T09:21:45: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777435914172-qzgufo7el7.jpeg
+2026-05-12T09:21:45: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777435914172-qzgufo7el7.jpeg
+2026-05-12T09:21:45: ✅ Successfully embedded image: IMG_6903.jpeg
+2026-05-12T09:21:50: 📋 Found 2 attachments for report 278:
+2026-05-12T09:21:50:    1. 20260429161828781.pdf (application/pdf) - Path: 1777452947157-2sdo0m6lvj6.pdf - Category: idcopy
+2026-05-12T09:21:50:    2. IMG_6907.jpeg (image/jpeg) - Path: 1777452956974-lbauhn4ec6o.jpeg - Category: operation
+2026-05-12T09:21:50: 📄 Attempting to embed PDF: 20260429161828781.pdf
+2026-05-12T09:21:50: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777452947157-2sdo0m6lvj6.pdf
+2026-05-12T09:21:50: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777452947157-2sdo0m6lvj6.pdf
+2026-05-12T09:21:50: 📊 PDF has 2 pages
+2026-05-12T09:21:51: ✅ Successfully embedded PDF: 20260429161828781.pdf (2 pages)
+2026-05-12T09:21:51: 🖼️  Attempting to embed image: IMG_6907.jpeg
+2026-05-12T09:21:51: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777452956974-lbauhn4ec6o.jpeg
+2026-05-12T09:21:51: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777452956974-lbauhn4ec6o.jpeg
+2026-05-12T09:21:51: ✅ Successfully embedded image: IMG_6907.jpeg
+2026-05-12T09:21:59: 📋 Found 2 attachments for report 279:
+2026-05-12T09:21:59:    1. image.jpg (image/jpeg) - Path: 1777514813368-adfc0a5kyc6.jpg - Category: operation
+2026-05-12T09:21:59:    2. 20260430093030958.pdf (application/pdf) - Path: 1777514918024-7eixufmi28.pdf - Category: idcopy
+2026-05-12T09:21:59: 📄 Attempting to embed PDF: 20260430093030958.pdf
+2026-05-12T09:21:59: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777514918024-7eixufmi28.pdf
+2026-05-12T09:21:59: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777514918024-7eixufmi28.pdf
+2026-05-12T09:21:59: 📊 PDF has 2 pages
+2026-05-12T09:21:59: ✅ Successfully embedded PDF: 20260430093030958.pdf (2 pages)
+2026-05-12T09:21:59: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:21:59: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777514813368-adfc0a5kyc6.jpg
+2026-05-12T09:21:59: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777514813368-adfc0a5kyc6.jpg
+2026-05-12T09:22:00: ✅ Successfully embedded image: image.jpg
+2026-05-12T09:22:08: 📋 Found 2 attachments for report 280:
+2026-05-12T09:22:08:    1. 20260501122152468.pdf (application/pdf) - Path: 1777613663806-jo35b21g6yq.pdf - Category: idcopy
+2026-05-12T09:22:08:    2. IMG_6927.jpeg (image/jpeg) - Path: 1777613699725-15h30909gfc.jpeg - Category: operation
+2026-05-12T09:22:08: 📄 Attempting to embed PDF: 20260501122152468.pdf
+2026-05-12T09:22:08: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777613663806-jo35b21g6yq.pdf
+2026-05-12T09:22:08: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777613663806-jo35b21g6yq.pdf
+2026-05-12T09:22:08: 📊 PDF has 2 pages
+2026-05-12T09:22:08: ✅ Successfully embedded PDF: 20260501122152468.pdf (2 pages)
+2026-05-12T09:22:08: 🖼️  Attempting to embed image: IMG_6927.jpeg
+2026-05-12T09:22:08: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777613699725-15h30909gfc.jpeg
+2026-05-12T09:22:08: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777613699725-15h30909gfc.jpeg
+2026-05-12T09:22:08: ✅ Successfully embedded image: IMG_6927.jpeg
+2026-05-12T09:22:14: 📋 Found 2 attachments for report 281:
+2026-05-12T09:22:14:    1. IMG_6926.jpeg (image/jpeg) - Path: 1777614409758-7rmt1mctg7o.jpeg - Category: operation
+2026-05-12T09:22:14:    2. 20260501164647648.pdf (application/pdf) - Path: 1777627521040-c9qloopeglk.pdf - Category: idcopy
+2026-05-12T09:22:14: 📄 Attempting to embed PDF: 20260501164647648.pdf
+2026-05-12T09:22:14: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777627521040-c9qloopeglk.pdf
+2026-05-12T09:22:14: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777627521040-c9qloopeglk.pdf
+2026-05-12T09:22:14: 📊 PDF has 2 pages
+2026-05-12T09:22:14: ✅ Successfully embedded PDF: 20260501164647648.pdf (2 pages)
+2026-05-12T09:22:14: 🖼️  Attempting to embed image: IMG_6926.jpeg
+2026-05-12T09:22:14: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777614409758-7rmt1mctg7o.jpeg
+2026-05-12T09:22:14: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777614409758-7rmt1mctg7o.jpeg
+2026-05-12T09:22:15: ✅ Successfully embedded image: IMG_6926.jpeg
+2026-05-12T09:22:25: 📋 Found 2 attachments for report 282:
+2026-05-12T09:22:25:    1. 6625.jpg (image/jpeg) - Path: 1777788444008-k0dlbvz4usc.jpg - Category: operation
+2026-05-12T09:22:25:    2. 20260503133114673.pdf (application/pdf) - Path: 1777788511427-3sm3qs3xpq8.pdf - Category: idcopy
+2026-05-12T09:22:25: 📄 Attempting to embed PDF: 20260503133114673.pdf
+2026-05-12T09:22:25: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777788511427-3sm3qs3xpq8.pdf
+2026-05-12T09:22:25: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777788511427-3sm3qs3xpq8.pdf
+2026-05-12T09:22:25: 📊 PDF has 2 pages
+2026-05-12T09:22:25: ✅ Successfully embedded PDF: 20260503133114673.pdf (2 pages)
+2026-05-12T09:22:25: 🖼️  Attempting to embed image: 6625.jpg
+2026-05-12T09:22:25: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777788444008-k0dlbvz4usc.jpg
+2026-05-12T09:22:25: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777788444008-k0dlbvz4usc.jpg
+2026-05-12T09:22:25: ✅ Successfully embedded image: 6625.jpg
+2026-05-12T09:22:44: 📋 Found 3 attachments for report 283:
+2026-05-12T09:22:44:    1. 146280.jpg (image/jpeg) - Path: 1777870011231-q542bmpqp8o.jpg - Category: operation
+2026-05-12T09:22:44:    2. สำเนา.jpg (image/jpeg) - Path: 1777870011231-ao6ek38ai6j.jpg - Category: idcopy
+2026-05-12T09:22:44:    3. 146092.jpg (image/jpeg) - Path: 1777870011231-nuxhrqsew0l.jpg - Category: idcopy
+2026-05-12T09:22:44: 🖼️  Attempting to embed image: สำเนา.jpg
+2026-05-12T09:22:44: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777870011231-ao6ek38ai6j.jpg
+2026-05-12T09:22:44: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777870011231-ao6ek38ai6j.jpg
+2026-05-12T09:22:44: ✅ Successfully embedded image: สำเนา.jpg
+2026-05-12T09:22:44: 🖼️  Attempting to embed image: 146092.jpg
+2026-05-12T09:22:44: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777870011231-nuxhrqsew0l.jpg
+2026-05-12T09:22:44: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777870011231-nuxhrqsew0l.jpg
+2026-05-12T09:22:44: ✅ Successfully embedded image: 146092.jpg
+2026-05-12T09:22:44: 🖼️  Attempting to embed image: 146280.jpg
+2026-05-12T09:22:44: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777870011231-q542bmpqp8o.jpg
+2026-05-12T09:22:44: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777870011231-q542bmpqp8o.jpg
+2026-05-12T09:22:44: ✅ Successfully embedded image: 146280.jpg
+2026-05-12T09:22:51: 📋 Found 3 attachments for report 285:
+2026-05-12T09:22:51:    1. IMG_6968.jpeg (image/jpeg) - Path: 1777970986885-442fmz8keew.jpeg - Category: operation
+2026-05-12T09:22:51:    2. 20260506090731461.pdf (application/pdf) - Path: 1778031897021-ftho1fxzl6.pdf - Category: idcopy
+2026-05-12T09:22:51:    3. 20260505162114278.pdf (application/pdf) - Path: 1778031902739-pw0nk16lt6s.pdf - Category: idcopy
+2026-05-12T09:22:51: 📄 Attempting to embed PDF: 20260506090731461.pdf
+2026-05-12T09:22:51: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778031897021-ftho1fxzl6.pdf
+2026-05-12T09:22:51: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778031897021-ftho1fxzl6.pdf
+2026-05-12T09:22:51: 📊 PDF has 1 pages
+2026-05-12T09:22:51: ✅ Successfully embedded PDF: 20260506090731461.pdf (1 pages)
+2026-05-12T09:22:51: 📄 Attempting to embed PDF: 20260505162114278.pdf
+2026-05-12T09:22:51: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778031902739-pw0nk16lt6s.pdf
+2026-05-12T09:22:51: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778031902739-pw0nk16lt6s.pdf
+2026-05-12T09:22:51: 📊 PDF has 1 pages
+2026-05-12T09:22:51: ✅ Successfully embedded PDF: 20260505162114278.pdf (1 pages)
+2026-05-12T09:22:51: 🖼️  Attempting to embed image: IMG_6968.jpeg
+2026-05-12T09:22:51: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777970986885-442fmz8keew.jpeg
+2026-05-12T09:22:51: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777970986885-442fmz8keew.jpeg
+2026-05-12T09:22:51: ✅ Successfully embedded image: IMG_6968.jpeg
+2026-05-12T09:22:54: 📋 Found 2 attachments for report 286:
+2026-05-12T09:22:54:    1. image.jpg (image/jpeg) - Path: 1778052982751-hah6gdpt8y.jpg - Category: operation
+2026-05-12T09:22:54:    2. 20260506145958771.pdf (application/pdf) - Path: 1778053008035-dylyl7sv0qw.pdf - Category: idcopy
+2026-05-12T09:22:54: 📄 Attempting to embed PDF: 20260506145958771.pdf
+2026-05-12T09:22:54: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778053008035-dylyl7sv0qw.pdf
+2026-05-12T09:22:54: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778053008035-dylyl7sv0qw.pdf
+2026-05-12T09:22:54: 📊 PDF has 2 pages
+2026-05-12T09:22:54: ✅ Successfully embedded PDF: 20260506145958771.pdf (2 pages)
+2026-05-12T09:22:54: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:22:54: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778052982751-hah6gdpt8y.jpg
+2026-05-12T09:22:54: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778052982751-hah6gdpt8y.jpg
+2026-05-12T09:22:54: ✅ Successfully embedded image: image.jpg
+2026-05-12T09:37:00:    ▲ Next.js 15.5.4
+2026-05-12T09:37:00:    - Local:        http://localhost:4000
+2026-05-12T09:37:00:    - Network:      http://122.154.75.194:4000
+2026-05-12T09:37:00: 
+2026-05-12T09:37:00:  ✓ Starting...
+2026-05-12T09:37:01:  ✓ Ready in 1380ms
+2026-05-12T09:49:52: 📋 Found 2 attachments for report 297:
+2026-05-12T09:49:52:    1. image.jpg (image/jpeg) - Path: 1778483100129-6ynh0urlkj3.jpg - Category: operation
+2026-05-12T09:49:52:    2. 20260511142833745.pdf (application/pdf) - Path: 1778483127196-wpikdyovk5.pdf - Category: idcopy
+2026-05-12T09:49:53: 📄 Attempting to embed PDF: 20260511142833745.pdf
+2026-05-12T09:49:53: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-12T09:49:53: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483127196-wpikdyovk5.pdf
+2026-05-12T09:49:53: 📊 PDF has 2 pages
+2026-05-12T09:49:53: ✅ Successfully embedded PDF: 20260511142833745.pdf (2 pages)
+2026-05-12T09:49:53: 🖼️  Attempting to embed image: image.jpg
+2026-05-12T09:49:53: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-12T09:49:53: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1778483100129-6ynh0urlkj3.jpg
+2026-05-12T09:49:53: ✅ Successfully embedded image: image.jpg
+2026-05-12T09:52:30: 📋 Found 3 attachments for report 284:
+2026-05-12T09:52:30:    1. IMG_9364.jpg (image/jpeg) - Path: 1777913478876-7ktmywr8wxx.jpg - Category: idcopy
+2026-05-12T09:52:30:    2. IMG_9365.jpg (image/jpeg) - Path: 1777913478876-3usc0corxr2.jpg - Category: operation
+2026-05-12T09:52:30:    3. 1777913478874-lrqb4risgxc_page-0001 (1).jpg (image/jpeg) - Path: 1777946700725-tkk3hqa859.jpg - Category: idcopy
+2026-05-12T09:52:30: 🖼️  Attempting to embed image: IMG_9364.jpg
+2026-05-12T09:52:30: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777913478876-7ktmywr8wxx.jpg
+2026-05-12T09:52:30: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777913478876-7ktmywr8wxx.jpg
+2026-05-12T09:52:30: ✅ Successfully embedded image: IMG_9364.jpg
+2026-05-12T09:52:30: 🖼️  Attempting to embed image: 1777913478874-lrqb4risgxc_page-0001 (1).jpg
+2026-05-12T09:52:30: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777946700725-tkk3hqa859.jpg
+2026-05-12T09:52:30: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777946700725-tkk3hqa859.jpg
+2026-05-12T09:52:30: ✅ Successfully embedded image: 1777913478874-lrqb4risgxc_page-0001 (1).jpg
+2026-05-12T09:52:30: 🖼️  Attempting to embed image: IMG_9365.jpg
+2026-05-12T09:52:30: 📂 Full path: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777913478876-3usc0corxr2.jpg
+2026-05-12T09:52:30: ✅ File exists: C:\E-services\cctv-request-system-v2-master\public\uploads\attachments\1777913478876-3usc0corxr2.jpg
+2026-05-12T09:52:30: ✅ Successfully embedded image: IMG_9365.jpg
+2026-05-12T09:55:11:    ▲ Next.js 15.5.4
+2026-05-12T09:55:11:    - Local:        http://localhost:4000
+2026-05-12T09:55:11:    - Network:      http://122.154.75.194:4000
+2026-05-12T09:55:11: 
+2026-05-12T09:55:11:  ✓ Starting...
+2026-05-12T09:55:12:  ✓ Ready in 1393ms
+2026-05-12T09:55:35: PATCH /api/reports/[id] - Received data: {
+2026-05-12T09:55:35:   reportId: 297,
+2026-05-12T09:55:35:   currentStatus: 'รอเอกสารอนุมัติ',
+2026-05-12T09:55:35:   newStatus: 'รอเอกสารอนุมัติ',
+2026-05-12T09:55:35:   hasStatusChange: false
+2026-05-12T09:55:35: }
+2026-05-12T10:37:15:    ▲ Next.js 15.5.4
+2026-05-12T10:37:15:    - Local:        http://localhost:4000
+2026-05-12T10:37:15:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:37:15: 
+2026-05-12T10:37:15:  ✓ Starting...
+2026-05-12T10:37:16:  ✓ Ready in 1396ms
+2026-05-12T10:38:10:    ▲ Next.js 15.5.4
+2026-05-12T10:38:10:    - Local:        http://localhost:4000
+2026-05-12T10:38:10:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:10: 
+2026-05-12T10:38:10:  ✓ Starting...
+2026-05-12T10:38:11:    ▲ Next.js 15.5.4
+2026-05-12T10:38:11:    - Local:        http://localhost:4000
+2026-05-12T10:38:11:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:11: 
+2026-05-12T10:38:11:  ✓ Starting...
+2026-05-12T10:38:13:    ▲ Next.js 15.5.4
+2026-05-12T10:38:13:    - Local:        http://localhost:4000
+2026-05-12T10:38:13:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:13: 
+2026-05-12T10:38:13:  ✓ Starting...
+2026-05-12T10:38:14:    ▲ Next.js 15.5.4
+2026-05-12T10:38:14:    - Local:        http://localhost:4000
+2026-05-12T10:38:14:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:14: 
+2026-05-12T10:38:14:  ✓ Starting...
+2026-05-12T10:38:16:    ▲ Next.js 15.5.4
+2026-05-12T10:38:16:    - Local:        http://localhost:4000
+2026-05-12T10:38:16:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:16: 
+2026-05-12T10:38:16:  ✓ Starting...
+2026-05-12T10:38:17:    ▲ Next.js 15.5.4
+2026-05-12T10:38:17:    - Local:        http://localhost:4000
+2026-05-12T10:38:17:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:17: 
+2026-05-12T10:38:17:  ✓ Starting...
+2026-05-12T10:38:19:    ▲ Next.js 15.5.4
+2026-05-12T10:38:19:    - Local:        http://localhost:4000
+2026-05-12T10:38:19:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:19: 
+2026-05-12T10:38:19:  ✓ Starting...
+2026-05-12T10:38:20:    ▲ Next.js 15.5.4
+2026-05-12T10:38:20:    - Local:        http://localhost:4000
+2026-05-12T10:38:20:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:20: 
+2026-05-12T10:38:20:  ✓ Starting...
+2026-05-12T10:38:22:    ▲ Next.js 15.5.4
+2026-05-12T10:38:22:    - Local:        http://localhost:4000
+2026-05-12T10:38:22:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:22: 
+2026-05-12T10:38:22:  ✓ Starting...
+2026-05-12T10:38:23:    ▲ Next.js 15.5.4
+2026-05-12T10:38:23:    - Local:        http://localhost:4000
+2026-05-12T10:38:23:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:23: 
+2026-05-12T10:38:23:  ✓ Starting...
+2026-05-12T10:38:25:    ▲ Next.js 15.5.4
+2026-05-12T10:38:25:    - Local:        http://localhost:4000
+2026-05-12T10:38:25:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:25: 
+2026-05-12T10:38:25:  ✓ Starting...
+2026-05-12T10:38:26:    ▲ Next.js 15.5.4
+2026-05-12T10:38:26:    - Local:        http://localhost:4000
+2026-05-12T10:38:26:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:26: 
+2026-05-12T10:38:26:  ✓ Starting...
+2026-05-12T10:38:28:    ▲ Next.js 15.5.4
+2026-05-12T10:38:28:    - Local:        http://localhost:4000
+2026-05-12T10:38:28:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:28: 
+2026-05-12T10:38:28:  ✓ Starting...
+2026-05-12T10:38:29:    ▲ Next.js 15.5.4
+2026-05-12T10:38:29:    - Local:        http://localhost:4000
+2026-05-12T10:38:29:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:29: 
+2026-05-12T10:38:29:  ✓ Starting...
+2026-05-12T10:38:31:    ▲ Next.js 15.5.4
+2026-05-12T10:38:31:    - Local:        http://localhost:4000
+2026-05-12T10:38:31:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:31: 
+2026-05-12T10:38:31:  ✓ Starting...
+2026-05-12T10:38:32:    ▲ Next.js 15.5.4
+2026-05-12T10:38:32:    - Local:        http://localhost:4000
+2026-05-12T10:38:32:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:32: 
+2026-05-12T10:38:32:  ✓ Starting...
+2026-05-12T10:38:34:    ▲ Next.js 15.5.4
+2026-05-12T10:38:34:    - Local:        http://localhost:4000
+2026-05-12T10:38:34:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:34: 
+2026-05-12T10:38:34:  ✓ Starting...
+2026-05-12T10:38:36:    ▲ Next.js 15.5.4
+2026-05-12T10:38:36:    - Local:        http://localhost:4000
+2026-05-12T10:38:36:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:36: 
+2026-05-12T10:38:36:  ✓ Starting...
+2026-05-12T10:38:37:    ▲ Next.js 15.5.4
+2026-05-12T10:38:37:    - Local:        http://localhost:4000
+2026-05-12T10:38:37:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:37: 
+2026-05-12T10:38:37:  ✓ Starting...
+2026-05-12T10:38:39:    ▲ Next.js 15.5.4
+2026-05-12T10:38:39:    - Local:        http://localhost:4000
+2026-05-12T10:38:39:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:39: 
+2026-05-12T10:38:39:  ✓ Starting...
+2026-05-12T10:38:40:    ▲ Next.js 15.5.4
+2026-05-12T10:38:40:    - Local:        http://localhost:4000
+2026-05-12T10:38:40:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:40: 
+2026-05-12T10:38:40:  ✓ Starting...
+2026-05-12T10:38:42:    ▲ Next.js 15.5.4
+2026-05-12T10:38:42:    - Local:        http://localhost:4000
+2026-05-12T10:38:42:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:42: 
+2026-05-12T10:38:42:  ✓ Starting...
+2026-05-12T10:38:43:    ▲ Next.js 15.5.4
+2026-05-12T10:38:43:    - Local:        http://localhost:4000
+2026-05-12T10:38:43:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:43: 
+2026-05-12T10:38:43:  ✓ Starting...
+2026-05-12T10:38:45:    ▲ Next.js 15.5.4
+2026-05-12T10:38:45:    - Local:        http://localhost:4000
+2026-05-12T10:38:45:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:45: 
+2026-05-12T10:38:45:  ✓ Starting...
+2026-05-12T10:38:46:    ▲ Next.js 15.5.4
+2026-05-12T10:38:46:    - Local:        http://localhost:4000
+2026-05-12T10:38:46:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:46: 
+2026-05-12T10:38:46:  ✓ Starting...
+2026-05-12T10:38:49:    ▲ Next.js 15.5.4
+2026-05-12T10:38:49:    - Local:        http://localhost:4000
+2026-05-12T10:38:49:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:49: 
+2026-05-12T10:38:49:  ✓ Starting...
+2026-05-12T10:38:50:    ▲ Next.js 15.5.4
+2026-05-12T10:38:50:    - Local:        http://localhost:4000
+2026-05-12T10:38:50:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:50: 
+2026-05-12T10:38:50:  ✓ Starting...
+2026-05-12T10:38:52:    ▲ Next.js 15.5.4
+2026-05-12T10:38:52:    - Local:        http://localhost:4000
+2026-05-12T10:38:52:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:52: 
+2026-05-12T10:38:52:  ✓ Starting...
+2026-05-12T10:38:54:    ▲ Next.js 15.5.4
+2026-05-12T10:38:54:    - Local:        http://localhost:4000
+2026-05-12T10:38:54:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:54: 
+2026-05-12T10:38:54:  ✓ Starting...
+2026-05-12T10:38:55:    ▲ Next.js 15.5.4
+2026-05-12T10:38:55:    - Local:        http://localhost:4000
+2026-05-12T10:38:55:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:38:55: 
+2026-05-12T10:38:55:  ✓ Starting...
+2026-05-12T10:38:56:  ✓ Ready in 1541ms
+2026-05-12T10:39:09:    ▲ Next.js 15.5.4
+2026-05-12T10:39:09:    - Local:        http://localhost:4000
+2026-05-12T10:39:09:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:39:09: 
+2026-05-12T10:39:09:  ✓ Starting...
+2026-05-12T10:39:10:  ✓ Ready in 1411ms
+2026-05-12T10:43:04:    ▲ Next.js 15.5.4
+2026-05-12T10:43:04:    - Local:        http://localhost:4000
+2026-05-12T10:43:04:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:43:04: 
+2026-05-12T10:43:04:  ✓ Starting...
+2026-05-12T10:43:05:  ✓ Ready in 1421ms
+2026-05-12T10:47:05:    ▲ Next.js 15.5.4
+2026-05-12T10:47:05:    - Local:        http://localhost:4000
+2026-05-12T10:47:05:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:47:05: 
+2026-05-12T10:47:05:  ✓ Starting...
+2026-05-12T10:47:06:  ✓ Ready in 1424ms
+2026-05-12T10:50:11:    ▲ Next.js 15.5.4
+2026-05-12T10:50:11:    - Local:        http://localhost:4000
+2026-05-12T10:50:11:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:50:11: 
+2026-05-12T10:50:11:  ✓ Starting...
+2026-05-12T10:50:12:    ▲ Next.js 15.5.4
+2026-05-12T10:50:12:    - Local:        http://localhost:4000
+2026-05-12T10:50:12:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:50:12: 
+2026-05-12T10:50:12:  ✓ Starting...
+2026-05-12T10:50:13:  ✓ Ready in 1391ms
+2026-05-12T10:51:02:    ▲ Next.js 15.5.4
+2026-05-12T10:51:02:    - Local:        http://localhost:4000
+2026-05-12T10:51:02:    - Network:      http://122.154.75.194:4000
+2026-05-12T10:51:02: 
+2026-05-12T10:51:02:  ✓ Starting...
+2026-05-12T10:51:03:  ✓ Ready in 1405ms

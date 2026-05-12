@@ -30,7 +30,7 @@ const RequestLoadingSkeleton = React.memo(function RequestLoadingSkeleton({
       >
         {/* Hero (ใช้คลาสเดียวกับเพจจริง) */}
         <section
-          className="relative overflow-hidden bg-gradient-to-br from-blue-700/90 to-blue-900/90 pt-20"
+          className="relative overflow-hidden bg-gradient-to-br from-[var(--primary)] to-[#001a4d] pt-20"
           style={{
             backgroundImage: 'url("/hero/hero.png")',
             backgroundSize: 'cover',
@@ -219,7 +219,7 @@ const RequestLoadingSkeleton = React.memo(function RequestLoadingSkeleton({
       aria-live="polite"
     >
       <section
-        className="relative bg-gradient-to-br from-blue-700/90 to-blue-900/90 pt-20"
+        className="relative bg-gradient-to-br from-[var(--primary)] to-[#001a4d] pt-20"
         style={{
           backgroundImage: 'url("/hero/hero.png")',
           backgroundSize: 'cover',
